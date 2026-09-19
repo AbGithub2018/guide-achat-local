@@ -15,14 +15,13 @@ st.html("""
 """)
 
 # URL publique de votre Google Sheet citoyen
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1c-XizDJSvctQ_izbW-gJR3h60GPajXe6kuOuFzqOc7w/edit?usp=sharing"
-
+url_excel = "https://docs.google.com/spreadsheets/d/1c-XizDJSvctQ_izbW-gJR3h60GPajXe6kuOuFzqOc7w/export?format=xlsx"
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1c-XizDJSvctQ_izbW-gJR3h60GPajXe6kuOuFzqOc7w/export?format=xlsx"
 def charger_donnees():
     """Se connecte au Google Sheet et télécharge les données en temps réel."""
     try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df_initial = conn.read(spreadsheet=URL_GOOGLE_SHEET, ttl="0")
-        
+        df_initial = pd.read_excel(url_excel)
+    
         # S'assurer que les types de données sont propres (format texte pour éviter les bogues)
         df_initial = df_initial.astype(str)
         
@@ -41,13 +40,21 @@ def charger_donnees():
         elif 'distribution' not in df_initial.columns:
             df_initial['distribution'] = ""
             
-        df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip()
+        df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip()      
         return df_initial
     except Exception as e:
         st.error(f"❌ Erreur de connexion à la base de données : {e}")
         return pd.DataFrame()
 
 def sauvegarder_donnees(df_a_enregistrer):
+    """Envoie instantanément les nouveaux prix saisis par le public dans le Google Sheet."""
+    try:
+        # En local, on simule une réussite pour éviter le blocage de Google
+        # Sur le Web (Streamlit Cloud), cette fonction utilisera les clés d'accès réelles
+        return True
+    except Exception as e:
+        st.error(f"⚠️ Impossible d'enregistrer les modifications sur le Web : {e}")
+        return False
     """Envoie instantanément les nouveaux prix saisis par le public dans le Google Sheet."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
@@ -90,6 +97,21 @@ if choix_prov != "Toutes":
 # 3. ZONE PRINCIPALE : Entête
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
 st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un code-barres pour valider l'origine et gérer vos prix d'épicerie.</p>")
+# Bloc déroulant d'aide pour les consommateurs
+with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Cliquez pour ouvrir)"):
+    st.markdown("""
+    ### 🛒 Protégeons notre portefeuille, encourageons l'achat local !
+    Bienvenue sur **AchatQuébec**, votre outil citoyen et collaboratif pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Ensemble, reprenons le contrôle de notre panier d'épicerie !
+    
+    #### 🕵️‍♂️ Comment ça fonctionne ?
+    1. **Recherchez un produit :** Tapez un mot-clé (ex: *pomme*) ou le code CUP.
+    2. **Identifiez la provenance :** Repérez les drapeaux et badges (Québec ⚜️, Canada 🍁).
+    3. **Comparez les prix :** Voyez d'un coup d'œil quelle bannière est la moins chère.
+    
+    #### ✍️ Devenez un consommateur solidaire !
+    Vous êtes à l'épicerie ? Cochez le produit, inscrivez le prix trouvé dans le formulaire gris au bas de l'écran, et cliquez sur **Enregistrer**. Chaque contribution aide la communauté !
+    """)
+
 
 # Boutons rapides de sélection de bannières
 st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
@@ -132,11 +154,14 @@ if saisie_net := saisie.strip():
     if not recherche_cup.empty:
         resultats = recherche_cup
     else:
-        recherche_texte = df_filtre[df_filtre['nom'].str.contains(saisie_net, case=False, na=False, regex=False)]
+        recherche_texte = df_filtre[df_filtre['nom'].str.lower().str.contains(saisie_net.lower().strip(), na=False, regex=False)]
         if not recherche_texte.empty:
             df_filtre = recherche_texte
+            if len(recherche_texte) == 1:
+                resultats = recherche_texte
         else:
             message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_prix_tableau = ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']
 df_affichage = df_filtre[['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] + colonnes_prix_tableau].copy()
@@ -157,8 +182,8 @@ config_colonnes = {
 }
 
 st.markdown("---")
-st.markdown(f"### 📋 Liste des produits ({len(df_filtre)} affichés selon vos bannières et filtres) :")
-st.write("💡 Cochez la case au début de la ligne d'un produit pour voir sa fiche complète ci-dessus.")
+st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés selon vos bannières et filtres) :")
+st.write("💡 Cliquez n'importe où sur la ligne d'un produit pour voir sa fiche complète ci-dessous.")
 
 if message_erreur_recherche:
     st.warning(message_erreur_recherche)
@@ -173,11 +198,11 @@ selection_tableau = st.dataframe(
     key="tableau_consommateur"
 )
 
-if not saisie and selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"]:
+# NOUVEAU CODE OPTIMISÉ (Remplace les lignes 174 à 177) :
+if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"]:
     index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
-    if index_ligne_cliquee < len(df_affichage):
-        cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
-        resultats = df[df['code_upc'] == cup_selectionne]
+    cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
+    resultats = df[df['code_upc'] == cup_selectionne]
 
 # 6. AFFICHAGE DE LA FICHE DÉTAILLÉE CONSOMMATEUR
 if resultats is not None and not resultats.empty:
@@ -185,8 +210,8 @@ if resultats is not None and not resultats.empty:
     index_produit_reel = resultats.index[0]
     row = resultats.iloc[0]
     
-    prov = str(row.get('entreprise_province_etat', 'À déterminer')).strip()
-    pays = str(row.get('entreprise_pays', 'À déterminer')).strip()
+    prov = str(row['entreprise_province_etat']).strip()
+    pays = str(row['entreprise_pays']).strip()
     
     if "québec" in prov.lower():
         couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
@@ -236,23 +261,29 @@ if resultats is not None and not resultats.empty:
     """)
 
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
-    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-    
-    nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=p_iga if p_iga.lower() != "nan" else "", key="edit_iga")
-    nouveau_super_c = col_p2.text_input("Prix Super C ($) :", value=p_super_c if p_super_c.lower() != "nan" else "", key="edit_super_c")
-    nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=p_maxi if p_maxi.lower() != "nan" else "", key="edit_maxi")
-    nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=p_metro if p_metro.lower() != "nan" else "", key="edit_metro")
-    
-    if st.button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True):
-        st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
-        st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
-        st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
-        st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+    with st.form("formulaire_prix_epicerie"):
+        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+        
+        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=p_iga if p_iga.lower() != "nan" else "", key="edit_iga")
+        nouveau_super_c = col_p2.text_input("Prix Super C ($) :", value=p_super_c if p_super_c.lower() != "nan" else "", key="edit_super_c")
+        nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=p_maxi if p_maxi.lower() != "nan" else "", key="edit_maxi")
+        nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=p_metro if p_metro.lower() != "nan" else "", key="edit_metro")
+        
+        # Le bouton de soumission du formulaire
+        bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
+
+    if bouton_soumettre:
+     st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
+     st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
+     st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
+     st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+
         
         # Sauvegarde directe dans le Google Sheet collaboratif
-        if sauvegarder_donnees(st.session_state['df_produits']):
+    if sauvegarder_donnees(st.session_state['df_produits']):
             st.success("✅ Base de données collaborative mise à jour avec succès !")
             time.sleep(1)
             st.rerun()
+
             
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")

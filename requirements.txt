@@ -1,2 +1,2 @@
 pandas
-streamlit-google-sheets
+st-gsheets-connection

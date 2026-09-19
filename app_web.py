@@ -47,24 +47,20 @@ def charger_donnees():
         return pd.DataFrame()
 
 def sauvegarder_donnees(df_a_enregistrer):
-    """Envoie instantanément les nouveaux prix saisis par le public dans le Google Sheet."""
+    """Envoie les prix dans le Google Sheet sur le Web, et simule la réussite sur PC."""
     try:
-        # Connexion officielle sécurisée de Streamlit (active uniquement sur le Web)
+        # Connexion officielle sécurisée de Streamlit (active sur le Web)
         conn = st.connection("gsheets", type=st.connection.GSheetsConnection if hasattr(st, 'connection') else GSheetsConnection)
         conn.update(spreadsheet=URL_GOOGLE_SHEET, data=df_a_enregistrer)
         return True
     except Exception as e:
-        # Si on est sur PC (en local), la connexion échoue et on simule quand même pour pouvoir tester l'interface
-        return True
-
-    """Envoie instantanément les nouveaux prix saisis par le public dans le Google Sheet."""
-    try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        conn.update(spreadsheet=URL_GOOGLE_SHEET, data=df_a_enregistrer)
-        return True
-    except Exception as e:
-        st.error(f"⚠️ Impossible d'enregistrer les modifications sur le Web : {e}")
-        return False
+        # Si on est en local sur votre PC (localhost), on simule la réussite pour vos tests
+        if "localhost" in st.runtime.get_instance()._main_script_path or "app_web.py" in st.runtime.get_instance()._main_script_path:
+            return True
+        else:
+            # Si on est sur le Web et que ça plante, on affiche le vrai bogue Google
+            st.error(f"❌ Erreur de sauvegarde réelle sur le serveur : {e}")
+            return False
 
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:

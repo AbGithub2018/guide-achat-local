@@ -15,7 +15,7 @@ st.html("""
 """)
 
 # URL publique de votre Google Sheet citoyen
-URL_GOOGLE_SHEET = "https://google.com"
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1c-XizDJSvctQ_izbW-gJR3h60GPajXe6kuOuFzqOc7w/edit?usp=sharing"
 
 def charger_donnees():
     """Se connecte au Google Sheet et télécharge les données en temps réel."""

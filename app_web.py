@@ -76,9 +76,6 @@ st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 
 
 if 'entreprise_pays' in df.columns:
     pass
-    # repartition_pays = df['entreprise_pays'].value_counts()
-    # st.sidebar.write("**Origine financière de vos produits :**")
-    # st.sidebar.bar_chart(repartition_pays)
 
 st.sidebar.markdown("---")
 
@@ -94,7 +91,6 @@ if 'entreprise_province_etat' in df_filtre.columns:
     choix_prov = st.sidebar.selectbox("Filtrer par Province / État :", liste_prov)
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
-
 # 3. ZONE PRINCIPALE : Entête
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
 st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un code-barres pour valider l'origine et gérer vos prix d'épicerie.</p>")
@@ -106,7 +102,7 @@ with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Clique
     
     #### 🕵️‍♂️ Comment ça fonctionne ?
     1. **Recherchez un produit :** Tapez un mot-clé (ex: *pomme*) ou le code CUP.
-    2. **Identifiez la provenance :** Repérez les drapeaux et badges (Québec ⚜️, Canada 🍁).
+    2. **Identifiez la provenance :** Repérez les drapes et badges (Québec ⚜️, Canada 🍁).
     3. **Comparez les prix :** Voyez d'un coup d'œil quelle bannière est la moins chère.
     
     #### ✍️ Devenez un consommateur solidaire !
@@ -211,19 +207,97 @@ st.markdown("---")
 st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés selon vos bannières et filtres) :")
 st.write("💡 Cliquez n'importe où sur la ligne d'un produit pour voir sa fiche complète ci-dessous.")
 
-if message_erreur_recherche:
-    st.warning(message_erreur_recherche)
+# --- SECTION LOGIQUE : AFFICHAGE DU TABLEAU OU DU MESSAGE D'ERREUR ---
+selection_tableau = None 
 
-selection_tableau = st.dataframe(
-    df_affichage,
-    column_config=config_colonnes,
-    use_container_width=True,
-    hide_index=True,
-    selection_mode="single-row",
-    on_select="rerun",
-    key="tableau_consommateur"
-)
+# CAS A : L'utilisateur n'a rien écrit dans la case -> On montre la liste complète par défaut
+if not saisie_net:
+    selection_tableau = st.dataframe(
+        df_affichage,
+        column_config=config_colonnes,
+        use_container_width=True,
+        hide_index=True,
+        selection_mode="single-row",
+        on_select="rerun",
+        key="tableau_consommateur"
+    )
 
+# CAS B : L'utilisateur a fait une recherche et on a des résultats -> On montre la liste filtrée
+elif not df_filtre.empty and len(df_filtre) < len(df):
+    selection_tableau = st.dataframe(
+        df_affichage,
+        column_config=config_colonnes,
+        use_container_width=True,
+        hide_index=True,
+        selection_mode="single-row",
+        on_select="rerun",
+        key="tableau_consommateur"
+    )
+
+# CAS C : La recherche ne donne RIEN -> On masque complètement le tableau de 10 440 lignes
+else:
+    if message_erreur_recherche and not saisie_net.strip().isdigit():
+        st.warning(message_erreur_recherche)
+
+    # Le formulaire collaboratif s'ouvre UNIQUE et SEULEMENT si c'est un code CUP numérique inconnu
+    if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10:
+        st.info(f"📦 Le code CUP **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
+        st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
+        
+        with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
+            nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
+            cup_final = st.text_input("Code CUP", value=saisie_net.strip(), disabled=True)
+            entreprise = st.text_input("Entreprise propriétaire / Marque (ex: Unico)")
+            province = st.text_input("Province / État (ex: Québec)")
+            pays = st.text_input("Pays", value="Canada")
+            distribution = st.text_input("Réseau d'épicerie (ex: IGA, Maxi, Metro, Super C)")
+            
+            st.write("---")
+            st.write("**Entrez les prix constatés en magasin (optionnel) :**")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1: prix_iga = st.text_input("Prix IGA ($)", value="")
+            with col2: prix_superc = st.text_input("Prix Super C ($)", value="")
+            with col3: prix_maxi = st.text_input("Prix Maxi ($)", value="")
+            with col4: prix_metro = st.text_input("Prix Metro ($)", value="")
+            
+            bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
+            
+            if bouton_creer:
+                if nom_nouveau:
+                    with st.spinner("Enregistrement de la nouvelle fiche produit..."):
+                        try:
+                            p_iga_val = prix_iga.strip() if prix_iga.strip() else "Non inscrit"
+                            p_super_c_val = prix_superc.strip() if prix_superc.strip() else "Non inscrit"
+                            p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else "Non inscrit"
+                            p_metro_val = prix_metro.strip() if prix_metro.strip() else "Non inscrit"
+                            
+                            nouvelle_ligne = {
+                                'code_upc': cup_final,
+                                'nom': nom_nouveau.strip(),
+                                'entreprise_proprietaire': entreprise.strip(),
+                                'entreprise_province_etat': province.strip(),
+                                'entreprise_pays': pays.strip(),
+                                'distribution': distribution.strip(),
+                                'prix_iga': p_iga_val,
+                                'prix_super_c': p_super_c_val,
+                                'prix_maxi': p_maxi_val,
+                                'prix_metro': p_metro_val
+                            }
+                            
+                            import pandas as pd
+                            st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
+                            
+                            if sauvegarder_donnees(st.session_state['df_produits']):
+                                st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
+                                st.balloons()
+                                time.sleep(1)
+                                st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur lors de l'enregistrement : {e}")
+                else:
+                    st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
+
+# Détection de la ligne cliquée dans le tableau interactif
 if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
     index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
     cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
@@ -233,7 +307,7 @@ if selection_tableau and "rows" in selection_tableau["selection"] and selection_
 if resultats is not None and not resultats.empty:
     st.markdown("---")
     index_produit_reel = resultats.index[0]
-    row = resultats.iloc[0]  # Correction ici pour extraire proprement la ligne
+    row = resultats.iloc[0]
     
     prov = str(row.get('entreprise_province_etat', '')).strip()
     pays = str(row.get('entreprise_pays', '')).strip()

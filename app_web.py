@@ -143,7 +143,7 @@ onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scan
 saisie_net = ""
 
 with onglet_clavier:
-    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup", autofocus=True)
+    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup")
     if saisie:
         saisie_net = saisie.strip()
 

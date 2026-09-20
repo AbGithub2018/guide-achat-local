@@ -137,8 +137,11 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     condition_distribution = df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)
     df_filtre = df_filtre[condition_distribution]
 
-# 4. ZONE DE RECHERCHE ET SCANNER
-onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scanner un Code-Barres"])
+# 4. ZONE DE RECHERCHE ET SCANNER VIDÉO EN DIRECT (100% GRATUIT)
+import streamlit.components.v1 as components
+
+st.markdown("### 🔍 Rechercher ou Scanner un produit")
+onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scanner en direct"])
 
 saisie_net = ""
 
@@ -148,27 +151,56 @@ with onglet_clavier:
         saisie_net = saisie.strip()
 
 with onglet_camera:
-    image_cam = st.camera_input("Cadrez le code-barres bien au centre de l'écran")
-    if image_cam:
-        try:
-            from pyzbar.pyzbar import decode
-            from PIL import Image
-            
-            img = Image.open(image_cam)
-            codes_detectes = decode(img)
-            
-            if codes_detectes:
-                saisie_net = codes_detectes.data.decode('utf-8').strip()
-                st.success(f"✅ Code CUP détecté : {saisie_net}")
-            else:
-                st.warning("⚠️ Aucun code-barres lisible trouvé sur la photo. Assurez-vous qu'il soit bien droit, éclairé et non flou.")
-        except ImportError:
-            st.error("❌ Le décodeur n'est pas prêt. Veuillez ajouter 'pyzbar' et 'pillow' dans votre fichier requirements.txt sur GitHub.")
+    st.write("💡 Placez le code-barres devant la caméra. Le scan est automatique.")
+    
+    # Code du scanner vidéo en direct (Open-Source / Gratuit)
+    scanner_html = """
+    <div id="interactive" class="viewport" style="width: 100%; height: 300px; background-color: #000; border-radius: 10px; overflow: hidden;"></div>
+    <script src="https://cloudflare.com"></script>
+    <script>
+        // On écoute le signal pour envoyer la valeur à Streamlit
+        function envoyerCode(code) {
+            window.parent.postMessage({
+                type: 'streamlit:setComponentValue',
+                value: code
+            }, '*');
+        }
+
+        Quagga.init({
+            inputStream : {
+                name : "Live",
+                type : "LiveStream",
+                target: document.querySelector('#interactive'),
+                constraints: {
+                    facingMode: "environment" // Force la caméra arrière du téléphone
+                }
+            },
+            decoder : {
+                readers : ["upc_reader", "upc_e_reader", "ean_reader"] // Formats d'épicerie standard
+            }
+        }, function(err) {
+            if (err) { console.log(err); return }
+            Quagga.start();
+        });
+
+        Quagga.onDetected(function(data) {
+            var code = data.codeResult.code;
+            envoyerCode(code);
+        });
+    </script>
+    """
+    # Affichage du composant caméra dans la page
+    code_scanne = components.html(scanner_html, height=320)
+    
+    if code_scanne:
+        saisie_net = str(code_scanne).strip()
+        st.success(f"✅ Code CUP détecté en direct : {saisie_net}")
 
 resultats = None
 message_erreur_recherche = None
 
 if saisie_net:
+
 
     try:
         cup_saisi = str(int(float(saisie_net))).strip()

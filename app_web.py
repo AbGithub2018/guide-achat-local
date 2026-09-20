@@ -14,15 +14,12 @@ st.html("""
 </style>
 """)
 
-# URL de votre Google Sheet citoyen
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1c-XizDJSvctQ_izbW-gJR3h60GPajXe6kuOuFzqOc7w"
-
 def charger_donnees():
-    """Se connecte au Google Sheet officiel en utilisant le compte de service des secrets."""
+    """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
     try:
-        # Utilisation de la connexion native Streamlit GSheets sécurisée par vos clés secrets.toml
+        # Streamlit va chercher lui-même l'URL et les clés dans vos Secrets
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df_initial = conn.read(spreadsheet=URL_GOOGLE_SHEET, worksheet="Sheet1")
+        df_initial = conn.read(worksheet="Sheet1")
     
         df_initial = df_initial.astype(str)
         df_initial['code_upc'] = df_initial['code_upc'].replace(r'\.0$', '', regex=True).str.strip()
@@ -44,24 +41,19 @@ def charger_donnees():
         return pd.DataFrame()
 
 def sauvegarder_donnees(df_a_enregistrer):
-    """Envoie REÉLLEMENT les prix dans le Google Sheet grâce aux droits d'Éditeur du compte de service."""
+    """Enregistre les prix automatiquement grâce aux secrets de Streamlit Cloud."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        conn.update(spreadsheet=URL_GOOGLE_SHEET, worksheet="Sheet1", data=df_a_enregistrer)
+        conn.update(worksheet="Sheet1", data=df_a_enregistrer)
         return True
     except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")
         return False
 
+
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()
-
-# Raccourci vers les données en session
-df = st.session_state['df_produits']
-
-if 'banniere_active' not in st.session_state:
-    st.session_state['banniere_active'] = "Tous"
 
 # Raccourci vers les données en session
 df = st.session_state['df_produits']
@@ -78,16 +70,19 @@ if 'entreprise_pays' in df.columns:
 
 st.sidebar.markdown("---")
 
-liste_pays = ["Tous"] + sorted([str(p) for p in df['entreprise_pays'].unique() if pd.notna(p) and p != ""])
-choix_pays = st.sidebar.selectbox("Filtrer par Pays propriétaire :", liste_pays)
+# On vérifie si la colonne existe avant de créer le filtre
+if 'entreprise_pays' in df.columns:
+    liste_pays = ["Tous"] + sorted([str(p) for p in df['entreprise_pays'].unique() if pd.notna(p) and p != ""])
+    choix_pays = st.sidebar.selectbox("Filtrer par Pays propriétaire :", liste_pays)
+    df_filtre = df[df['entreprise_pays'] == choix_pays] if choix_pays != "Tous" else df.copy()
+else:
+    df_filtre = df.copy()
 
-df_filtre = df[df['entreprise_pays'] == choix_pays] if choix_pays != "Tous" else df.copy()
-
-liste_prov = ["Toutes"] + sorted([str(p) for p in df_filtre['entreprise_province_etat'].unique() if pd.notna(p) and p != ""])
-choix_prov = st.sidebar.selectbox("Filtrer par Province / État :", liste_prov)
-
-if choix_prov != "Toutes":
-    df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
+if 'entreprise_province_etat' in df_filtre.columns:
+    liste_prov = ["Toutes"] + sorted([str(p) for p in df_filtre['entreprise_province_etat'].unique() if pd.notna(p) and p != ""])
+    choix_prov = st.sidebar.selectbox("Filtrer par Province / État :", liste_prov)
+    if choix_prov != "Toutes":
+        df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
 
 # 3. ZONE PRINCIPALE : Entête
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
@@ -144,21 +139,23 @@ if saisie_net := saisie.strip():
     except ValueError:
         cup_saisi = saisie_net
 
-    recherche_cup = df_filtre[df_filtre['code_upc'] == cup_saisi]
-    
-    if not recherche_cup.empty:
-        resultats = recherche_cup
-    else:
-        recherche_texte = df_filtre[df_filtre['nom'].str.lower().str.contains(saisie_net.lower().strip(), na=False, regex=False)]
-        if not recherche_texte.empty:
-            df_filtre = recherche_texte
-            if len(recherche_texte) == 1:
-                resultats = recherche_texte
+    if 'code_upc' in df_filtre.columns:
+        recherche_cup = df_filtre[df_filtre['code_upc'] == cup_saisi]
+        if not recherche_cup.empty:
+            resultats = recherche_cup
         else:
-            message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+            if 'nom' in df_filtre.columns:
+                recherche_texte = df_filtre[df_filtre['nom'].str.lower().str.contains(saisie_net.lower().strip(), na=False, regex=False)]
+                if not recherche_texte.empty:
+                    df_filtre = recherche_texte
+                    if len(recherche_texte) == 1:
+                        resultats = recherche_texte
+                else:
+                    message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_prix_tableau = ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']
-df_affichage = df_filtre[['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] + colonnes_prix_tableau].copy()
+colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
+df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
 
 for c in df_affichage.columns:
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
@@ -193,19 +190,19 @@ selection_tableau = st.dataframe(
 )
 
 # NOUVEAU CODE OPTIMISÉ
-if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"]:
-    index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
+if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
+    index_ligne_cliquee = selection_tableau["selection"]["rows"]
     cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
     resultats = df[df['code_upc'] == cup_selectionne]
 
 # 6. AFFICHAGE DE LA FICHE DÉTAILLÉE CONSOMMATEUR
 if resultats is not None and not resultats.empty:
     st.markdown("---")
-    index_produit_reel = resultats.index[0]
-    row = resultats.iloc[0]
+    index_produit_reel = resultats.index
+    row = resultats.iloc
     
-    prov = str(row['entreprise_province_etat']).strip()
-    pays = str(row['entreprise_pays']).strip()
+    prov = str(row.get('entreprise_province_etat', '')).strip()
+    pays = str(row.get('entreprise_pays', '')).strip()
     
     if "québec" in prov.lower():
         couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"

@@ -72,7 +72,7 @@ df = st.session_state['df_produits']
 if 'banniere_active' not in st.session_state:
     st.session_state['banniere_active'] = "Tous"
 # 2. BARRE LATERALE (Statistiques et Filtres Géopolitiques)
-st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif;'>📊 STATISTIQUES ET FILTRES</h2>")
+st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits par pays d'origine</h2>")
 
 if 'entreprise_pays' in df.columns:
     pass

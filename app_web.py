@@ -137,12 +137,39 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     condition_distribution = df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)
     df_filtre = df_filtre[condition_distribution]
 
-# 4. BARRE DE RECHERCHE GÉANTE
-saisie = st.text_input("👉 SCANNEZ LE CODE-BARRES (CUP) OU TAPEZ UN NOM :", key="recherche_cup")
+# 4. ZONE DE RECHERCHE ET SCANNER
+onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scanner un Code-Barres"])
+
+saisie_net = ""
+
+with onglet_clavier:
+    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup", autofocus=True)
+    if saisie:
+        saisie_net = saisie.strip()
+
+with onglet_camera:
+    image_cam = st.camera_input("Cadrez le code-barres bien au centre de l'écran")
+    if image_cam:
+        try:
+            from pyzbar.pyzbar import decode
+            from PIL import Image
+            
+            img = Image.open(image_cam)
+            codes_detectes = decode(img)
+            
+            if codes_detectes:
+                saisie_net = codes_detectes.data.decode('utf-8').strip()
+                st.success(f"✅ Code CUP détecté : {saisie_net}")
+            else:
+                st.warning("⚠️ Aucun code-barres lisible trouvé sur la photo. Assurez-vous qu'il soit bien droit, éclairé et non flou.")
+        except ImportError:
+            st.error("❌ Le décodeur n'est pas prêt. Veuillez ajouter 'pyzbar' et 'pillow' dans votre fichier requirements.txt sur GitHub.")
+
 resultats = None
 message_erreur_recherche = None
 
-if saisie_net := saisie.strip():
+if saisie_net:
+
     try:
         cup_saisi = str(int(float(saisie_net))).strip()
     except ValueError:

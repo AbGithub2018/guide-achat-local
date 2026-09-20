@@ -75,9 +75,9 @@ if 'banniere_active' not in st.session_state:
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif;'>📊 STATISTIQUES ET FILTRES</h2>")
 
 if 'entreprise_pays' in df.columns:
-    repartition_pays = df['entreprise_pays'].value_counts()
-    st.sidebar.write("**Origine financière de vos produits :**")
-    st.sidebar.bar_chart(repartition_pays)
+    #repartition_pays = df['entreprise_pays'].value_counts()
+    #st.sidebar.write("**Origine financière de vos produits :**")
+    #st.sidebar.bar_chart(repartition_pays)
 
 st.sidebar.markdown("---")
 

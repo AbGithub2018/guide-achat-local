@@ -14,27 +14,24 @@ st.html("""
 </style>
 """)
 
-# URL publique de votre Google Sheet citoyen
-url_excel = "https://docs.google.com/spreadsheets/d/1c-XizDJSvctQ_izbW-gJR3h60GPajXe6kuOuFzqOc7w/export?format=xlsx"
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1c-XizDJSvctQ_izbW-gJR3h60GPajXe6kuOuFzqOc7w/export?format=xlsx"
+# URL de votre Google Sheet citoyen
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1c-XizDJSvctQ_izbW-gJR3h60GPajXe6kuOuFzqOc7w"
+
 def charger_donnees():
-    """Se connecte au Google Sheet et télécharge les données en temps réel."""
+    """Se connecte au Google Sheet officiel en utilisant le compte de service des secrets."""
     try:
-        df_initial = pd.read_excel(url_excel)
+        # Utilisation de la connexion native Streamlit GSheets sécurisée par vos clés secrets.toml
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df_initial = conn.read(spreadsheet=URL_GOOGLE_SHEET, worksheet="Sheet1")
     
-        # S'assurer que les types de données sont propres (format texte pour éviter les bogues)
         df_initial = df_initial.astype(str)
-        
-        # Nettoyage et sécurisation des codes CUP pour éviter l'erreur Arrow
         df_initial['code_upc'] = df_initial['code_upc'].replace(r'\.0$', '', regex=True).str.strip()
         
-        # Configuration des 4 colonnes de prix cloisonnées exigées
         for col_prix in ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']:
             if col_prix not in df_initial.columns:
                 df_initial[col_prix] = ""
             df_initial[col_prix] = df_initial[col_prix].replace('nan', '').str.strip()
             
-        # Synchronisation des colonnes de distribution
         if 'reseau_distribution' in df_initial.columns and 'distribution' not in df_initial.columns:
             df_initial['distribution'] = df_initial['reseau_distribution']
         elif 'distribution' not in df_initial.columns:
@@ -43,28 +40,28 @@ def charger_donnees():
         df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip()      
         return df_initial
     except Exception as e:
-        st.error(f"❌ Erreur de connexion à la base de données : {e}")
+        st.error(f"❌ Erreur de lecture : {e}")
         return pd.DataFrame()
 
 def sauvegarder_donnees(df_a_enregistrer):
-    """Envoie les prix dans le Google Sheet sur le Web, et simule la réussite sur PC."""
+    """Envoie REÉLLEMENT les prix dans le Google Sheet grâce aux droits d'Éditeur du compte de service."""
     try:
-        # Connexion officielle sécurisée de Streamlit (active sur le Web)
-        conn = st.connection("gsheets", type=st.connection.GSheetsConnection if hasattr(st, 'connection') else GSheetsConnection)
-        conn.update(spreadsheet=URL_GOOGLE_SHEET, data=df_a_enregistrer)
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        conn.update(spreadsheet=URL_GOOGLE_SHEET, worksheet="Sheet1", data=df_a_enregistrer)
         return True
     except Exception as e:
-        # Si on est en local sur votre PC (localhost), on simule la réussite pour vos tests
-        if "localhost" in st.runtime.get_instance()._main_script_path or "app_web.py" in st.runtime.get_instance()._main_script_path:
-            return True
-        else:
-            # Si on est sur le Web et que ça plante, on affiche le vrai bogue Google
-            st.error(f"❌ Erreur de sauvegarde réelle sur le serveur : {e}")
-            return False
+        st.error(f"❌ Erreur de sauvegarde réelle : {e}")
+        return False
 
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()
+
+# Raccourci vers les données en session
+df = st.session_state['df_produits']
+
+if 'banniere_active' not in st.session_state:
+    st.session_state['banniere_active'] = "Tous"
 
 # Raccourci vers les données en session
 df = st.session_state['df_produits']
@@ -99,7 +96,7 @@ st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un
 with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Cliquez pour ouvrir)"):
     st.markdown("""
     ### 🛒 Protégeons notre portefeuille, encourageons l'achat local !
-    Bienvenue sur **AchatQuébec**, votre outil citoyen et collaboratif pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Ensemble, reprenons le contrôle de notre panier d'épicerie !
+    Bienvenue sur **AchatQuébec**, votre outil citoyen et collaborative pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Ensemble, reprenons le contrôle de notre panier d'épicerie !
     
     #### 🕵️‍♂️ Comment ça fonctionne ?
     1. **Recherchez un produit :** Tapez un mot-clé (ex: *pomme*) ou le code CUP.
@@ -159,7 +156,6 @@ if saisie_net := saisie.strip():
                 resultats = recherche_texte
         else:
             message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
-
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_prix_tableau = ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']
 df_affichage = df_filtre[['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] + colonnes_prix_tableau].copy()
@@ -196,7 +192,7 @@ selection_tableau = st.dataframe(
     key="tableau_consommateur"
 )
 
-# NOUVEAU CODE OPTIMISÉ (Remplace les lignes 174 à 177) :
+# NOUVEAU CODE OPTIMISÉ
 if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"]:
     index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
     cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
@@ -271,15 +267,14 @@ if resultats is not None and not resultats.empty:
         bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
 
     if bouton_soumettre:
-     st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
-     st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
-     st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
-     st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
-
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
         
-        # Sauvegarde directe dans le Google Sheet collaboratif
-    if sauvegarder_donnees(st.session_state['df_produits']):
-            st.success("✅ Base de données collaborative mise à jour avec succès !")
+        # Sauvegarde directe dans le Google Sheet collaboratif uniquement au clic
+        if sauvegarder_donnees(st.session_state['df_produits']):
+            st.success("Base de données collaborative mise à jour avec succès !")
             time.sleep(1)
             st.rerun()
 

@@ -17,19 +17,30 @@ st.html("""
 def charger_donnees():
     """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
     try:
-        # Streamlit va chercher lui-même l'URL et les clés dans vos Secrets
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_initial = conn.read(worksheet="Sheet1")
     
+        if df_initial is None or df_initial.empty:
+            st.error("⚠️ Le fichier Google Sheet lu est vide. Vérifiez l'onglet 'Sheet1'.")
+            return pd.DataFrame()
+
         df_initial = df_initial.astype(str)
-        df_initial['code_upc'] = df_initial['code_upc'].replace(r'\.0$', '', regex=True).str.strip()
+        
+        # Nettoyage automatique des noms de colonnes pour éviter les KeyError
+        df_initial.columns = [c.strip().lower() for c in df_initial.columns]
+        
+        if 'code_upc' in df_initial.columns:
+            df_initial['code_upc'] = df_initial['code_upc'].replace(r'\.0$', '', regex=True).str.strip()
+        else:
+            df_initial['code_upc'] = ""
         
         for col_prix in ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']:
             if col_prix not in df_initial.columns:
                 df_initial[col_prix] = ""
             df_initial[col_prix] = df_initial[col_prix].replace('nan', '').str.strip()
             
-        if 'reseau_distribution' in df_initial.columns and 'distribution' not in df_initial.columns:
+        # Sécurité pour la colonne distribution (gère vos deux colonnes E et K)
+        if 'distribution' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:
             df_initial['distribution'] = df_initial['reseau_distribution']
         elif 'distribution' not in df_initial.columns:
             df_initial['distribution'] = ""
@@ -70,7 +81,6 @@ if 'entreprise_pays' in df.columns:
 
 st.sidebar.markdown("---")
 
-# On vérifie si la colonne existe avant de créer le filtre
 if 'entreprise_pays' in df.columns:
     liste_pays = ["Tous"] + sorted([str(p) for p in df['entreprise_pays'].unique() if pd.notna(p) and p != ""])
     choix_pays = st.sidebar.selectbox("Filtrer par Pays propriétaire :", liste_pays)
@@ -87,7 +97,7 @@ if 'entreprise_province_etat' in df_filtre.columns:
 # 3. ZONE PRINCIPALE : Entête
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
 st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un code-barres pour valider l'origine et gérer vos prix d'épicerie.</p>")
-# Bloc déroulant d'aide pour les consommateurs
+
 with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Cliquez pour ouvrir)"):
     st.markdown("""
     ### 🛒 Protégeons notre portefeuille, encourageons l'achat local !
@@ -101,7 +111,6 @@ with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Clique
     #### ✍️ Devenez un consommateur solidaire !
     Vous êtes à l'épicerie ? Cochez le produit, inscrivez le prix trouvé dans le formulaire gris au bas de l'écran, et cliquez sur **Enregistrer**. Chaque contribution aide la communauté !
     """)
-
 
 # Boutons rapides de sélection de bannières
 st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
@@ -122,8 +131,7 @@ if col_tous.button("🔄 Toutes", use_container_width=True):
 
 banniere = st.session_state['banniere_active']
 
-# Application du filtre de bannière
-if banniere != "Tous":
+if banniere != "Tous" and 'distribution' in df_filtre.columns:
     nom_banniere_recherche = banniere.replace('_', ' ')
     condition_distribution = df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)
     df_filtre = df_filtre[condition_distribution]
@@ -189,7 +197,6 @@ selection_tableau = st.dataframe(
     key="tableau_consommateur"
 )
 
-# NOUVEAU CODE OPTIMISÉ
 if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
     index_ligne_cliquee = selection_tableau["selection"]["rows"]
     cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
@@ -260,7 +267,6 @@ if resultats is not None and not resultats.empty:
         nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=p_maxi if p_maxi.lower() != "nan" else "", key="edit_maxi")
         nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=p_metro if p_metro.lower() != "nan" else "", key="edit_metro")
         
-        # Le bouton de soumission du formulaire
         bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
 
     if bouton_soumettre:
@@ -269,11 +275,9 @@ if resultats is not None and not resultats.empty:
         st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
         st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
         
-        # Sauvegarde directe dans le Google Sheet collaboratif uniquement au clic
         if sauvegarder_donnees(st.session_state['df_produits']):
             st.success("Base de données collaborative mise à jour avec succès !")
             time.sleep(1)
             st.rerun()
 
-            
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")

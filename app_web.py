@@ -198,15 +198,15 @@ selection_tableau = st.dataframe(
 )
 
 if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-    index_ligne_cliquee = selection_tableau["selection"]["rows"]
+    index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
     cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
     resultats = df[df['code_upc'] == cup_selectionne]
 
 # 6. AFFICHAGE DE LA FICHE DÉTAILLÉE CONSOMMATEUR
 if resultats is not None and not resultats.empty:
     st.markdown("---")
-    index_produit_reel = resultats.index
-    row = resultats.iloc
+    index_produit_reel = resultats.index[0]
+    row = resultats.iloc[0]  # Correction ici pour extraire proprement la ligne
     
     prov = str(row.get('entreprise_province_etat', '')).strip()
     pays = str(row.get('entreprise_pays', '')).strip()

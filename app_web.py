@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import time
 from streamlit_gsheets import GSheetsConnection
-import cv2
 import numpy as np
 from PIL import Image
 

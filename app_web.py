@@ -139,18 +139,25 @@ onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scan
 
 saisie_net = ""
 
+# Vérification immédiate si un code CUP vient d'être envoyé par le scanner photo
+if "cup" in st.query_params:
+    saisie_net = str(st.query_params["cup"]).strip()
+    st.success(f"✅ Code CUP détecté : {saisie_net}")
+    st.query_params.clear()  # Nettoie la barre d'adresse proprement
+
 with onglet_clavier:
     saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup")
-    if saisie:
+    if saisie and not saisie_net:
         saisie_net = saisie.strip()
 
 with onglet_camera:
-    st.write("📷 **Alignez le code-barres** au centre de la caméra de votre téléphone pour le numériser en temps réel :")
-        # Code HTML5/JavaScript universel pour scanner en direct via le navigateur du téléphone
+    st.write("📷 **Alignez le code-barres** au centre de la caméra arrière. Le scan se fait automatiquement au vol :")
+    
+    # Code HTML5/JavaScript durci avec autofocus forcé et rechargement URL ultra-fiable
     code_scanner_html = """
-    <div style="text-align:center;">
-        <div id="loading-message" style="padding:10px; color:#666;">🔄 Initialisation de la caméra arrière...</div>
-        <video id="video-stream" style="width:100%; max-width:500px; border-radius:10px; display:none;" autoplay playsinline></video>
+    <div style="text-align:center; font-family:sans-serif;">
+        <div id="loading-message" style="padding:15px; color:#666; font-size:16px;">🔄 Initialisation de la caméra arrière...</div>
+        <video id="video-stream" style="width:100%; max-width:450px; border:4px solid #003366; border-radius:10px; display:none;" autoplay playsinline></video>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
@@ -159,36 +166,68 @@ with onglet_camera:
         const video = document.getElementById('video-stream');
         const loadingMessage = document.getElementById('loading-message');
 
-        codeReader.listVideoInputDevices()
-            .then((videoInputDevices) => {
-                let selectedDeviceId = videoInputDevices[0]?.deviceId;
-                for (let device of videoInputDevices) {
-                    if (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('arrière')) {
-                        selectedDeviceId = device.deviceId;
-                        break;
-                    }
-                }
+        // Configuration stricte pour forcer l'autofocus et la caméra arrière
+        const contraintes = {
+            video: {
+                facingMode: { exact: "environment" },
+                focusMode: "continuous",
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        };
 
+        navigator.mediaDevices.getUserMedia(contraintes)
+            .then((stream) => {
                 loadingMessage.style.display = 'none';
                 video.style.display = 'inline-block';
-
-                codeReader.decodeFromVideoDevice(selectedDeviceId, 'video-stream', (result, err) => {
+                video.srcObject = stream;
+                
+                // Lance la lecture en direct avec le décodeur universel ZXing
+                codeReader.decodeFromStream(stream, 'video-stream', (result, err) => {
                     if (result) {
                         const cupScanne = result.text.trim();
-                        const url = new URL(window.parent.location.href);
-                        url.searchParams.set('cup', cupScanne);
-                        window.parent.location.href = url.toString();
+                        
+                        // MÉTHODE RADICALE ET FIABLE : On pousse le CUP directement dans l'URL de l'application
+                        const urlCourante = new URL(window.parent.location.href);
+                        urlCourante.searchParams.set('cup', cupScanne);
+                        
+                        // Force le téléphone à rafraîchir l'application avec le bon produit
+                        window.parent.location.href = urlCourante.toString();
                     }
                 });
             })
             .catch((err) => {
-                loadingMessage.innerHTML = "❌ Erreur d'accès à la caméra. Assurez-vous d'avoir autorisé l'appareil photo dans votre navigateur.";
+                // Secours si le téléphone refuse le mode "exact" (comme sur certains vieux Android)
+                codeReader.listVideoInputDevices()
+                    .then((devices) => {
+                        let idCamera = devices[devices.length - 1].deviceId;
+                        for (let d of devices) {
+                            if (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('arrière')) {
+                                idCamera = d.deviceId;
+                                break;
+                            }
+                        }
+                        loadingMessage.style.display = 'none';
+                        video.style.display = 'inline-block';
+                        
+                        codeReader.decodeFromVideoDevice(idCamera, 'video-stream', (result, err) => {
+                            if (result) {
+                                const cupScanne = result.text.trim();
+                                const urlCourante = new URL(window.parent.location.href);
+                                urlCourante.searchParams.set('cup', cupScanne);
+                                window.parent.location.href = urlCourante.toString();
+                            }
+                        });
+                    })
+                    .catch((e) => {
+                        loadingMessage.innerHTML = "❌ Erreur : Veuillez autoriser l'appareil photo dans les réglages de votre fureteur mobile.";
+                    });
             });
     </script>
     """
     
     import streamlit.components.v1 as components
-    components.html(code_scanner_html, height=320, scrolling=False)
+    components.html(code_scanner_html, height=360, scrolling=False)
 
 resultats = None
 message_erreur_recherche = None

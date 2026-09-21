@@ -155,7 +155,7 @@ with onglet_camera:
     st.write("Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.")
     
     # Lien de redirection vers un scanner web open-source performant qui renverra le code vers votre app
-    url_scanner_externe = "https://scanapp.org/?auto=true&return=https://achatquebec.streamlit.app/?cup={CODE}"
+    url_scanner_externe = "https://scanapp.org/?automode=1&return=https://achatquebec.streamlit.app/?cup={CODE}"
     
     st.markdown(f"""
     <div style="text-align: center; margin: 20px 0;">

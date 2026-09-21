@@ -133,9 +133,6 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     condition_distribution = df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)
     df_filtre = df_filtre[condition_distribution]
 
-input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup")
-if saisie:
-        saisie_net = saisie.strip()
 
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO
 onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scanner un Code-Barres"])

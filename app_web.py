@@ -128,27 +128,27 @@ with onglet_camera:
     st.markdown("### 📷 Prenez le code-barres en photo")
     st.info("Alignez le code-barres du produit au centre de l'écran et prenez la photo.")
     
-    # Nouveau bouton natif Streamlit (Forcer l'activation de la caméra sur Samsung)
+    # Bouton officiel de Streamlit
     photo_produit = st.camera_input("👉 Cliquez ici pour ouvrir l'appareil photo", key="camera_officielle_samsung")
     
     if photo_produit:
-                bytes_data = photo_produit.getvalue()
-    image_np = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+        # Lecture universelle de la photo prise par le téléphone
+        image_pil = Image.open(photo_produit)
         
-        # Amélioration de l'image pour le scan
-    gris = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+        # Importation locale sécurisée pour éviter les bogues au démarrage
+        from pybar_unofficial.pybar import decode
         
-        # Détection automatique du code-barres
-    detecteur = cv2.BarcodeDetector()
-    ok, codes_detectes, _ = detecteur.detectAndDecode(gris)
+        # Lancement de l'analyse automatique de l'image
+        codes_detectes = decode(image_pil)
         
-    if ok and codes_detectes:
-            code_cam_detecte = codes_detectes.strip()
+        if codes_detectes:
+            # Récupération du premier code trouvé et conversion en texte propre
+            code_cam_detecte = str(codes_detectes[0].data.decode('utf-8')).strip()
             st.session_state['code_scanne'] = code_cam_detecte
             st.success(f"✅ Code CUP détecté : {code_cam_detecte}")
             st.rerun()
-    else:
-            st.warning("⚠️ Code-barres illisible. Reprenez la photo en reculant le produit à 20-30 cm pour éviter le flou.")
+        else:
+            st.warning("⚠️ Code-barres illisible. Reprenez la photo en reculant le produit à 20-30 cm pour éviter le flou de l'objectif.")
 
 with onglet_clavier:
     valeur_champ = st.session_state['code_scanne'] if st.session_state['code_scanne'] else ""
@@ -161,7 +161,6 @@ saisie_net = st.session_state['code_scanne']
 
 resultats = None
 message_erreur_recherche = None
-
 
 if saisie_net:
     try:

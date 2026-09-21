@@ -9,12 +9,14 @@ st.set_page_config(page_title="Acheter Québécois & Canadien", page_icon="📦"
 # Injection CSS pour la barre de recherche géante
 st.html("""
 <style>
-    /* Grossir la barre de recherche */
+    /* 1. Grossir de façon agressive la barre de recherche géante */
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
     
-    /* Grossir les onglets (Recherche manuelle / Scanner) */
-    .stTabs button p { font-size: 22px !important; font-weight: bold !important; }
+    /* 2. Cibler et forcer le grossissement des textes dans les onglets (Tabs) */
+    div[data-baseweb="tab"] { font-size: 26px !important; font-weight: bold !important; padding: 12px 20px !important; }
+    div[data-baseweb="tab"] p { font-size: 26px !important; font-weight: bold !important; }
+    button[data-baseweb="tab"] { font-size: 26px !important; font-weight: bold !important; }
 </style>
 """)
 

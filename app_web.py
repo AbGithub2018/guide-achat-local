@@ -161,26 +161,27 @@ with onglet_camera:
     
     st.markdown("---")
     
-    # Lien de redirection intelligent
-    url_scanner_external = "https://scanapp.org{CODE}"
+    # Lien de redirection vers le scanner externe
+    url_scanner_external = "https://scanapp.org"
     
     # Création des deux colonnes (60% pour le texte à gauche, 40% pour le bouton à droite)
     col_instructions, col_bouton = st.columns([0.6, 0.4], vertical_alignment="center")
     
     with col_instructions:
         st.html("""
-        <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 6px solid #003366;">
+        <div style="background-color: #f9f9f9; padding: 22px; border-radius: 8px; border-left: 6px solid #003366;">
             <p style="font-size: 22px; font-weight: bold; margin-top: 0; color: #003366;">💡 Comment ça fonctionne ?</p>
             <ol style="font-size: 19px; line-height: 1.6; margin-bottom: 0; padding-left: 20px; color: #111;">
                 <li>Cliquez sur le bouton bleu <b>Ouvrir le scanner</b>.</li>
-                <li>Scannez le code-barres de votre produit avec l'utilitaire externe.</li>
-                <li>Le code sera capturé et vous serez automatiquement ramené ici avec la fiche du produit affichée !</li>
+                <li>Scannez le code-barres de votre produit.</li>
+                <li>Une fois scanné, cliquez sur le bouton <b>Copier</b> dans l'utilitaire de scan.</li>
+                <li>Fermez l'application de scan, revenez ici et <b>collez</b> le code barre dans la case de recherche manuelle !</li>
             </ol>
         </div>
         """)
         
     with col_bouton:
-        # Affichage du bouton bleu avec votre style et votre lien automatique
+        # Affichage du bouton bleu avec votre style
         st.html(f"""
         <div style="text-align: center;">
             <a href="{url_scanner_external}" target="_blank" style="text-decoration: none;">
@@ -190,6 +191,7 @@ with onglet_camera:
             </a>
         </div>
         """)
+
 resultats = None
 message_erreur_recherche = None
 

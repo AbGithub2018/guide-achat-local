@@ -132,22 +132,22 @@ with onglet_camera:
     photo_produit = st.camera_input("👉 Cliquez ici pour ouvrir l'appareil photo", key="camera_officielle_samsung")
     
     if photo_produit:
-        image_pil = Image.open(photo_produit)
-        image_np = np.array(image_pil)
+                bytes_data = photo_produit.getvalue()
+    image_np = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
         
         # Amélioration de l'image pour le scan
-        gris = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+    gris = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
         
         # Détection automatique du code-barres
-        detecteur = cv2.BarcodeDetector()
-        ok, codes_detectes, _ = detecteur.detectAndDecode(gris)
+    detecteur = cv2.BarcodeDetector()
+    ok, codes_detectes, _ = detecteur.detectAndDecode(gris)
         
-        if ok and codes_detectes:
+    if ok and codes_detectes:
             code_cam_detecte = codes_detectes.strip()
             st.session_state['code_scanne'] = code_cam_detecte
             st.success(f"✅ Code CUP détecté : {code_cam_detecte}")
             st.rerun()
-        else:
+    else:
             st.warning("⚠️ Code-barres illisible. Reprenez la photo en reculant le produit à 20-30 cm pour éviter le flou.")
 
 with onglet_clavier:

@@ -147,9 +147,10 @@ with onglet_clavier:
 with onglet_camera:
     st.write("📷 **Alignez le code-barres** au centre de la caméra de votre téléphone pour le numériser en temps réel :")
     try:
-        from streamlit_qrcode_scanner import qr_scanner
+        from streamlit_qrcode_scanner import qrcode_scanner
         # Déclenche un scan vidéo continu en utilisant la caméra arrière du mobile
-        code_scanne = qr_scanner(key="scanner_live_achat_quebec")
+        code_scanne = qrcode_scanner(key="scanner_live_achat_quebec")
+
         
         if code_scanne:
             saisie_net = str(code_scanne).strip()

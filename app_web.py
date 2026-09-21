@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 import time
 from streamlit_gsheets import GSheetsConnection
-from streamlit_qrcode_scanner import qrcode_scanner
+import cv2
+import numpy as np
+from PIL import Image
 
 # Configuration initiale de l'application
 st.set_page_config(page_title="Acheter Québécois & Canadien", page_icon="📦", layout="wide")
@@ -123,21 +125,32 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
 onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Caméra Scanner (Intégré)"])
 
 with onglet_camera:
-    st.markdown("### 📷 Placez le code-barres devant la caméra")
-    st.info("Le lecteur va analyser le flux vidéo en continu. Dès qu'un code est trouvé, il est capturé et envoyé au formulaire.")
+    st.markdown("### 📷 Prenez le code-barres en photo")
+    st.info("Alignez le code-barres du produit au centre de l'écran et prenez la photo.")
     
-    # Intégration du composant de scan en direct
-    code_cam_detecte = qrcode_scanner(key="lecteur_direct_upc")
-        # Saisie manuelle de secours pour simuler un code-barres sur PC
-    #code_simule = st.text_input("💻 Mode Test PC (Simuler un scan de code-barres) :", key="test_pc_scan")
-    #if code_simule:
-        #code_cam_detecte = code_simule
-    if code_cam_detecte:
-        st.session_state['code_scanne'] = str(code_cam_detecte).strip()
-        st.success(f"✅ Code capturé par la caméra : {st.session_state['code_scanne']}")
+    # Nouveau bouton natif Streamlit (Forcer l'activation de la caméra sur Samsung)
+    photo_produit = st.camera_input("👉 Cliquez ici pour ouvrir l'appareil photo", key="camera_officielle_samsung")
+    
+    if photo_produit:
+        image_pil = Image.open(photo_produit)
+        image_np = np.array(image_pil)
+        
+        # Amélioration de l'image pour le scan
+        gris = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+        
+        # Détection automatique du code-barres
+        detecteur = cv2.BarcodeDetector()
+        ok, codes_detectes, _ = detecteur.detectAndDecode(gris)
+        
+        if ok and codes_detectes:
+            code_cam_detecte = codes_detectes.strip()
+            st.session_state['code_scanne'] = code_cam_detecte
+            st.success(f"✅ Code CUP détecté : {code_cam_detecte}")
+            st.rerun()
+        else:
+            st.warning("⚠️ Code-barres illisible. Reprenez la photo en reculant le produit à 20-30 cm pour éviter le flou.")
 
 with onglet_clavier:
-    # La valeur par défaut s'adapte si la caméra vient de scanner un élément
     valeur_champ = st.session_state['code_scanne'] if st.session_state['code_scanne'] else ""
     saisie_utilisateur = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", value=valeur_champ, key="champ_recherche_manuel")
     
@@ -146,9 +159,9 @@ with onglet_clavier:
 
 saisie_net = st.session_state['code_scanne']
 
-# Traitement algorithmique de la recherche dans la base de données
 resultats = None
 message_erreur_recherche = None
+
 
 if saisie_net:
     try:

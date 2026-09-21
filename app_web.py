@@ -229,6 +229,7 @@ with onglet_camera:
     import streamlit.components.v1 as components
     components.html(code_scanner_html, height=360, scrolling=False)
 
+
 resultats = None
 message_erreur_recherche = None
 

@@ -134,7 +134,7 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[condition_distribution]
 
 input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup")
-    if saisie:
+if saisie:
         saisie_net = saisie.strip()
 
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO

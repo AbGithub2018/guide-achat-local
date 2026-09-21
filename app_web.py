@@ -135,14 +135,14 @@ with onglet_camera:
         # Lecture universelle de la photo prise par le téléphone
         image_pil = Image.open(photo_produit)
         
-        # Importation locale sécurisée pour éviter les bogues au démarrage
-        from pybar_unofficial.pybar import decode
+        # Importation locale sécurisée de pyzbar
+        from pyzbar.pyzbar import decode
         
-        # Lancement de l'analyse automatique de l'image
+        # Lancement de l'analyse automatique de la photo
         codes_detectes = decode(image_pil)
         
         if codes_detectes:
-            # Récupération du premier code trouvé et conversion en texte propre
+            # Récupération du code trouvé et conversion en texte propre
             code_cam_detecte = str(codes_detectes[0].data.decode('utf-8')).strip()
             st.session_state['code_scanne'] = code_cam_detecte
             st.success(f"✅ Code CUP détecté : {code_cam_detecte}")

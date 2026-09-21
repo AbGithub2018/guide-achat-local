@@ -137,26 +137,30 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[condition_distribution]
 
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO
-onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scanner un Code-Barres"])
+# Remplacement des onglets récalcitrants par de gros boutons radio géants horizontaux
+choix_mode = st.radio(
+    "👉 MODE DE RECHERCHE :",
+    ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"],
+    horizontal=True,
+    label_visibility="collapsed"
+)
 saisie_net = ""
-
-# 4. INTERCEPTION AUTOMATIQUE DU SCANNER
+# 4. INTERCEPTION AUTOMATIQUE DU SCANNER EXTERNE
 if "cup" in st.query_params:
     saisie_net = str(st.query_params["cup"]).strip()
     st.success(f"✅ Code CUP détecté : {saisie_net}")
 
-with onglet_clavier:
-    # On injecte le code scanné s'il existe, sinon on laisse la case vide
+# --- EN CLAVIER UNIQUEMENT SI LE PREMIER BOUTON RADIO EST SÉLECTIONNÉ ---
+if  choix_mode == "⌨️ Recherche manuelle":
     valeur_par_defaut = saisie_net if saisie_net else ""
-    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", value=valeur_par_defaut, key="recherche_cup")
-    
+    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", value=valeur_par_defaut, key="recherche_cup")    
     if saisie:
         saisie_net = saisie.strip()
         
     # On nettoie la mémoire de l'adresse SEULEMENT ICI, une fois que la case a récupéré le code
     if "cup" in st.query_params:
         st.query_params.clear()
-with onglet_camera:
+elif choix_mode == "📸 Scanner un Code-Barres":
     st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>⚡ Lecteur de code-barres haute vitesse</h2>")
     st.html("<p style='font-size: 20px; color: #333;'>Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.</p>")
     

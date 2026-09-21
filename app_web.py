@@ -9,11 +9,17 @@ st.set_page_config(page_title="Acheter Québécois & Canadien", page_icon="📦"
 # Injection CSS pour la barre de recherche géante
 st.html("""
 <style>
+    /* Grossir la barre de recherche */
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
+    
+    /* Grossir les onglets (Recherche manuelle / Scanner) */
+    .stTabs button p { font-size: 22px !important; font-weight: bold !important; }
 </style>
 """)
+
 def charger_donnees():
+
     """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
@@ -149,25 +155,37 @@ with onglet_clavier:
     # On nettoie la mémoire de l'adresse SEULEMENT ICI, une fois que la case a récupéré le code
     if "cup" in st.query_params:
         st.query_params.clear()
-
+:
 with onglet_camera:
     st.markdown("### ⚡ Lecteur de code-barres haute vitesse")
     st.write("Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.")
     
-    # Lien de redirection vers un scanner web open-source performant qui renverra le code vers votre app
-    url_scanner_externe = "https://scanapp.org/?automode=1&return=https://achatquebec.streamlit.app/?cup={CODE}"
+    st.markdown("---")
     
-    st.markdown(f"""
-    <div style="text-align: center; margin: 20px 0;">
-        <a href="{url_scanner_externe}" target="_blank" style="text-decoration: none;">
-            <button style="background-color: #003366; color: white; font-size: 20px; font-weight: bold; padding: 18px 30px; border: none; border-radius: 10px; cursor: pointer; width: 100%; max-width: 400px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);">
-                🚀 OUVRIR LE SCANNER HAUTE VITESSE
-            </button>
-        </a>
-    </div>
-    """, unsafe_allow_html=True)   
-    st.info("💡 **Comment ça fonctionne ?** Cliquez sur le bouton bleu, scannez le produit, et vous serez automatiquement ramené ici avec la fiche du produit affichée !")
-
+    # Lien de redirection intelligent (conservé de votre code d'origine)
+    url_scanner_external = "https://scanapp.org{CODE}"
+    
+    # Création des deux colonnes (60% pour le texte à gauche, 40% pour le bouton à droite)
+    col_instructions, col_bouton = st.columns([0.6, 0.4], vertical_alignment="center")
+    
+    with col_instructions:
+        st.markdown("""
+        **💡 Comment ça fonctionne ?**
+        1. Cliquez sur le bouton bleu **Ouvrir le scanner**.
+        2. Scannez le code-barres de votre produit avec l'utilitaire externe.
+        3. Le code sera capturé et vous serez automatiquement ramené ici avec la fiche du produit affichée !
+        """)    
+    with col_bouton:
+        # Affichage du bouton bleu avec votre style et votre lien automatique
+        st.html(f"""
+        <div style="text-align: center;">
+            <a href="{url_scanner_external}" target="_blank" style="text-decoration: none;">
+                <button style="background-color: #003366; color: white; font-size: 20px; font-weight: bold; padding: 18px 30px; border-radius: 8px; border: none; cursor: pointer; width: 100%;">
+                    🚀 OUVRIR LE SCANNER HAUTE VITESSE
+                </button>
+            </a>
+        </div>
+        """)
 resultats = None
 message_erreur_recherche = None
 

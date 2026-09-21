@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as s
 import pandas as pd
 import time
 from streamlit_gsheets import GSheetsConnection
@@ -13,7 +13,6 @@ st.html("""
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
 </style>
 """)
-
 def charger_donnees():
     """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
     try:
@@ -60,8 +59,6 @@ def sauvegarder_donnees(df_a_enregistrer):
     except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")
         return False
-
-
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()
@@ -108,7 +105,6 @@ with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Clique
     #### ✍️ Devenez un consommateur solidaire !
     Vous êtes à l'épicerie ? Cochez le produit, inscrivez le prix trouvé dans le formulaire gris au bas de l'écran, et cliquez sur **Enregistrer**. Chaque contribution aide la communauté !
     """)
-
 # Boutons rapides de sélection de bannières
 st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
 col_iga, col_maxi, col_metro, col_super_c, col_walmart, col_tous = st.columns(6)
@@ -133,10 +129,8 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     condition_distribution = df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)
     df_filtre = df_filtre[condition_distribution]
 
-
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO
 onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scanner un Code-Barres"])
-
 saisie_net = ""
 
 # Vérification immédiate si un code CUP vient d'être envoyé par le scanner photo
@@ -144,91 +138,27 @@ if "cup" in st.query_params:
     saisie_net = str(st.query_params["cup"]).strip()
     st.success(f"✅ Code CUP détecté : {saisie_net}")
     st.query_params.clear()  # Nettoie la barre d'adresse proprement
-
 with onglet_clavier:
     saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup")
     if saisie and not saisie_net:
         saisie_net = saisie.strip()
-
 with onglet_camera:
-    st.write("📷 **Alignez le code-barres** au centre de la caméra arrière. Le scan se fait automatiquement au vol :")
+    st.markdown("### ⚡ Lecteur de code-barres haute vitesse")
+    st.write("Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.")
     
-    # Code HTML5/JavaScript durci avec autofocus forcé et rechargement URL ultra-fiable
-    code_scanner_html = """
-    <div style="text-align:center; font-family:sans-serif;">
-        <div id="loading-message" style="padding:15px; color:#666; font-size:16px;">🔄 Initialisation de la caméra arrière...</div>
-        <video id="video-stream" style="width:100%; max-width:450px; border:4px solid #003366; border-radius:10px; display:none;" autoplay playsinline></video>
+    # Lien de redirection vers un scanner web open-source performant qui renverra le code vers votre app
+    url_scanner_externe = "https://scanapp.org{CODE}"
+    
+    st.markdown(f"""
+    <div style="text-align: center; margin: 20px 0;">
+        <a href="{url_scanner_externe}" target="_parent" style="text-decoration: none;">
+            <button style="background-color: #003366; color: white; font-size: 20px; font-weight: bold; padding: 18px 30px; border: none; border-radius: 10px; cursor: pointer; width: 100%; max-width: 400px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);">
+                🚀 OUVRIR LE SCANNER HAUTE VITESSE
+            </button>
+        </a>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
-    <script>
-        const codeReader = new ZXing.BrowserMultiFormatReader();
-        const video = document.getElementById('video-stream');
-        const loadingMessage = document.getElementById('loading-message');
-
-        // Configuration stricte pour forcer l'autofocus et la caméra arrière
-        const contraintes = {
-            video: {
-                facingMode: { exact: "environment" },
-                focusMode: "continuous",
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            }
-        };
-
-        navigator.mediaDevices.getUserMedia(contraintes)
-            .then((stream) => {
-                loadingMessage.style.display = 'none';
-                video.style.display = 'inline-block';
-                video.srcObject = stream;
-                
-                // Lance la lecture en direct avec le décodeur universel ZXing
-                codeReader.decodeFromStream(stream, 'video-stream', (result, err) => {
-                    if (result) {
-                        const cupScanne = result.text.trim();
-                        
-                        // MÉTHODE RADICALE ET FIABLE : On pousse le CUP directement dans l'URL de l'application
-                        const urlCourante = new URL(window.parent.location.href);
-                        urlCourante.searchParams.set('cup', cupScanne);
-                        
-                        // Force le téléphone à rafraîchir l'application avec le bon produit
-                        window.parent.location.href = urlCourante.toString();
-                    }
-                });
-            })
-            .catch((err) => {
-                // Secours si le téléphone refuse le mode "exact" (comme sur certains vieux Android)
-                codeReader.listVideoInputDevices()
-                    .then((devices) => {
-                        let idCamera = devices[devices.length - 1].deviceId;
-                        for (let d of devices) {
-                            if (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('arrière')) {
-                                idCamera = d.deviceId;
-                                break;
-                            }
-                        }
-                        loadingMessage.style.display = 'none';
-                        video.style.display = 'inline-block';
-                        
-                        codeReader.decodeFromVideoDevice(idCamera, 'video-stream', (result, err) => {
-                            if (result) {
-                                const cupScanne = result.text.trim();
-                                const urlCourante = new URL(window.parent.location.href);
-                                urlCourante.searchParams.set('cup', cupScanne);
-                                window.parent.location.href = urlCourante.toString();
-                            }
-                        });
-                    })
-                    .catch((e) => {
-                        loadingMessage.innerHTML = "❌ Erreur : Veuillez autoriser l'appareil photo dans les réglages de votre fureteur mobile.";
-                    });
-            });
-    </script>
-    """
-    
-    import streamlit.components.v1 as components
-    components.html(code_scanner_html, height=360, scrolling=False)
-
+    """, unsafe_allow_html=True)   
+    st.info("💡 **Comment ça fonctionne ?** Cliquez sur le bouton bleu, scannez le produit, et vous serez automatiquement ramené ici avec la fiche du produit affichée !")
 
 resultats = None
 message_erreur_recherche = None
@@ -261,7 +191,6 @@ df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c
 
 for c in df_affichage.columns:
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
-
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("Code CUP", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large"),

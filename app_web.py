@@ -13,10 +13,18 @@ st.html("""
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
     
-    /* 2. Cibler et forcer le grossissement des textes dans les onglets (Tabs) */
-    div[data-baseweb="tab"] { font-size: 26px !important; font-weight: bold !important; padding: 12px 20px !important; }
-    div[data-baseweb="tab"] p { font-size: 26px !important; font-weight: bold !important; }
-    button[data-baseweb="tab"] { font-size: 26px !important; font-weight: bold !important; }
+    /* 2. FORCE BRUTE : Grossir physiquement TOUTE la barre d'onglets de 150% */
+    div[data-testid="stTabs"] {
+        transform: scale(1.4) !important;
+        transform-origin: top left !important;
+        margin-bottom: 35px !important; /* Ajoute de l'espace en dessous pour éviter que ça embarque sur la recherche */
+    }
+    
+    /* Mettre les textes à l'intérieur en gras et s'assurer de la lisibilité */
+    div[data-testid="stTabs"] button p {
+        font-weight: bold !important;
+        color: #111111 !important;
+    }
 </style>
 """)
 

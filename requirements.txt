@@ -1,5 +1,5 @@
+streamlit>=1.35.0
 pandas
-st-gsheets-connection
-openpyxl
+st-df-conn==0.1.1
+streamlit-gsheets
 streamlit-qrcode-scanner
-pillow

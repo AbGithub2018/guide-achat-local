@@ -156,30 +156,35 @@ with onglet_clavier:
     if "cup" in st.query_params:
         st.query_params.clear()
 with onglet_camera:
-    st.markdown("### ⚡ Lecteur de code-barres haute vitesse")
-    st.write("Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.")
+    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>⚡ Lecteur de code-barres haute vitesse</h2>")
+    st.html("<p style='font-size: 20px; color: #333;'>Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.</p>")
     
     st.markdown("---")
     
-    # Lien de redirection intelligent (conservé de votre code d'origine)
+    # Lien de redirection intelligent
     url_scanner_external = "https://scanapp.org{CODE}"
     
     # Création des deux colonnes (60% pour le texte à gauche, 40% pour le bouton à droite)
     col_instructions, col_bouton = st.columns([0.6, 0.4], vertical_alignment="center")
     
     with col_instructions:
-        st.markdown("""
-        **💡 Comment ça fonctionne ?**
-        1. Cliquez sur le bouton bleu **Ouvrir le scanner**.
-        2. Scannez le code-barres de votre produit avec l'utilitaire externe.
-        3. Le code sera capturé et vous serez automatiquement ramené ici avec la fiche du produit affichée !
-        """)    
+        st.html("""
+        <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 6px solid #003366;">
+            <p style="font-size: 22px; font-weight: bold; margin-top: 0; color: #003366;">💡 Comment ça fonctionne ?</p>
+            <ol style="font-size: 19px; line-height: 1.6; margin-bottom: 0; padding-left: 20px; color: #111;">
+                <li>Cliquez sur le bouton bleu <b>Ouvrir le scanner</b>.</li>
+                <li>Scannez le code-barres de votre produit avec l'utilitaire externe.</li>
+                <li>Le code sera capturé et vous serez automatiquement ramené ici avec la fiche du produit affichée !</li>
+            </ol>
+        </div>
+        """)
+        
     with col_bouton:
         # Affichage du bouton bleu avec votre style et votre lien automatique
         st.html(f"""
         <div style="text-align: center;">
             <a href="{url_scanner_external}" target="_blank" style="text-decoration: none;">
-                <button style="background-color: #003366; color: white; font-size: 20px; font-weight: bold; padding: 18px 30px; border-radius: 8px; border: none; cursor: pointer; width: 100%;">
+                <button style="background-color: #003366; color: white; font-size: 22px; font-weight: bold; padding: 22px 35px; border-radius: 10px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     🚀 OUVRIR LE SCANNER HAUTE VITESSE
                 </button>
             </a>

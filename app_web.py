@@ -133,6 +133,10 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     condition_distribution = df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)
     df_filtre = df_filtre[condition_distribution]
 
+input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup")
+    if saisie:
+        saisie_net = saisie.strip()
+
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO
 onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scanner un Code-Barres"])
 
@@ -144,26 +148,24 @@ with onglet_clavier:
         saisie_net = saisie.strip()
 
 with onglet_camera:
-    image_cam = st.camera_input("Prenez une photo claire et nette du code-barres")
-    if image_cam:
-        try:
-            from pyzbar.pyzbar import decode
-            from PIL import Image
-            
-            img = Image.open(image_cam)
-            codes_detectes = decode(img)
-            
-            if codes_detectes:
-                saisie_net = codes_detectes[0].data.decode('utf-8').strip()
-                st.success(f"✅ Code CUP détecté : {saisie_net}")
-            else:
-                st.warning("⚠️ Code-barres non détecté. Conseil : Reculez un peu votre téléphone (20-30 cm) pour éviter le flou et les reflets, puis reprenez la photo.")
-        except Exception as e:
-            st.error(f"❌ Erreur lors du décodage de la photo : {e}")
+    st.write("📷 **Alignez le code-barres** au centre de la caméra de votre téléphone pour le numériser en temps réel :")
+    try:
+        from streamlit_qrcode_scanner import qr_scanner
+        # Déclenche un scan vidéo continu en utilisant la caméra arrière du mobile
+        code_scanne = qr_scanner(key="scanner_live_achat_quebec")
+        
+        if code_scanne:
+            saisie_net = str(code_scanne).strip()
+            st.success(f"✅ Code CUP détecté au vol : {saisie_net}")
+            time.sleep(0.5)
+            st.rerun()
+    except Exception as e:
+        st.error(f"❌ Impossible de démarrer le lecteur vidéo en direct : {e}")
 
 resultats = None
 message_erreur_recherche = None
 
+# --- CETTE LOGIQUE DE RECHERCHE DOIT RESTER ICI POUR LE CLAVIER ---
 if saisie_net:
     try:
         cup_saisi = str(int(float(saisie_net))).strip()
@@ -183,6 +185,7 @@ if saisie_net:
                         resultats = recherche_texte
                 else:
                     message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_prix_tableau = ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']
 colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]

@@ -125,20 +125,29 @@ onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Cam�
 
 with onglet_camera:
     st.markdown("### 📷 Prenez le code-barres en photo")
-    st.info("Alignez le code-barres du produit au centre de l'écran et prenez la photo.")
+    st.info("Alignez le code-barres au centre. Pour les petits formats (ex: boîte de saumon), reculez un peu (25 cm) et assurez-vous que la lumière est bonne.")
     
     # Bouton officiel de Streamlit
     photo_produit = st.camera_input("👉 Cliquez ici pour ouvrir l'appareil photo", key="camera_officielle_samsung")
     
     if photo_produit:
-        # Lecture universelle de la photo prise par le téléphone
+        # 1. Lecture de la photo prise par le téléphone
         image_pil = Image.open(photo_produit)
+        
+        # --- ZOOM AUTOMATIQUE POUR LES PETITS CODES-BARRES ---
+        # On agrandit artificiellement l'image pour séparer les lignes verticales serrées
+        largeur, hauteur = image_pil.size
+        image_zoom = image_pil.resize((largeur * 3, hauteur * 3), Image.Resampling.LANCZOS)
+        
+        # On accentue le contraste en noir et blanc pur
+        image_optimisee = image_zoom.convert("L").point(lambda x: 0 if x < 120 else 255, '1')
+        # -----------------------------------------------------
         
         # Importation locale sécurisée de pyzbar
         from pyzbar.pyzbar import decode
         
-        # Lancement de l'analyse automatique de la photo
-        codes_detectes = decode(image_pil)
+        # Analyse automatique sur l'image agrandie et contrastée
+        codes_detectes = decode(image_optimisee)
         
         if codes_detectes:
             # Récupération du code trouvé et conversion en texte propre
@@ -147,7 +156,7 @@ with onglet_camera:
             st.success(f"✅ Code CUP détecté : {code_cam_detecte}")
             st.rerun()
         else:
-            st.warning("⚠️ Code-barres illisible. Reprenez la photo en reculant le produit à 20-30 cm pour éviter le flou de l'objectif.")
+            st.warning("⚠️ Code-barres illisible. Essayez de reculer la boîte de saumon (25-30 cm) pour éviter le flou, assurez-vous qu'il n'y a pas de reflet sur le métal, et reprenez la photo.")
 
 with onglet_clavier:
     valeur_champ = st.session_state['code_scanne'] if st.session_state['code_scanne'] else ""

@@ -133,15 +133,23 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
 onglet_clavier, onglet_camera = st.tabs(["⌨️ Recherche manuelle", "📷 Scanner un Code-Barres"])
 saisie_net = ""
 
-# Vérification immédiate si un code CUP vient d'être envoyé par le scanner photo
+# 4. INTERCEPTION AUTOMATIQUE DU SCANNER
 if "cup" in st.query_params:
     saisie_net = str(st.query_params["cup"]).strip()
     st.success(f"✅ Code CUP détecté : {saisie_net}")
-    st.query_params.clear()  # Nettoie la barre d'adresse proprement
+
 with onglet_clavier:
-    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", key="recherche_cup")
-    if saisie and not saisie_net:
+    # On injecte le code scanné s'il existe, sinon on laisse la case vide
+    valeur_par_defaut = saisie_net if saisie_net else ""
+    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", value=valeur_par_defaut, key="recherche_cup")
+    
+    if saisie:
         saisie_net = saisie.strip()
+        
+    # On nettoie la mémoire de l'adresse SEULEMENT ICI, une fois que la case a récupéré le code
+    if "cup" in st.query_params:
+        st.query_params.clear()
+
 with onglet_camera:
     st.markdown("### ⚡ Lecteur de code-barres haute vitesse")
     st.write("Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.")

@@ -146,19 +146,49 @@ with onglet_clavier:
 
 with onglet_camera:
     st.write("📷 **Alignez le code-barres** au centre de la caméra de votre téléphone pour le numériser en temps réel :")
-    try:
-        from streamlit_qrcode_scanner import qrcode_scanner
-        # Déclenche un scan vidéo continu en utilisant la caméra arrière du mobile
-        code_scanne = qrcode_scanner(key="scanner_live_achat_quebec")
+        # Code HTML5/JavaScript universel pour scanner en direct via le navigateur du téléphone
+    code_scanner_html = """
+    <div style="text-align:center;">
+        <div id="loading-message" style="padding:10px; color:#666;">🔄 Initialisation de la caméra arrière...</div>
+        <video id="video-stream" style="width:100%; max-width:500px; border-radius:10px; display:none;" autoplay playsinline></video>
+    </div>
 
-        
-        if code_scanne:
-            saisie_net = str(code_scanne).strip()
-            st.success(f"✅ Code CUP détecté au vol : {saisie_net}")
-            time.sleep(0.5)
-            st.rerun()
-    except Exception as e:
-        st.error(f"❌ Impossible de démarrer le lecteur vidéo en direct : {e}")
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
+    <script>
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+        const video = document.getElementById('video-stream');
+        const loadingMessage = document.getElementById('loading-message');
+
+        codeReader.listVideoInputDevices()
+            .then((videoInputDevices) => {
+                let selectedDeviceId = videoInputDevices[0]?.deviceId;
+                for (let device of videoInputDevices) {
+                    if (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('arrière')) {
+                        selectedDeviceId = device.deviceId;
+                        break;
+                    }
+                }
+
+                loadingMessage.style.display = 'none';
+                video.style.display = 'inline-block';
+
+                codeReader.decodeFromVideoDevice(selectedDeviceId, 'video-stream', (result, err) => {
+                    if (result) {
+                        const cupScanne = result.text.trim();
+                        const url = new URL(window.parent.location.href);
+                        url.searchParams.set('cup', cupScanne);
+                        window.parent.location.href = url.toString();
+                    }
+                });
+            })
+            .catch((err) => {
+                loadingMessage.innerHTML = "❌ Erreur d'accès à la caméra. Assurez-vous d'avoir autorisé l'appareil photo dans votre navigateur.";
+            });
+    </script>
+    """
+    
+    import streamlit.components.v1 as components
+    components.html(code_scanner_html, height=320, scrolling=False)
 
 resultats = None
 message_erreur_recherche = None

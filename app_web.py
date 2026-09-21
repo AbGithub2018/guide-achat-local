@@ -155,7 +155,6 @@ with onglet_clavier:
     # On nettoie la mémoire de l'adresse SEULEMENT ICI, une fois que la case a récupéré le code
     if "cup" in st.query_params:
         st.query_params.clear()
-:
 with onglet_camera:
     st.markdown("### ⚡ Lecteur de code-barres haute vitesse")
     st.write("Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.")

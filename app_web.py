@@ -24,7 +24,7 @@ def charger_donnees():
     """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df_initial = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/1Kwy7Dsq4xkhJQxFA4TuilGclbm6hLbPYGo8p3h8OJTg", worksheet="Sheet1")
+        df_initial = conn.read(spreadsheet=" https://docs.google.com/spreadsheets/d/1Kwy7Dsq4xkhJQxFA4TuilGclbm6hLbPYGo8p3h8OJTg ", worksheet="Sheet1")
         if df_initial is None or df_initial.empty:
             st.error("⚠️ Le fichier Google Sheet lu est vide. Vérifiez l'onglet 'Sheet1'.")
             return pd.DataFrame()

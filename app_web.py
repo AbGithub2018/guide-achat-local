@@ -64,7 +64,7 @@ try:
          st.cache_data.clear()
          if 'df_produits' in st.session_state:
              del st.session_state['df_produits']
-         return True
+    return True
      
 except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")

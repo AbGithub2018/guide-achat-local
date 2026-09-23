@@ -110,7 +110,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
     index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     
     try:
-        vrai_index = index_ligne[0]
+        vrai_index = index_ligne
         cup_actuel = str(df_affichage.iloc[vrai_index]['code_upc']).strip()
         
         if cup_actuel and len(cup_actuel) >= 4:
@@ -121,8 +121,8 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             st.sidebar.link_button("👁️ Voir la photo du produit", url_image, use_container_width=True)
         else:
             st.sidebar.warning("Code CUP invalide ou trop court.")
-    except Exception as e:
-        st.sidebar.error(f"Erreur : {e}")
+    except Exception:
+        st.sidebar.error("Impossible de lire le code CUP.")
 else:
     st.sidebar.info("Sélectionnez un produit dans le tableau pour voir sa photo ici.")
 

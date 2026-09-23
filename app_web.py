@@ -205,10 +205,7 @@ message_erreur_recherche = None
 
 # --- CETTE LOGIQUE DE RECHERCHE DOIT RESTER ICI POUR LE CLAVIER ---
 if saisie_net:
-    try:
-        cup_saisi = str(int(float(saisie_net))).strip()
-    except ValueError:
-        cup_saisi = saisie_net
+    cup_saisi = saisie_net.strip()
 
     if 'code_upc' in df_filtre.columns:
         recherche_cup = df_filtre[df_filtre['code_upc'] == cup_saisi]

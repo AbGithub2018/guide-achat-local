@@ -441,7 +441,7 @@ with st.expander("🔑 Administration (Zone réservée)"):
 if st.button("❌ Supprimer définitivement le produit du Nuage", type="primary"):
     if cup_a_supprimer:
         try:
-            conn = st.connection("gsheets", type="streamlit_gsheets.GSheetsConnection")
+            conn = st.connection("gsheets", type=GSheetsConnection)
             df_actuel = conn.read(ttl=0)
             df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
             conn.update(data=df_nettoye)

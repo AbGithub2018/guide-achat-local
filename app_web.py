@@ -66,7 +66,7 @@ try:
              del st.session_state['df_produits']
          return True
      
-    except Exception as e:
+except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")
         return False
 # Initialisation et chargement de la base de données en Session Streamlit

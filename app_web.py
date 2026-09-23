@@ -151,6 +151,8 @@ with st.sidebar.expander("🔑 Administration"):
             if cup_a_supprimer:
                 df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
                 conn.update(data=df_nettoye)
+                if 'df_produits' in st.session_state:
+                    del st.session_state['df_produits']
                 st.success("Produit supprimé avec succès !")
                 time.sleep(1)
                 st.rerun()
@@ -479,37 +481,3 @@ if resultats is not None and not resultats.empty:
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
 # =====================================================================
-# 🛡️ SECTION ADMINISTRATEUR : SUPPRESSION DE PRODUITS TESTS
-# =====================================================================
-st.markdown("---") # Crée la ligne de séparation sous le bouton rouge actuel
-
-# Un volet pliable discret tout en bas de la page
-with st.expander("🔑 Administration (Zone réservée)"):
-    
-    # Champ de saisie masqué pour votre mot de passe
-    mot_de_passe_saisi = st.text_input("Entrez le mot de passe de gestion", type="password")
-    
-    if mot_de_passe_saisi == st.secrets["admin"]["password"]:
-        st.success("🔓 Mode Administrateur Activé")
-        
-        # Champ pour entrer le CUP test à effacer (Ex: 999999999999)
-        cup_a_supprimer = st.text_input("Code CUP du produit à supprimer")
-              
-if st.button("❌ Supprimer définitivement le produit du Nuage", type="primary"):
-    if cup_a_supprimer:
-        try:
-            conn = st.connection("gsheets", type=GSheetsConnection)
-            df_actuel = conn.read(ttl=0)
-            df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
-            conn.update(data=df_nettoye)
-            if 'df_produits' in st.session_state:
-                del st.session_state['df_produits']
-            st.error(f"Le produit avec le code CUP {cup_a_supprimer} a été supprimé de Google Sheets.")
-            st.toast("Base de données mise à jour ! La page va s'actualiser.", icon="🔄")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Erreur lors de la mise à jour de la feuille : {e}")
-    elif mot_de_passe_saisi:
-        st.error("Mot de passe administrateur incorrect.")
-    else:
-        st.warning("Veuillez inscrire un code CUP.")

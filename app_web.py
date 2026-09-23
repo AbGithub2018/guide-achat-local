@@ -442,7 +442,7 @@ if st.button("❌ Supprimer définitivement le produit du Nuage", type="primary"
         try:
             conn = st.connection("gsheets", type="streamlit_gsheets.GSheetsConnection")
             df_actuel = conn.read(ttl=0)
-            df_nettoye = df_actuel[df_actuel['Code CUP'].astype(str) != str(cup_a_supprimer)]
+            df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
             conn.update(data=df_nettoye)
             if 'df_produits' in st.session_state:
                 del st.session_state['df_produits']

@@ -121,8 +121,8 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             st.sidebar.link_button("👁️ Voir la photo du produit", url_image, use_container_width=True)
         else:
             st.sidebar.warning("Code CUP invalide ou trop court.")
-    except Exception:
-        st.sidebar.error("Impossible de lire le code CUP.")
+    except Exception as e:
+        st.sidebar.error(f"Erreur : {e}")
 else:
     st.sidebar.info("Sélectionnez un produit dans le tableau pour voir sa photo ici.")
 

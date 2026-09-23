@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
-from streamlit_gsheets import GSheetsConnection
+
 
 # 1. CONFIGURATION ET STYLE VISUEL DE LA PAGE
 st.set_page_config(page_title="Acheter Québécois & Canadien", page_icon="📦", layout="wide")

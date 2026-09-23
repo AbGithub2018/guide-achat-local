@@ -435,30 +435,58 @@ with st.expander("🔑 Administration (Zone réservée)"):
         
         # Champ pour entrer le CUP test à effacer (Ex: 999999999999)
         cup_a_supprimer = st.text_input("Code CUP du produit à supprimer")
-        
-        if st.button("❌ Supprimer définitivement le produit du Nuage", type="primary"):
-            if cup_a_supprimer:
-                try:
-                    # 1. On se reconnecte à votre Google Sheet (Streamlit réutilise la connexion existante)
-                    conn = st.connection("gsheets", type=st.connections.GSheetsConnection)
-                    
-                    # 2. On relit les données actuelles
-                    df_actuel = conn.read()
-                    
-                    # 3. On nettoie en supprimant la ligne qui contient le CUP test
-                    # (remplacez 'Code CUP' par le nom exact de votre colonne si elle s'écrit autrement)
-                    df_nettoye = df_actuel[df_actuel['Code CUP'].astype(str) != str(cup_a_supprimer)]
-                    
-                    # 4. On renvoie la liste mise à jour à Google Sheets
-                    conn.update(data=df_nettoye)
-                    
-                    st.error(f"Le produit avec le code CUP {cup_a_supprimer} a été supprimé de Google Sheets.")
-                    st.toast("Base de données mise à jour ! Rechargez la page.", icon="🔄")
-                
-                except Exception as e:
-                    st.error(f"Erreur lors de la mise à jour de la feuille : {e}")
-            else:
-                st.warning("Veuillez inscrire un code CUP.")
-                
+              
+if st.button("❌ Supprimer définitivement le produit du Nuage", type="primary"):
+    if cup_a_supprimer:
+        try:
+            # 1. On se reconnecte de façon sécurisée avec les guillemets
+            conn = st.connection("gsheets", type="streamlit_gsheets.GSheetsConnection")
+
+            # 2. On relit les données en direct (ttl=0 force la mise à jour immédiate)
+            df_actuel = conn.read(ttl=0)
+
+            # 3. On nettoie en supprimant la ligne qui contient le CUP test
+            df_nettoye = df_actuel[df_actuel['Code CUP'].astype(str) != str(cup_a_supprimer)]
+
+            # 4. On renvoie la liste mise à jour à Google Sheets
+            conn.update(data=df_nettoye)
+
+            # 5. VRAIMENT IMPORTANT : On vide la mémoire de la session pour que l'application sache que le produit n'existe plus
+            if 'df_produits' in st.session_state:
+                del st.session_state['df_produits']
+
+            st.error(f"Le produit avec le code CUP {cup_a_supprimer} a été supprimé de Google Sheets.")
+            st.toast("Base de données mise à jour ! La page va s'actualiser.", icon="🔄")
+            
+            # Relancer l'application pour appliquer les changements visuels immédiatement
+            st.rerun()
+
+        except Exception as e:
+            st.error(f"Erreur lors de la mise à jour de la feuille : {e}")
+    else:
+        st.warning("Veuillez inscrire un code CUP.")
+              
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     elif mot_de_passe_saisi:
         st.error("Mot de passe administrateur incorrect.")

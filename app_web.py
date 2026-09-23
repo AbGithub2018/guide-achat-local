@@ -58,9 +58,15 @@ def charger_donnees():
 
 def sauvegarder_donnees(df_a_enregistrer):
     """Enregistre les prix automatiquement grâce aux secrets de Streamlit Cloud."""
-    try:
+        try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         conn.update(worksheet="Sheet1", data=df_a_enregistrer)
+        
+        # --- LES DEUX LIGNES MAGIQUES À AJOUTER ICI ---
+        st.cache_data.clear()
+        if 'df_produits' in st.session_state:
+            del st.session_state['df_produits']
+            
         return True
     except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")

@@ -106,23 +106,19 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("Aperçu du produit")
 
 # On vérifie si la variable 'row' existe et contient un produit sélectionné
-if 'row' in locals() and row is not None and row.get('code_upc'):
-    # On récupère proprement le code CUP
-    cup_actuel = str(row.get('code_upc')).strip()
+if 'produit_selectionne' in st.session_state and st.session_state['produit_selectionne'] is not None:
+    row_memorise = st.session_state['produit_selectionne']
+    cup_actuel = str(row_memorise.get('code_upc')).strip()
     
     if len(cup_actuel) >= 4:
-        # On extrait les 4 premiers chiffres pour le sous-dossier
         prefixe = cup_actuel[:4]
-        
-        # On fabrique l'adresse internet de l'image
         url_image = f"https://barcodelookup.com{prefixe}/{cup_actuel}-1.jpg"
-        
-        # On affiche l'image dans la zone grise
         st.sidebar.image(url_image, caption=f"CUP: {cup_actuel}", use_container_width=True)
     else:
         st.sidebar.warning("Code CUP trop court.")
 else:
     st.sidebar.info("Sélectionnez un produit pour voir sa photo ici.")
+
 
 # --------------------------------------------------------
 # 🔑 ÉTAPE 2 : ZONE ADMINISTRATEUR COMPACTE AVEC DÉCONNEXION
@@ -427,6 +423,8 @@ if resultats is not None and not resultats.empty:
     prov = str(row.get('entreprise_province_etat', '')).strip()
     pays = str(row.get('entreprise_pays', '')).strip()
     
+    st.session_state['produit_selectionne'] = row
+
     if "québec" in prov.lower():
         couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
         verdict = "⚜️ PRODUIT QUÉBÉCOIS (Décisions et Siège au Québec)"

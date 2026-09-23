@@ -118,17 +118,17 @@ with st.sidebar.expander("🔑 Administration"):
         st.session_state["admin_connecte"] = False
 
     # CAS A : L'ADMINISTRATEUR N'EST PAS CONNECTÉ
-    if not st.session_state["admin_connecte"]:
+        if not st.session_state["admin_connecte"]:
         mot_de_passe = st.text_input(
             "Entrez le mot de passe de gestion", 
             type="password", 
             key="sidebar_mdp_secret"
         )
         
-        # Mettez votre vrai mot de passe à la place de "VOTRE_MOT_DE_PASSE"
-        if mot_de_passe == "VOTRE_MOT_DE_PASSE":
+        if mot_de_passe == st.secrets["admin"]["password"]:
             st.session_state["admin_connecte"] = True
             st.rerun()
+
 
     # CAS B : L'ADMINISTRATEUR EST CONNECTÉ (Le mot de passe disparaît !)
     else:

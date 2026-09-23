@@ -121,7 +121,7 @@ with st.sidebar.expander("🔑 Administration"):
     if not st.session_state["admin_connecte"]:
         mot_de_passe = st.text_input(
             "Entrez le mot de passe de gestion", 
-            type="$AbStreamlitgithub2018%", 
+            type="password", 
             key="sidebar_mdp_secret"
         )
         

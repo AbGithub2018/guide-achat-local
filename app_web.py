@@ -99,6 +99,64 @@ if 'entreprise_province_etat' in df_filtre.columns:
     choix_prov = st.sidebar.selectbox("Filtrer par Province / État :", liste_prov)
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
+# --------------------------------------------------------
+# 📸 ÉTAPE 1 : RÉSERVATION DE L'ESPACE PHOTO (FUTUR)
+# --------------------------------------------------------
+st.sidebar.markdown("---") 
+st.sidebar.markdown("<h3 style='color: #003366; font-size: 18px;'>📸 Aperçu du produit</h3>", unsafe_html=True)
+st.sidebar.info("Sélectionnez un produit pour voir sa photo ici.")
+
+
+# --------------------------------------------------------
+# 🔑 ÉTAPE 2 : ZONE ADMINISTRATEUR COMPACTE AVEC DÉCONNEXION
+# --------------------------------------------------------
+st.sidebar.markdown("---") 
+
+with st.sidebar.expander("🔑 Administration"):
+    # Initialisation de la variable de connexion si elle n'existe pas
+    if "admin_connecte" not in st.session_state:
+        st.session_state["admin_connecte"] = False
+
+    # CAS A : L'ADMINISTRATEUR N'EST PAS CONNECTÉ
+    if not st.session_state["admin_connecte"]:
+        mot_de_passe = st.text_input(
+            "Entrez le mot de passe de gestion", 
+            type="$AbStreamlitgithub2018%", 
+            key="sidebar_mdp_secret"
+        )
+        
+        # Mettez votre vrai mot de passe à la place de "VOTRE_MOT_DE_PASSE"
+        if mot_de_passe == "VOTRE_MOT_DE_PASSE":
+            st.session_state["admin_connecte"] = True
+            st.rerun()
+
+    # CAS B : L'ADMINISTRATEUR EST CONNECTÉ (Le mot de passe disparaît !)
+    else:
+        st.success("🟢 Mode Admin Actif")
+        
+        # Le bouton de déconnexion
+        if st.button("Se déconnecter", type="primary", use_container_width=True):
+            st.session_state["admin_connecte"] = False
+            st.rerun()
+            
+        st.markdown("---")
+        
+        # --- LOGIQUE DE SUPPRESSION ---
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df_actuel = conn.read(ttl=0)
+        
+        cup_a_supprimer = st.text_input("Code CUP du produit à supprimer", key="cup_delete_input")
+        
+        if st.button("Supprimer définitivement le produit du Nuage", use_container_width=True):
+            if cup_a_supprimer:
+                df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
+                conn.update(data=df_nettoye)
+                st.success("Produit supprimé avec succès !")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.warning("Veuillez entrer un code CUP valide.")
+
 # 3. ZONE PRINCIPALE : Entête
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
 st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un code-barres pour valider l'origine et gérer vos prix d'épicerie.</p>")

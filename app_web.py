@@ -58,7 +58,7 @@ def charger_donnees():
 
 def sauvegarder_donnees(df_a_enregistrer):
     """Enregistre les prix automatiquement grâce aux secrets de Streamlit Cloud."""
-       try:
+    try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         conn.update(worksheet="Sheet1", data=df_a_enregistrer)
         st.cache_data.clear()

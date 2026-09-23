@@ -106,18 +106,25 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("Aperçu du produit")
 
 # On vérifie si la variable 'row' existe et contient un produit sélectionné
-if 'produit_selectionne' in st.session_state and st.session_state['produit_selectionne'] is not None:
-    row_memorise = st.session_state['produit_selectionne']
-    cup_actuel = str(row_memorise.get('code_upc')).strip()
+if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
+    index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     
-    if len(cup_actuel) >= 4:
-        prefixe = cup_actuel[:4]
-        url_image = f"https://barcodelookup.com{prefixe}/{cup_actuel}-1.jpg"
-        st.sidebar.image(url_image, caption=f"CUP: {cup_actuel}", use_container_width=True)
-    else:
-        st.sidebar.warning("Code CUP trop court.")
+    try:
+        cup_actuel = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
+        
+        if cup_actuel and len(cup_actuel) >= 4:
+            prefixe = cup_actuel[:4]
+            url_image = f"https://barcodelookup.com{prefixe}/{cup_actuel}-1.jpg"
+            
+            st.sidebar.success(f"📦 Produit sélectionné : {cup_actuel}")
+            st.sidebar.link_button("👁️ Voir la photo du produit", url_image, use_container_width=True)
+        else:
+            st.sidebar.warning("Code CUP invalide ou trop court.")
+    except Exception:
+        st.sidebar.error("Impossible de lire le code CUP.")
 else:
-    st.sidebar.info("Sélectionnez un produit pour voir sa photo ici.")
+    st.sidebar.info("Sélectionnez un produit dans le tableau pour voir sa photo ici.")
+
 
 
 # --------------------------------------------------------

@@ -211,7 +211,7 @@ if saisie_net:
         cup_saisi = saisie_net
 
     if 'code_upc' in df_filtre.columns:
-        recherche_cup = df[df['code_upc'] == cup_saisi]
+        recherche_cup = df_filtre[df_filtre['code_upc'] == cup_saisi]
         if not recherche_cup.empty:
             resultats = recherche_cup
         else:

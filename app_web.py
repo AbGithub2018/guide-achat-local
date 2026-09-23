@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+code_upc = "Code CUP"
 
 
 # 1. CONFIGURATION ET STYLE VISUEL DE LA PAGE

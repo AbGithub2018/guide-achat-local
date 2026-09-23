@@ -103,7 +103,7 @@ if 'entreprise_province_etat' in df_filtre.columns:
 # 📸 ÉTAPE 1 : RÉSERVATION DE L'ESPACE PHOTO (FUTUR)
 # --------------------------------------------------------
 st.sidebar.markdown("---") 
-st.sidebar.markdown("<h3 style='color: #003366; font-size: 18px;'>📸 Aperçu du produit</h3>", unsafe_html=True)
+st.sidebar.subheader("📸 Aperçu du produit")
 st.sidebar.info("Sélectionnez un produit pour voir sa photo ici.")
 
 

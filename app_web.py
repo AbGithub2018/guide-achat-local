@@ -110,11 +110,12 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
     index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     
     try:
-        cup_actuel = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
+        vrai_index = index_ligne[0]
+        cup_actuel = str(df_affichage.iloc[vrai_index]['code_upc']).strip()
         
         if cup_actuel and len(cup_actuel) >= 4:
             prefixe = cup_actuel[:4]
-            url_image = f"https://barcodelookup.com{prefixe}/{cup_actuel}-1.jpg"
+            url_image = f"https://images.barcodelookup.com/{prefixe}/{cup_actuel}-1.jpg"
             
             st.sidebar.success(f"📦 Produit sélectionné : {cup_actuel}")
             st.sidebar.link_button("👁️ Voir la photo du produit", url_image, use_container_width=True)

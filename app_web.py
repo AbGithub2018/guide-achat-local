@@ -105,29 +105,24 @@ if 'entreprise_province_etat' in df_filtre.columns:
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
 
-# On vérifie si un produit a été coché dans votre tableau
-if 'selection' in st.session_state and st.session_state['selection']['rows']:
-    # On va chercher la ligne cochée
-    index_ligne = st.session_state['selection']['rows'][0]
-    
-    # On extrait le code CUP de cette ligne (en supposant que votre tableau s'appelle df_filtre)
-    cup_actuel = str(df_filtre.iloc[index_ligne]['code_upc']).strip()
+# On vérifie si la variable 'row' existe et contient un produit sélectionné
+if 'row' in locals() and row is not None and row.get('code_upc'):
+    # On récupère proprement le code CUP
+    cup_actuel = str(row.get('code_upc')).strip()
     
     if len(cup_actuel) >= 4:
-        # On prend les 4 premiers chiffres pour le sous-dossier du site d'images
+        # On extrait les 4 premiers chiffres pour le sous-dossier
         prefixe = cup_actuel[:4]
         
-        # On fabrique le lien automatique vers l'image
+        # On fabrique l'adresse internet de l'image
         url_image = f"https://barcodelookup.com{prefixe}/{cup_actuel}-1.jpg"
         
-        # On affiche l'image dans la barre grise
+        # On affiche l'image dans la zone grise
         st.sidebar.image(url_image, caption=f"CUP: {cup_actuel}", use_container_width=True)
     else:
         st.sidebar.warning("Code CUP trop court.")
 else:
     st.sidebar.info("Sélectionnez un produit pour voir sa photo ici.")
-
-
 
 # --------------------------------------------------------
 # 🔑 ÉTAPE 2 : ZONE ADMINISTRATEUR COMPACTE AVEC DÉCONNEXION

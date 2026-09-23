@@ -103,8 +103,30 @@ if 'entreprise_province_etat' in df_filtre.columns:
 # 📸 ÉTAPE 1 : RÉSERVATION DE L'ESPACE PHOTO (FUTUR)
 # --------------------------------------------------------
 st.sidebar.markdown("---") 
-st.sidebar.subheader("📸 Aperçu du produit")
-st.sidebar.info("Sélectionnez un produit pour voir sa photo ici.")
+st.sidebar.subheader("Aperçu du produit")
+
+# On vérifie si un produit a été coché dans votre tableau
+if 'selection' in st.session_state and st.session_state['selection']['rows']:
+    # On va chercher la ligne cochée
+    index_ligne = st.session_state['selection']['rows'][0]
+    
+    # On extrait le code CUP de cette ligne (en supposant que votre tableau s'appelle df_filtre)
+    cup_actuel = str(df_filtre.iloc[index_ligne]['code_upc']).strip()
+    
+    if len(cup_actuel) >= 4:
+        # On prend les 4 premiers chiffres pour le sous-dossier du site d'images
+        prefixe = cup_actuel[:4]
+        
+        # On fabrique le lien automatique vers l'image
+        url_image = f"https://barcodelookup.com{prefixe}/{cup_actuel}-1.jpg"
+        
+        # On affiche l'image dans la barre grise
+        st.sidebar.image(url_image, caption=f"CUP: {cup_actuel}", use_container_width=True)
+    else:
+        st.sidebar.warning("Code CUP trop court.")
+else:
+    st.sidebar.info("Sélectionnez un produit pour voir sa photo ici.")
+
 
 
 # --------------------------------------------------------

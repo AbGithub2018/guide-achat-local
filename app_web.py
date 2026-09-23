@@ -461,32 +461,10 @@ if st.button("❌ Supprimer définitivement le produit du Nuage", type="primary"
             # Relancer l'application pour appliquer les changements visuels immédiatement
             st.rerun()
 
-        except Exception as e:
-            st.error(f"Erreur lors de la mise à jour de la feuille : {e}")
-    else:
-        st.warning("Veuillez inscrire un code CUP.")
-              
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    elif mot_de_passe_saisi:
-        st.error("Mot de passe administrateur incorrect.")
+           except Exception as e:
+                st.error(f"Erreur lors de la mise à jour de la feuille : {e}")
+            
+elif mot_de_passe_saisi:
+st.error("Mot de passe administrateur incorrect.")
+else:
+st.warning("Veuillez inscrire un code CUP.")

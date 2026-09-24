@@ -99,38 +99,8 @@ if 'entreprise_province_etat' in df_filtre.columns:
     choix_prov = st.sidebar.selectbox("Filtrer par Province / État :", liste_prov)
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
-# --------------------------------------------------------
-# 📸 ÉTAPE 1 : RÉSERVATION DE L'ESPACE PHOTO (FUTUR)
-# --------------------------------------------------------
-st.sidebar.markdown("---") 
-st.sidebar.subheader("Aperçu du produit")
 
-# On vérifie si la variable 'row' existe et contient un produit sélectionné
-if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
-    index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
-    
-    try:
-        vrai_index = index_ligne
-        cup_actuel = str(df_affichage.iloc[vrai_index]['code_upc']).strip()
-        
-        if cup_actuel and len(cup_actuel) >= 4:
-            prefixe = cup_actuel[:4]
-            url_image = f"https://images.barcodelookup.com/{prefixe}/{cup_actuel}-1.jpg"
-            
-            st.sidebar.success(f"📦 Produit sélectionné : {cup_actuel}")
-            st.sidebar.link_button("👁️ Voir la photo du produit", url_image, use_container_width=True)
-        else:
-            st.sidebar.warning("Code CUP invalide ou trop court.")
-    except Exception:
-        st.sidebar.error("Impossible de lire le code CUP.")
-else:
-    st.sidebar.info("Sélectionnez un produit dans le tableau pour voir sa photo ici.")
-
-
-
-# --------------------------------------------------------
 # 🔑 ÉTAPE 2 : ZONE ADMINISTRATEUR COMPACTE AVEC DÉCONNEXION
-# --------------------------------------------------------
 st.sidebar.markdown("---") 
 
 with st.sidebar.expander("🔑 Administration"):
@@ -325,6 +295,31 @@ config_colonnes = {
 st.markdown("---")
 st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés selon vos bannières et filtres) :")
 st.write("💡 Cliquez n'importe où sur la ligne d'un produit pour voir sa fiche complète ci-dessous.")
+# --------------------------------------------------------
+# 📸 ÉTAPE 1 : RÉSERVATION DE L'ESPACE PHOTO (FUTUR)
+# --------------------------------------------------------
+st.sidebar.markdown("---") 
+st.sidebar.subheader("Aperçu du produit")
+
+if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
+    # On extrait le premier numéro de la liste d'index proprement
+    index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
+    
+    try:
+        # On extrait le CUP brut du tableau sans se soucier du format ou du zéro
+        raw_cup = df_affichage.iloc[index_ligne]['code_upc']
+        cup_actuel = str(int(float(raw_cup))).strip()
+        
+        if cup_actuel:
+            # On envoie le code directement sur la page de recherche officielle du site
+            url_image = f"https://www.barcodelookup.com/{cup_actuel}"
+            
+            st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
+            st.sidebar.link_button("👁️ Voir la photo du produit", url_image, use_container_width=True)
+        else:
+            st.sidebar.warning("Code CUP invalide ou vide.")
+    except Exception as e:
+        st.sidebar.error(f"Erreur de lecture du CUP : {e}")
 
 # --- SECTION LOGIQUE : AFFICHAGE DU TABLEAU OU DU MESSAGE D'ERREUR ---
 selection_tableau = None 

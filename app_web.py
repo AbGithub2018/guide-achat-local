@@ -136,7 +136,7 @@ with st.sidebar.expander("🔑 Administration"):
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_actuel = conn.read(ttl=0)
         
-        cup_a_supprimer = st.text_input("Code CUP du produit à supprimer", key="cup_delete_input")
+        cup_a_supprimer = st.text_input("code_upc du produit à supprimer", key="cup_delete_input")
         
         if st.button("Supprimer définitivement le produit du Nuage", use_container_width=True):
             if cup_a_supprimer:
@@ -148,7 +148,7 @@ with st.sidebar.expander("🔑 Administration"):
                 time.sleep(1)
                 st.rerun()
             else:
-                st.warning("Veuillez entrer un code CUP valide.")
+                st.warning("Veuillez entrer un code_upc valide.")
 
 # 3. ZONE PRINCIPALE : Entête
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
@@ -160,7 +160,7 @@ with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Clique
     Bienvenue sur **AchatQuébec**, votre outil citoyen et collaborative pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Ensemble, reprenons le contrôle de notre panier d'épicerie !
     
     #### 🕵️‍♂️ Comment ça fonctionne ?
-    1. **Recherchez un produit :** Tapez un mot-clé (ex: *pomme*) ou le code CUP.
+    1. **Recherchez un produit :** Tapez un mot-clé (ex: *pomme*) ou le code_upc.
     2. **Identifiez la provenance :** Repérez les drapes et badges (Québec ⚜️, Canada 🍁).
     3. **Comparez les prix :** Voyez d'un coup d'œil quelle bannière est la moins chère.
     
@@ -203,12 +203,12 @@ saisie_net = ""
 # 4. INTERCEPTION AUTOMATIQUE DU SCANNER EXTERNE
 if "cup" in st.query_params:
     saisie_net = str(st.query_params["cup"]).strip()
-    st.success(f"✅ Code CUP détecté : {saisie_net}")
+    st.success(f"✅ code_upc détecté : {saisie_net}")
 
 # --- EN CLAVIER UNIQUEMENT SI LE PREMIER BOUTON RADIO EST SÉLECTIONNÉ ---
 if  choix_mode == "⌨️ Recherche manuelle":
     valeur_par_defaut = saisie_net if saisie_net else ""
-    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN CODE CUP :", value=valeur_par_defaut, key="recherche_cup")    
+    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN code_upc :", value=valeur_par_defaut, key="recherche_cup")    
     if saisie:
         saisie_net = saisie.strip()
         
@@ -258,20 +258,36 @@ message_erreur_recherche = None
 # --- CETTE LOGIQUE DE RECHERCHE DOIT RESTER ICI POUR LE CLAVIER ---
 if saisie_net:
     cup_saisi = saisie_net.strip()
+    terme_recherche_minuscule = cup_saisi.lower()
 
     if 'code_upc' in df_filtre.columns:
-        recherche_cup = df_filtre[df_filtre['code_upc'] == cup_saisi]
+        # 1. On cherche d'abord le CUP exact
+        recherche_cup = df_filtre[df_filtre['code_upc'].astype(str).str.strip() == cup_saisi]
+        
         if not recherche_cup.empty:
+            # SI ON TROUVE LE CUP : On applique immédiatement le filtre et on stocke le résultat
+            df_filtre = recherche_cup
             resultats = recherche_cup
         else:
+            # SI LE CUP N'EXISTE PAS : Alors seulement on fait la recherche élargie par texte
+            conditions = pd.Series(False, index=df_filtre.index)
+            
             if 'nom' in df_filtre.columns:
-                recherche_texte = df_filtre[df_filtre['nom'].str.lower().str.contains(saisie_net.lower().strip(), na=False, regex=False)]
-                if not recherche_texte.empty:
-                    df_filtre = recherche_texte
-                    if len(recherche_texte) == 1:
-                        resultats = recherche_texte
-                else:
-                    message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+                conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'siege_social' in df_filtre.columns:
+                conditions |= df_filtre['siege_social'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'lieu_usine' in df_filtre.columns:
+                conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+                
+            recherche_texte = df_filtre[conditions]
+            
+            if not recherche_texte.empty:
+                df_filtre = recherche_texte
+                if len(recherche_texte) == 1:
+                    resultats = recherche_texte
+            else:
+                message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+
 
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_prix_tableau = ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']
@@ -281,9 +297,9 @@ df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c
 for c in df_affichage.columns:
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 config_colonnes = {
-    "code_upc": st.column_config.TextColumn("Code CUP", width="medium"),
+    "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large"),
-    "entreprise_proprietaire": st.column_config.TextColumn("Entreprise"),
+    "siege_social": st.column_config.TextColumn("Entreprise"),
     "entreprise_province_etat": st.column_config.TextColumn("Province/État"),
     "distribution": st.column_config.TextColumn("Réseau d'épicerie"),
     "prix_iga": st.column_config.TextColumn("Prix IGA"),
@@ -317,7 +333,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             st.sidebar.link_button("👁️ Voir la photo du produit", url_image, use_container_width=True)
         else:
-            st.sidebar.warning("Code CUP invalide ou vide.")
+            st.sidebar.warning("code_upc invalide ou vide.")
     except Exception as e:
         st.sidebar.error(f"Erreur de lecture du CUP : {e}")
 
@@ -353,14 +369,14 @@ else:
     if message_erreur_recherche and not saisie_net.strip().isdigit():
         st.warning(message_erreur_recherche)
 
-    # Le formulaire collaboratif s'ouvre UNIQUE et SEULEMENT si c'est un code CUP numérique inconnu
+    # Le formulaire collaboratif s'ouvre UNIQUE et SEULEMENT si c'est un code_upc numérique inconnu
     if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10:
-        st.info(f"📦 Le code CUP **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
+        st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
         st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
         
         with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
             nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
-            cup_final = st.text_input("Code CUP", value=saisie_net.strip(), disabled=True)
+            cup_final = st.text_input("code_upc", value=saisie_net.strip(), disabled=True)
             entreprise = st.text_input("Entreprise propriétaire / Marque (ex: Unico)")
             province = st.text_input("Province / État (ex: Québec)")
             pays = st.text_input("Pays", value="Canada")
@@ -388,7 +404,7 @@ else:
                             nouvelle_ligne = {
                                 'code_upc': cup_final,
                                 'nom': nom_nouveau.strip(),
-                                'entreprise_proprietaire': entreprise.strip(),
+                                'siege_social': entreprise.strip(),
                                 'entreprise_province_etat': province.strip(),
                                 'entreprise_pays': pays.strip(),
                                 'distribution': distribution.strip(),

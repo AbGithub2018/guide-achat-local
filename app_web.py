@@ -2,11 +2,8 @@ import streamlit as st
 import pandas as pd
 import time
 from streamlit_gsheets import GSheetsConnection
-code_upc = "code_upc"import streamlit as st
 import streamlit.components.v1 as components
-import pandas as pd
-import time
-from streamlit_gsheets import GSheetsConnection
+# Initialisation de la variable
 code_upc = "code_upc"
 
 # 1. CONFIGURATION ET STYLE VISUEL DE LA PAGE

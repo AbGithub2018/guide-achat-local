@@ -430,8 +430,12 @@ else:
 # Détection de la ligne cliquée dans le tableau interactif
 if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
     index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
-    cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
-    resultats = df[df['code_upc'] == cup_selectionne]
+    
+    # LA LIGNE DE SÉCURITÉ À AJOUTER ICI :
+    if index_ligne_cliquee < len(df_affichage):
+        cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
+        resultats = df[df['code_upc'] == cup_selectionne]
+
 
 # 6. AFFICHAGE DE LA FICHE DÉTAILLÉE CONSOMMATEUR
 if resultats is not None and not resultats.empty:

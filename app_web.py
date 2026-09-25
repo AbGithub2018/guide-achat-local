@@ -327,11 +327,31 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         cup_actuel = str(int(float(raw_cup))).strip()
         
         if cup_actuel:
-            # On envoie le code directement sur la page de recherche officielle du site
-            url_image = f"https://www.barcodelookup.com/{cup_actuel}"
-            
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
-            st.sidebar.link_button("👁️ Voir la photo du produit", url_image, use_container_width=True)
+            
+            # --- CODE DE RÉCUPÉRATION PAR OPEN FOOD FACTS ---
+            import requests
+            
+            with st.sidebar.spinner("Recherche de la photo..."):
+                try:
+                    # Lien officiel de l'API gratuite d'Open Food Facts
+                    url_api = f"https://world.openfoodfacts.org/api/v0/product/{cup_actuel}.json"
+                    headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
+                    reponse = requests.get(url_api, headers=headers, timeout=5)
+                    
+                    if reponse.status_code == 200:
+                        donnees = reponse.json()
+                        
+                        # On vérifie si le produit et son image existent dans leur base
+                        if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
+                            lien_photo = donnees["product"]["image_url"]
+                            st.sidebar.image(lien_photo, caption=f"Photo officielle OpenFoodFacts", use_container_width=True)
+                        else:
+                            st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
+                    else:
+                        st.sidebar.error("❌ Serveur d'images indisponible.")
+                except Exception as e:
+                    st.sidebar.error(f"⚠️ Erreur de connexion : {e}")
         else:
             st.sidebar.warning("code_upc invalide ou vide.")
     except Exception as e:

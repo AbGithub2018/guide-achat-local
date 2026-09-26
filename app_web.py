@@ -1,280 +1,541 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-from google.oauth2.service_account import Credentials
-from st_gsheets_connection import GSheetsConnection
+import time
+from streamlit_gsheets import GSheetsConnection
+code_upc = "code_upc"
 
-# Configuration de la page
-st.set_page_config(
-    page_title="Mon Guide d'Achat Local",
-    page_icon="🍎",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# 1. CONFIGURATION ET STYLE VISUEL DE LA PAGE
+st.set_page_config(page_title="Acheter Québécois & Canadien", page_icon="📦", layout="wide")
 
-# Style CSS personnalisé pour l'interface
+# Injection CSS pour la barre de recherche géante
 st.html("""
-    <style>
-    .stApp { background-color: #f4f7f6; }
-    .stButton>button {
-        background-color: #003366;
-        color: white;
-        border-radius: 8px;
-        font-weight: bold;
-        border: none;
-        padding: 10px 24px;
-        font-size: 16px;
-    }
-    .stButton>button:hover { background-color: #002244; color: white; }
-    div[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e0e0e0; }
-    .stSelectbox label, .stTextInput label, .stRadio label {
-        color: #003366 !important;
-        font-weight: bold !important;
-        font-size: 16px !important;
-    }
-    div[data-testid="stDataFrame"] { background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    </style>
+<style>
+    /* Grossir la barre de recherche géante */
+    .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
+    .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
+    
+    /* Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
+    .stRadio label p { font-size: 26px !important; font-weight: bold !important; color: #111111 !important; }
+    div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
+</style>
 """)
-# Initialisation de la connexion Google Sheets
-try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-except Exception as e:
-    st.error(f"Erreur de connexion aux secrets de l'application : {e}")
-    st.stop()
 
-# Chargement de la base de données avec cache
-@st.cache_data(ttl=600)
 def charger_donnees():
+
+    """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
     try:
-        df = conn.read(worksheet="sheet1")
-        df.columns = df.columns.str.strip()
+        conn = st.connection("gsheets", type="streamlit_gsheets.GSheetsConnection")
+        df_initial = conn.read(worksheet="Sheet1")
+        if df_initial is None or df_initial.empty:
+            st.error("⚠️ Le fichier Google Sheet lu est vide. Vérifiez l'onglet 'Sheet1'.")
+            return pd.DataFrame()
+
+        df_initial = df_initial.astype(str)
         
-        # S'assurer que le code UPC est traité comme une chaîne de caractères propre
-        if 'code_upc' in df.columns:
-            df['code_upc'] = df['code_upc'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
-            # Rétablir les zéros initiaux pour les codes de 11 chiffres transformés par Excel
-            df['code_upc'] = df['code_upc'].apply(lambda x: x.zfill(12) if (x.isdigit() and len(x) == 11) else x)
-        return df
+        # Nettoyage automatique des noms de colonnes pour éviter les KeyError
+        df_initial.columns = [c.strip().lower() for c in df_initial.columns]
+        
+        if 'code_upc' in df_initial.columns:
+            df_initial['code_upc'] = df_initial['code_upc'].replace(r'\.0$', '', regex=True).str.strip()
+        else:
+            df_initial['code_upc'] = ""
+        
+        for col_prix in ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']:
+            if col_prix not in df_initial.columns:
+                df_initial[col_prix] = ""
+            df_initial[col_prix] = df_initial[col_prix].replace('nan', '').str.strip()
+            
+        # Sécurité pour la colonne distribution (gère vos deux colonnes E et K)
+        if 'distribution' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:
+            df_initial['distribution'] = df_initial['reseau_distribution']
+        elif 'distribution' not in df_initial.columns:
+            df_initial['distribution'] = ""
+            
+        df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip()      
+        return df_initial
     except Exception as e:
-        st.error(f"Erreur lors du chargement de la feuille Google Sheets : {e}")
+        st.error(f"❌ Erreur de lecture : {e}")
         return pd.DataFrame()
 
-df_produits = charger_donnees()
+def sauvegarder_donnees(df_a_enregistrer):
+    """Enregistre les prix automatiquement grâce aux secrets de Streamlit Cloud."""
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        conn.update(worksheet="Sheet1", data=df_a_enregistrer)
+        st.cache_data.clear()
+        if 'df_produits' in st.session_state:
+            del st.session_state['df_produits']
+        return True
+    except Exception as e:
+        st.error(f"❌ Erreur de sauvegarde réelle : {e}")
+        return False
 
-# Barre latérale - Navigation principale
-st.sidebar.html("<h2 style='color: #003366; font-size: 22px; font-weight: bold; margin-bottom: 20px;'>🧭 Navigation</h2>")
-choix_mode = st.sidebar.radio(
-    "Choisissez une action :",
-    ["🔍 Recherche manuelle", "📸 Scanner un Code-Barres", "➕ Ajouter un produit d'achat local"]
-)
+# Initialisation et chargement de la base de données en Session Streamlit
+if 'df_produits' not in st.session_state:
+    st.session_state['df_produits'] = charger_donnees()
 
-# Variables globales de contrôle pour la recherche
-saisie_net = None
-# CODE DU SCANNEUR LOCAL INTEGRI COMPLETEMENT REPARE
-if choix_mode == "📸 Scanner un Code-Barres":
-    import cv2
-    import numpy as np
-    from pyzbar.pyzbar import decode
+# Raccourci vers les données en session
+df = st.session_state['df_produits']
 
-    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📸 Scanneur Local Haute Performance</h2>")
-    st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone pour analyser le produit.</p>")
-    
-    image_chargee = st.file_uploader("Prendre une photo du code-barres", type=["jpg", "jpeg", "png"], key="scanner_camera_local")
-    
-    if image_chargee:
-        file_bytes = np.asarray(bytearray(image_chargee.read()), dtype=np.uint8)
-        image_cv = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+if 'banniere_active' not in st.session_state:
+    st.session_state['banniere_active'] = "Tous"
+# 2. BARRE LATERALE (Statistiques et Filtres Géopolitiques)
+st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits par pays d'origine</h2>")
+
+if 'entreprise_pays' in df.columns:
+    pass
+
+st.sidebar.markdown("---")
+
+if 'entreprise_pays' in df.columns:
+    liste_pays = ["Tous"] + sorted([str(p) for p in df['entreprise_pays'].unique() if pd.notna(p) and p != ""])
+    choix_pays = st.sidebar.selectbox("Filtrer par Pays propriétaire :", liste_pays)
+    df_filtre = df[df['entreprise_pays'] == choix_pays] if choix_pays != "Tous" else df.copy()
+else:
+    df_filtre = df.copy()
+
+if 'entreprise_province_etat' in df_filtre.columns:
+    liste_prov = ["Toutes"] + sorted([str(p) for p in df_filtre['entreprise_province_etat'].unique() if pd.notna(p) and p != ""])
+    choix_prov = st.sidebar.selectbox("Filtrer par Province / État :", liste_prov)
+    if choix_prov != "Toutes":
+        df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
+
+# 🔑 ÉTAPE 2 : ZONE ADMINISTRATEUR COMPACTE AVEC DÉCONNEXION
+st.sidebar.markdown("---") 
+
+with st.sidebar.expander("🔑 Administration"):
+    # Initialisation de la variable de connexion si elle n'existe pas
+    if "admin_connecte" not in st.session_state:
+        st.session_state["admin_connecte"] = False
+
+    # CAS A : L'ADMINISTRATEUR N'EST PAS CONNECTÉ
+    if not st.session_state["admin_connecte"]:
+        mot_de_passe = st.text_input(
+            "Entrez le mot de passe de gestion", 
+            type="password", 
+            key="sidebar_mdp_secret"
+        )
+        if mot_de_passe == st.secrets["admin"]["password"]:
+            st.session_state["admin_connecte"] = True
+            st.rerun()
+
+ 
+
+    # CAS B : L'ADMINISTRATEUR EST CONNECTÉ (Le mot de passe disparaît !)
+    else:
+        st.success("🟢 Mode Admin Actif")
         
-        st.subheader("📸 Photo transmise :")
-        st.image(image_cv, use_container_width=True)
+        # Le bouton de déconnexion
+        if st.button("Se déconnecter", type="primary", use_container_width=True):
+            st.session_state["admin_connecte"] = False
+            st.rerun()
+            
+        st.markdown("---")
         
-        gris = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
-        _, gris_ameliore = cv2.threshold(gris, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # --- LOGIQUE DE SUPPRESSION ---
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df_actuel = conn.read(ttl=0)
         
-        with st.spinner("🔍 Décodage du code-barres en cours..."):
-            codes_detectes = decode(image_cv)
-            if not codes_detectes:
-                codes_detectes = decode(gris_ameliore)
-                
-            if codes_detectes:
-                for code in codes_detectes:
-                    code_upc_extrait = code.data.decode('utf-8').strip()
-                    st.success(f"🎯 Code-barres lu avec succès : {code_upc_extrait}")
-                    saisie_net = code_upc_extrait
-                    break
+        cup_a_supprimer = st.text_input("code_upc du produit à supprimer", key="cup_delete_input")
+        
+        if st.button("Supprimer définitivement le produit du Nuage", use_container_width=True):
+            if cup_a_supprimer:
+                df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
+                conn.update(data=df_nettoye)
+                if 'df_produits' in st.session_state:
+                    del st.session_state['df_produits']
+                st.success("Produit supprimé avec succès !")
+                time.sleep(1)
+                st.rerun()
             else:
-                st.error("❌ Aucun code-barres n'a pu être détecté. Assurez-vous que l'image est bien éclairée, stable et horizontale.")
+                st.warning("Veuillez entrer un code_upc valide.")
+
+# 3. ZONE PRINCIPALE : Entête
+st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
+st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un code-barres pour valider l'origine et gérer vos prix d'épicerie.</p>")
+
+with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Cliquez pour ouvrir)"):
+    st.markdown("""
+    ### 🛒 Protégeons notre portefeuille, encourageons l'achat local !
+    Bienvenue sur **AchatQuébec**, votre outil citoyen et collaborative pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Ensemble, reprenons le contrôle de notre panier d'épicerie !
+    
+    #### 🕵️‍♂️ Comment ça fonctionne ?
+    1. **Recherchez un produit :** Tapez un mot-clé (ex: *pomme*) ou le code_upc.
+    2. **Identifiez la provenance :** Repérez les drapes et badges (Québec ⚜️, Canada 🍁).
+    3. **Comparez les prix :** Voyez d'un coup d'œil quelle bannière est la moins chère.
+    
+    #### ✍️ Devenez un consommateur solidaire !
+    Vous êtes à l'épicerie ? Cochez le produit, inscrivez le prix trouvé dans le formulaire gris au bas de l'écran, et cliquez sur **Enregistrer**. Chaque contribution aide la communauté !
+    """)
+# Boutons rapides de sélection de bannières
+st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
+col_iga, col_maxi, col_metro, col_super_c, col_walmart, col_tous = st.columns(6)
+
+if col_iga.button("🔴 IGA", use_container_width=True):
+    st.session_state['banniere_active'] = "IGA"
+if col_maxi.button("🟡 Maxi", use_container_width=True):
+    st.session_state['banniere_active'] = "Maxi"
+if col_metro.button("🟢 Metro", use_container_width=True):
+    st.session_state['banniere_active'] = "Metro"
+if col_super_c.button("🔵 Super C", use_container_width=True):
+    st.session_state['banniere_active'] = "Super_C"
+if col_walmart.button("🔵 Walmart", use_container_width=True):
+    st.session_state['banniere_active'] = "Walmart"
+if col_tous.button("🔄 Toutes", use_container_width=True):
+    st.session_state['banniere_active'] = "Tous"
+
+banniere = st.session_state['banniere_active']
+
+if banniere != "Tous" and 'distribution' in df_filtre.columns:
+    nom_banniere_recherche = banniere.replace('_', ' ')
+    condition_distribution = df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)
+    df_filtre = df_filtre[condition_distribution]
+
+# 4. ZONE DE RECHERCHE ET SCANNER PHOTO
+# Remplacement des onglets récalcitrants par de gros boutons radio géants horizontaux
+choix_mode = st.radio(
+    "👉 MODE DE RECHERCHE :",
+    ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"],
+    horizontal=True,
+    label_visibility="collapsed"
+)
+saisie_net = ""
+# 4. INTERCEPTION AUTOMATIQUE DU SCANNER EXTERNE
+if "cup" in st.query_params:
+    saisie_net = str(st.query_params["cup"]).strip()
+    st.success(f"✅ code_upc détecté : {saisie_net}")
+
+# --- EN CLAVIER UNIQUEMENT SI LE PREMIER BOUTON RADIO EST SÉLECTIONNÉ ---
+if  choix_mode == "⌨️ Recherche manuelle":
+    valeur_par_defaut = saisie_net if saisie_net else ""
+    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN code_upc :", value=valeur_par_defaut, key="recherche_cup")    
+    if saisie:
+        saisie_net = saisie.strip()
+        
+    # On nettoie la mémoire de l'adresse SEULEMENT ICI, une fois que la case a récupéré le code
+    if "cup" in st.query_params:
+        st.query_params.clear()
+elif choix_mode == "📸 Scanner un Code-Barres":
+    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>⚡ Lecteur de code-barres haute vitesse</h2>")
+    st.html("<p style='font-size: 20px; color: #333;'>Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.</p>")
+    
+    st.markdown("---")
+    
+    # Lien de redirection vers le scanner externe
+    url_scanner_external = "https://scanapp.org"
+    
+    # Création des deux colonnes (60% pour le texte à gauche, 40% pour le bouton à droite)
+    col_instructions, col_bouton = st.columns([0.6, 0.4], vertical_alignment="center")
+    
+    with col_instructions:
+        st.html("""
+        <div style="background-color: #f9f9f9; padding: 22px; border-radius: 8px; border-left: 6px solid #003366;">
+            <p style="font-size: 22px; font-weight: bold; margin-top: 0; color: #003366;">💡 Comment ça fonctionne ?</p>
+            <ol style="font-size: 19px; line-height: 1.6; margin-bottom: 0; padding-left: 20px; color: #111;">
+                <li>Cliquez sur le bouton bleu <b>Ouvrir le scanner</b>.</li>
+                <li>Scannez le code-barres de votre produit.</li>
+                <li>Une fois scanné, cliquez sur le bouton <b>Copier</b> dans l'utilitaire de scan.</li>
+                <li>Fermez l'application de scan, revenez ici et <b>collez</b> le code barre dans la case de recherche manuelle !</li>
+            </ol>
+        </div>
+        """)
+        
+    with col_bouton:
+        # Affichage du bouton bleu avec votre style
+        st.html(f"""
+        <div style="text-align: center;">
+            <a href="{url_scanner_external}" target="_blank" style="text-decoration: none;">
+                <button style="background-color: #003366; color: white; font-size: 22px; font-weight: bold; padding: 22px 35px; border-radius: 10px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    🚀 OUVRIR LE SCANNER HAUTE VITESSE
+                </button>
+            </a>
+        </div>
+        """)
 
 resultats = None
 message_erreur_recherche = None
 
-# Interface pour la recherche manuelle (clavier)
-if choix_mode == "🔍 Recherche manuelle":
-    st.html("<h1 style='color: #003366; font-size: 32px; font-weight: bold; margin-bottom: 10px;'>🍎 Mon Guide d'Achat Local</h1>")
-    st.html("<p style='font-size: 18px; color: #555; margin-bottom: 30px;'>Trouvez instantanément l'origine et le lieu de fabrication de vos produits alimentaires.</p>")
-    
-    st.html("<h3 style='color: #003366; font-size: 20px; font-weight: bold; margin-bottom: 5px;'>🔍 Rechercher un produit</h3>")
-    saisie_utilisateur = st.text_input(
-        "Entrez un code UPC (12 chiffres), une marque, une catégorie ou un ingrédient :",
-        placeholder="Ex: 064200111011, Biscuits, Fromage, Leclerc...",
-        key="barre_recherche_principale"
-    )
-    if saisie_utilisateur:
-        saisie_net = saisie_utilisateur.strip()
-# Logique de traitement et affichage des résultats de recherche (Clavier ou Scanneur)
+# --- CETTE LOGIQUE DE RECHERCHE DOIT RESTER ICI POUR LE CLAVIER ---
 if saisie_net:
-    if not df_produits.empty:
-        # Recherche par correspondance exacte sur le code UPC (format texte)
-        if saisie_net.isdigit():
-            saisie_formatee = saisie_net.zfill(12) if len(saisie_net) == 11 else saisie_net
-            resultats = df_produits[df_produits['code_upc'] == saisie_formatee]
-        
-        # Si aucune correspondance exacte d'UPC, faire une recherche textuelle globale
-        if resultats is None or resultats.empty:
-            masque = (
-                df_produits['code_upc'].str.contains(saisie_net, case=False, na=False) |
-                df_produits['nom'].str.contains(saisie_net, case=False, na=False) |
-                df_produits['entreprise_proprietaire'].str.contains(saisie_net, case=False, na=False) |
-                df_produits['lieu_usine'].str.contains(saisie_net, case=False, na=False) |
-                df_produits['categorie_produit'].str.contains(saisie_net, case=False, na=False)
-            )
-            resultats = df_produits[masque]
-            
-        if resultats.empty:
-            message_erreur_recherche = f"🕵️ No produit trouvé pour '{saisie_net}'."
-    else:
-        message_erreur_recherche = "❌ Impossible d'effectuer la recherche car la base de données est vide."
+    cup_saisi = saisie_net.strip()
+    terme_recherche_minuscule = cup_saisi.lower()
 
-# Affichage de la fiche produit détaillée
-if resultats is not None and not resultats.empty:
-    st.html("<h2 style='color: #003366; font-size: 24px; font-weight: bold; margin-top: 20px; margin-bottom: 15px;'>📦 Résultats de l'analyse</h2>")
-    
-    # Si un seul produit correspond, on affiche sa fiche détaillée stylisée
-    if len(resultats) == 1:
-        row = resultats.iloc[0]
+    if 'code_upc' in df_filtre.columns:
+        # 1. On cherche d'abord le CUP exact
+        recherche_cup = df_filtre[df_filtre['code_upc'].astype(str).str.strip() == cup_saisi]
         
-        st.html(f"""
-            <div style='background-color: white; padding: 25px; border-radius: 12px; border-left: 8px solid #003366; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px;'>
-                <span style='background-color: #e6f0fa; color: #003366; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px;'>Code UPC: {row.get('code_upc', 'N/A')}</span>
-                <h2 style='margin-top: 10px; color: #333; font-size: 28px; font-weight: bold;'>{row.get('nom', 'Produit Inconnu')}</h2>
-                <hr style='border: 0; h2: 1px; background: #eee; margin: 15px 0;'>
-                <div style='display: flex; flex-wrap: wrap; gap: 40px;'>
-                    <div style='flex: 1; min-width: 250px;'>
-                        <p style='margin: 5px 0; font-size: 16px;'><strong style='color: #003366;'>🏭 Lieu de fabrication (Usine) :</strong> <span style='font-size: 18px; font-weight: bold; color: #d32f2f;'>{row.get('lieu_usine', 'Non spécifié')}</span></p>
-                        <p style='margin: 5px 0; font-size: 16px;'><strong style='color: #003366;'>🏢 Entreprise propriétaire :</strong> {row.get('entreprise_proprietaire', 'N/A')}</p>
-                        <p style='margin: 5px 0; font-size: 16px;'><strong style='color: #003366;'>🗺️ Siège social :</strong> {row.get('siege_social', 'N/A')}</p>
-                    </div>
-                    <div style='flex: 1; min-width: 250px;'>
-                        <p style='margin: 5px 0; font-size: 16px;'><strong style='color: #003366;'>🇨🇦 Provenance de l'entreprise :</strong> {row.get('entreprise_pays', 'N/A')} ({row.get('entreprise_province_etat', 'N/A')})</p>
-                        <p style='margin: 5px 0; font-size: 16px;'><strong style='color: #003366;'>🛒 Réseau de distribution :</strong> {row.get('reseau_distribution', 'N/A')}</p>
-                        <p style='margin: 5px 0; font-size: 16px;'><strong style='color: #003366;'>🗂️ Catégorie :</strong> {row.get('categorie_produit', 'N/A')}</p>
-                    </div>
-                </div>
-            </div>
-        """)
-        
-        # Zone d'affichage des bannières de prix sous forme de colonnes épurées
-        st.html("<h3 style='color: #003366; font-size: 20px; font-weight: bold; margin-bottom: 10px;'>💰 Suivi indicatif des prix enregistrés :</h3>")
-        p_iga = row.get('prix_iga', '-')
-        p_maxi = row.get('prix_maxi', '-')
-        p_metro = row.get('prix_metro', '-')
-        p_superc = row.get('prix_superc', '-')
-        p_walmart = row.get('prix_walmart', '-')
-        
-        c1, c2, c3, c4, c5 = st.columns(5)
-        c1.metric(label="IGA (Sobeys)", value=f"{p_iga} $" if p_iga != '-' and str(p_iga).strip() != '' else "-")
-        c2.metric(label="Maxi (Loblaw)", value=f"{p_maxi} $" if p_maxi != '-' and str(p_maxi).strip() != '' else "-")
-        c3.metric(label="Metro", value=f"{p_metro} $" if p_metro != '-' and str(p_metro).strip() != '' else "-")
-        c4.metric(label="Super C", value=f"{p_superc} $" if p_superc != '-' and str(p_superc).strip() != '' else "-")
-        c5.metric(label="Walmart", value=f"{p_walmart} $" if p_walmart != '-' and str(p_walmart).strip() != '' else "-")
-        
-    # Si plusieurs produits correspondent, on affiche le tableau synthétique
-    else:
-        st.info(f"💡 {len(resultats)} produits correspondent à votre recherche. Sélectionnez votre produit dans la liste ci-dessous :")
-        colonnes_visibles = ['code_upc', 'nom', 'entreprise_proprietaire', 'lieu_usine', 'categorie_produit']
-        df_affichage = resultats[colonnes_visibles] if all(col in resultats.columns for col in colonnes_visibles) else resultats
-        st.dataframe(df_affichage, use_container_width=True, hide_index=True)
-# Gestion du cas d'un nouveau produit (Lancement du formulaire collaboratif)
-if message_erreur_recherche or (choix_mode == "📸 Scanner un Code-Barres" and saisie_net and (resultats is None or resultats.empty)):
-    if message_erreur_recherche and message_erreur_recherche != "Ajout direct":
-        st.warning(message_erreur_recherche)
-        
-    st.html("<div style='background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; font-weight: bold; margin-bottom: 20px;'>🤝 Mode Collaboratif : Aidez la communauté à documenter ce produit !</div>")
-    
-    # Pré-remplissage automatique de l'UPC si détecté par le clavier ou le scanneur
-    upc_propose = saisie_net if (saisie_net and saisie_net.isdigit()) else ""
-    
-    with st.form("formulaire_ajout_produit", clear_on_submit=True):
-        st.html("<h3 style='color: #003366; font-size: 20px; font-weight: bold;'>📝 Formulaire d'enregistrement de produit</h3>")
-        
-        c_left, c_right = st.columns(2)
-        with c_left:
-            form_upc = st.text_input("Code UPC (12 chiffres) :", value=upc_propose, max_chars=12)
-            form_nom = st.text_input("Nom exact du produit :", placeholder="Ex: Fromage Le Pizy, Biscuits Pattes d'ours...")
-            form_proprietaire = st.text_input("Entreprise propriétaire :", placeholder="Ex: Saputo, Fromagerie La Suisse Normande...")
-            form_siege = st.text_input("Ville du Siège Social :", placeholder="Ex: Montréal, Saint-Roch-de-l'Achigan...")
-            form_pays = st.text_input("Pays de l'entreprise :", value="Canada")
-            form_province = st.text_input("Province / État :", value="Québec")
-        with c_right:
-            form_usine = st.text_input("Lieu de fabrication / Usine (IMPORTANT) :", placeholder="Ex: Fabriqué au Québec, Usine de Joliette...")
-            form_reseau = st.text_input("Réseau de distribution :", placeholder="Ex: Metro, IGA, Super C, Maxi...")
-            form_cat = st.text_input("Catégorie de produit :", placeholder="Ex: Produits laitiers, Boulangerie, Jus...")
-            st.html("<p style='color: #003366; font-weight: bold; margin-bottom: 5px;'>🛒 Prix indicatifs payés en magasin (Optionnel) :</p>")
-            form_iga = st.text_input("Prix chez IGA ($) :", placeholder="-")
-            form_maxi = st.text_input("Prix chez Maxi ($) :", placeholder="-")
-            form_metro = st.text_input("Prix chez Metro ($) :", placeholder="-")
+        if not recherche_cup.empty:
+            # SI ON TROUVE LE CUP : On applique immédiatement le filtre et on stocke le résultat
+            df_filtre = recherche_cup
+            resultats = recherche_cup
+        else:
+            # SI LE CUP N'EXISTE PAS : Alors seulement on fait la recherche élargie par texte
+            conditions = pd.Series(False, index=df_filtre.index)
             
-        bouton_soumission = st.form_submit_button("💾 Enregistrer le produit dans la base cloud")
-        
-        if bouton_soumission:
-            if not form_upc or not form_nom or not form_usine:
-                st.error("⚠️ Les champs 'Code UPC', 'Nom du produit' et 'Lieu de fabrication (Usine)' sont obligatoires.")
-            elif not form_upc.isdigit() or len(form_upc) < 11:
-                st.error("⚠️ Le code UPC entré est invalide. Il doit être composé uniquement de chiffres.")
+            if 'nom' in df_filtre.columns:
+                conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'siege_social' in df_filtre.columns:
+                conditions |= df_filtre['siege_social'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'lieu_usine' in df_filtre.columns:
+                conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+                
+            recherche_texte = df_filtre[conditions]
+            
+            if not recherche_texte.empty:
+                df_filtre = recherche_texte
+                if len(recherche_texte) == 1:
+                    resultats = recherche_texte
             else:
+                message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+
+
+# 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
+colonnes_prix_tableau = ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']
+colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
+df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
+
+for c in df_affichage.columns:
+    df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
+config_colonnes = {
+    "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
+    "nom": st.column_config.TextColumn("Nom du produit", width="large"),
+    "siege_social": st.column_config.TextColumn("Entreprise"),
+    "entreprise_province_etat": st.column_config.TextColumn("Province/État"),
+    "distribution": st.column_config.TextColumn("Réseau d'épicerie"),
+    "prix_iga": st.column_config.TextColumn("Prix IGA"),
+    "prix_super_c": st.column_config.TextColumn("Prix Super C"),
+    "prix_maxi": st.column_config.TextColumn("Prix Maxi"),
+    "prix_metro": st.column_config.TextColumn("Prix Metro")
+}
+
+st.markdown("---")
+st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés selon vos bannières et filtres) :")
+st.write("💡 Cliquez n'importe où sur la ligne d'un produit pour voir sa fiche complète ci-dessous.")
+# --------------------------------------------------------
+# 📸 ÉTAPE 1 : RÉSERVATION DE L'ESPACE PHOTO (FUTUR)
+# --------------------------------------------------------
+st.sidebar.markdown("---") 
+st.sidebar.subheader("Aperçu du produit")
+
+if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
+    # On extrait le premier numéro de la liste d'index proprement
+    index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
+    
+    try:
+        # On extrait le CUP brut du tableau sans se soucier du format ou du zéro
+        raw_cup = df_affichage.iloc[index_ligne]['code_upc']
+        cup_actuel = str(int(float(raw_cup))).strip()
+        
+        if cup_actuel:
+            st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
+            
+            # --- CODE DE RÉCUPÉRATION PAR OPEN FOOD FACTS ---
+            import requests
+            
+            with st.sidebar.spinner("Recherche de la photo..."):
                 try:
-                    # Formatage de sécurité pour l'UPC à 12 chiffres
-                    upc_final = form_upc.zfill(12) if len(form_upc) == 11 else form_upc
+                    # Lien officiel de l'API gratuite d'Open Food Facts
+                    url_api = f"https://world.openfoodfacts.org/api/v0/product/{cup_actuel}.json"
+                    headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
+                    reponse = requests.get(url_api, headers=headers, timeout=5)
                     
-                    # Construction de la nouvelle ligne de données
-                    nouvelle_ligne = pd.DataFrame([{
-                        "code_upc": str(upc_final).strip(),
-                        "nom": form_nom.strip(),
-                        "entreprise_proprietaire": form_proprietaire.strip(),
-                        "siege_social": form_siege.strip(),
-                        "entreprise_pays": form_pays.strip(),
-                        "entreprise_province_etat": form_province.strip(),
-                        "lieu_usine": form_usine.strip(),
-                        "reseau_distribution": form_reseau.strip(),
-                        "categorie_produit": form_cat.strip(),
-                        "prix_iga": form_iga.strip() if form_iga else "-",
-                        "prix_maxi": form_maxi.strip() if form_maxi else "-",
-                        "prix_metro": form_metro.strip() if form_metro else "-",
-                        "prix_superc": "-",
-                        "prix_walmart": "-",
-                        "date_maj": datetime.now().strftime("%Y-%m-%d")
-                    }])
-                    
-                    # Envoi et écriture en nuage sur Google Sheets
-                    conn.create(worksheet="sheet1", data=nouvelle_ligne)
-                    st.cache_data.clear()  # Vidange immédiate du cache local pour inclure le produit au prochain scan
-                    st.success(f"🎉 Succès ! Le produit '{form_nom}' a été enregistré. Il est maintenant disponible pour toute la communauté québécoise !")
-                    st.balloons()
-                except Exception as ex:
-                    st.error(f"Erreur technique lors de la sauvegarde sur Google Sheets : {ex}")
+                    if reponse.status_code == 200:
+                        donnees = reponse.json()
+                        
+                        # On vérifie si le produit et son image existent dans leur base
+                        if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
+                            lien_photo = donnees["product"]["image_url"]
+                            st.sidebar.image(lien_photo, caption=f"Photo officielle OpenFoodFacts", use_container_width=True)
+                        else:
+                            st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
+                    else:
+                        st.sidebar.error("❌ Serveur d'images indisponible.")
+                except Exception as e:
+                    st.sidebar.error(f"⚠️ Erreur de connexion : {e}")
+        else:
+            st.sidebar.warning("code_upc invalide ou vide.")
+    except Exception as e:
+        st.sidebar.error(f"Erreur de lecture du CUP : {e}")
 
-# Vue par défaut de l'application (Tableau des produits d'achat local récents)
-if not saisie_net and choix_mode != "➕ Ajouter un produit d'achat local":
-    st.html("<h2 style='color: #003366; font-size: 24px; font-weight: bold; margin-top: 10px; margin-bottom: 15px;'>📋 Répertoire de l'Achat Local</h2>")
-    if not df_produits.empty:
-        st.write(f"La base de données cloud contient actuellement **{len(df_produits)}** produits alimentaires documentés.")
-        colonnes_affichage = ['code_upc', 'nom', 'entreprise_proprietaire', 'lieu_usine', 'categorie_produit']
-        df_table = df_produits[colonnes_affichage] if all(col in df_produits.columns for col in colonnes_affichage) else df_produits
-        st.dataframe(df_table, use_container_width=True, hide_index=True)
+# --- SECTION LOGIQUE : AFFICHAGE DU TABLEAU OU DU MESSAGE D'ERREUR ---
+selection_tableau = None 
+
+# CAS A : L'utilisateur n'a rien écrit dans la case -> On montre la liste complète par défaut
+if not saisie_net:
+    selection_tableau = st.dataframe(
+        df_affichage,
+        column_config=config_colonnes,
+        use_container_width=True,
+        hide_index=True,
+        selection_mode="single-row",
+        on_select="rerun",
+        key="tableau_consommateur"
+    )
+
+# CAS B : L'utilisateur a fait une recherche et on a des résultats -> On montre la liste filtrée
+elif not df_filtre.empty and len(df_filtre) < len(df):
+    selection_tableau = st.dataframe(
+        df_affichage,
+        column_config=config_colonnes,
+        use_container_width=True,
+        hide_index=True,
+        selection_mode="single-row",
+        on_select="rerun",
+        key="tableau_consommateur"
+    )
+
+# CAS C : La recherche ne donne RIEN -> On masque complètement le tableau de 10 440 lignes
+else:
+    if message_erreur_recherche and not saisie_net.strip().isdigit():
+        st.warning(message_erreur_recherche)
+
+    # Le formulaire collaboratif s'ouvre UNIQUE et SEULEMENT si c'est un code_upc numérique inconnu
+    if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10:
+        st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
+        st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
+        
+        with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
+            nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
+            cup_final = st.text_input("code_upc", value=saisie_net.strip(), disabled=True)
+            entreprise = st.text_input("Entreprise propriétaire / Marque (ex: Unico)")
+            province = st.text_input("Province / État (ex: Québec)")
+            pays = st.text_input("Pays", value="Canada")
+            distribution = st.text_input("Réseau d'épicerie (ex: IGA, Maxi, Metro, Super C)")
+            
+            st.write("---")
+            st.write("**Entrez les prix constatés en magasin (optionnel) :**")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1: prix_iga = st.text_input("Prix IGA ($)", value="")
+            with col2: prix_superc = st.text_input("Prix Super C ($)", value="")
+            with col3: prix_maxi = st.text_input("Prix Maxi ($)", value="")
+            with col4: prix_metro = st.text_input("Prix Metro ($)", value="")
+            
+            bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
+            
+            if bouton_creer:
+                if nom_nouveau:
+                    with st.spinner("Enregistrement de la nouvelle fiche produit..."):
+                        try:
+                            p_iga_val = prix_iga.strip() if prix_iga.strip() else "Non inscrit"
+                            p_super_c_val = prix_superc.strip() if prix_superc.strip() else "Non inscrit"
+                            p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else "Non inscrit"
+                            p_metro_val = prix_metro.strip() if prix_metro.strip() else "Non inscrit"
+                            
+                            nouvelle_ligne = {
+                                'code_upc': cup_final,
+                                'nom': nom_nouveau.strip(),
+                                'siege_social': entreprise.strip(),
+                                'entreprise_province_etat': province.strip(),
+                                'entreprise_pays': pays.strip(),
+                                'distribution': distribution.strip(),
+                                'prix_iga': p_iga_val,
+                                'prix_super_c': p_super_c_val,
+                                'prix_maxi': p_maxi_val,
+                                'prix_metro': p_metro_val
+                            }
+                            
+                            import pandas as pd
+                            st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
+                            
+                            if sauvegarder_donnees(st.session_state['df_produits']):
+                                st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
+                                st.balloons()
+                                time.sleep(1)
+                                st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur lors de l'enregistrement : {e}")
+                else:
+                    st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
+
+# Détection de la ligne cliquée dans le tableau interactif
+if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
+    index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
+    
+    # LA LIGNE DE SÉCURITÉ À AJOUTER ICI :
+    if index_ligne_cliquee < len(df_affichage):
+        cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
+        resultats = df[df['code_upc'] == cup_selectionne]
+
+
+# 6. AFFICHAGE DE LA FICHE DÉTAILLÉE CONSOMMATEUR
+if resultats is not None and not resultats.empty:
+    st.markdown("---")
+    index_produit_reel = resultats.index[0]
+    row = resultats.iloc[0]
+    
+    prov = str(row.get('entreprise_province_etat', '')).strip()
+    pays = str(row.get('entreprise_pays', '')).strip()
+    
+    st.session_state['produit_selectionne'] = row
+
+    if "québec" in prov.lower():
+        couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
+        verdict = "⚜️ PRODUIT QUÉBÉCOIS (Décisions et Siège au Québec)"
+    elif "canada" in pays.lower():
+        couleur_boite, couleur_texte = "#e8f5e9", "#1b5e20"
+        verdict = "🍁 PRODUIT CANADIEN (Décisions au Canada)"
     else:
-        st.info("La base de données est actuellement vide ou en cours de chargement.")
+        couleur_boite, couleur_texte = "#fafafa", "#424242"
+        verdict = "🌍 PROPRIÉTÉ ÉTRANGÈRE (L'argent quitte le pays)"
 
-# Onglet direct pour l'ajout manuel de produits sans passer par une recherche
-if choix_mode == "➕ Ajouter un produit d'achat local" and not saisie_net:
-    st.html("<h1 style='color: #003366; font-size: 32px; font-weight: bold;'>➕ Contribuer au Guide</h1>")
-    message_erreur_recherche = "Ajout direct"
+    p_iga = str(row.get('prix_iga', '')).strip()
+    p_super_c = str(row.get('prix_super_c', '')).strip()
+    p_maxi = str(row.get('prix_maxi', '')).strip()
+    p_metro = str(row.get('prix_metro', '')).strip()
+    
+    affichage_iga = p_iga if p_iga and p_iga.lower() != "nan" else "Non inscrit"
+    affichage_super_c = p_super_c if p_super_c and p_super_c.lower() != "nan" else "Non inscrit"
+    affichage_maxi = p_maxi if p_maxi and p_maxi.lower() != "nan" else "Non inscrit"
+    affichage_metro = p_metro if p_metro and p_metro.lower() != "nan" else "Non inscrit"
+    
+    usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
+
+    bloc_prix_html = f"""
+    <div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">
+        <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px; color: #1a1a1a;">🔴 IGA : {affichage_iga}</span>
+        <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px; color: #1a1a1a;">🔵 SUPER C : {affichage_super_c}</span>
+        <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px; color: #1a1a1a;">🟡 MAXI : {affichage_maxi}</span>
+        <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px; color: #1a1a1a;">🟢 METRO : {affichage_metro}</span>
+    </div>
+    """
+
+    st.html(f"""
+    <div style="background-color: {couleur_boite}; padding: 22px; border-radius: 10px; border-left: 12px solid {couleur_texte}; margin-bottom: 15px; font-family: Arial, sans-serif;">
+        <h3 style="color: {couleur_texte}; margin-top: 0; font-size: 22px;">{verdict}</h3>
+        <p style="font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #1a1a1a;">📦 {row.get('nom', 'Produit sans nom')}</p>
+        <p style="font-size: 24px; color: #d32f2f; font-weight: bold; background-color: #ffffff; display: inline-block; padding: 4px 12px; border-radius: 5px; border: 2px solid #d32f2f; margin: 5px 0;">🔢 CUP : {row.get('code_upc', 'Inconnu')}</p>
+        {bloc_prix_html}
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #ccc;">
+        <table style="width: 100%; font-size: 17px; color: #333; line-height: 1.8; border-collapse: collapse;">
+            <tr><td style="width: 25%; padding: 4px 0;"><b>🏢 Compagnie :</b></td><td><b>{row.get('entreprise_proprietaire', 'À déterminer')}</b></td></tr>
+            <tr><td style="padding: 4px 0;"><b>📍 Siège social :</b></td><td>{prov} ({pays})</td></tr>
+            <tr><td style="padding: 4px 0;"><b>🏭 Usine principale :</b></td><td>{usine_actuelle}</td></tr>
+            <tr><td style="padding: 4px 0;"><b>🏪 Réseau d'épicerie :</b></td><td>{row.get('distribution', 'Général')}</td></tr>
+        </table>
+    </div>
+    """)
+
+    st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
+    with st.form("formulaire_prix_epicerie"):
+        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+        
+        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=p_iga if p_iga.lower() != "nan" else "", key="edit_iga")
+        nouveau_super_c = col_p2.text_input("Prix Super C ($) :", value=p_super_c if p_super_c.lower() != "nan" else "", key="edit_super_c")
+        nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=p_maxi if p_maxi.lower() != "nan" else "", key="edit_maxi")
+        nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=p_metro if p_metro.lower() != "nan" else "", key="edit_metro")
+        
+        bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
+
+    if bouton_soumettre:
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+        
+        if sauvegarder_donnees(st.session_state['df_produits']):
+            st.success("Base de données collaborative mise à jour avec succès !")
+            time.sleep(1)
+            st.rerun()
+
+st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
+# ==================

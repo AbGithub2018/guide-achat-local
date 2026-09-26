@@ -223,8 +223,8 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📸 Scanneur Local Haute Performance</h2>")
     st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone pour analyser le produit.</p>")
     
-    # Zone d'importation de l'image (active la caméra native sur appareil mobile)
-    image_chargee = st.file_uploader("Prendre une photo du code-barres", type=["jpg", "jpeg", "png"], key="scanner_camera_local")
+        # Active l'objectif de la caméra directement dans l'application web sans passer par les menus du cell
+    image_chargee = st.camera_input("📸 Alignez le code-barres horizontalement devant l'objectif", key="scanner_camera_local")
     
     if image_chargee:
         # Transformation du fichier téléversé pour OpenCV

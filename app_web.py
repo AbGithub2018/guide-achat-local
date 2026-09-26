@@ -216,41 +216,45 @@ if  choix_mode == "⌨️ Recherche manuelle":
     if "cup" in st.query_params:
         st.query_params.clear()
 elif choix_mode == "📸 Scanner un Code-Barres":
-    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>⚡ Lecteur de code-barres haute vitesse</h2>")
-    st.html("<p style='font-size: 20px; color: #333;'>Pour garantir une détection instantanée de vos produits d'épicerie sans aucun ralentissement, nous utilisons un utilitaire de numérisation externe ultra-performant.</p>")
+    import cv2
+    import numpy as np
+    from pyzbar.pyzbar import decode
+
+    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📸 Scanneur Local Haute Performance</h2>")
+    st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone pour analyser le produit.</p>")
     
-    st.markdown("---")
+    # Zone d'importation de l'image (active la caméra native sur appareil mobile)
+    image_chargee = st.file_uploader("Prendre une photo du code-barres", type=["jpg", "jpeg", "png"], key="scanner_camera_local")
     
-    # Lien de redirection vers le scanner externe
-    url_scanner_external = "https://scanapp.org"
-    
-    # Création des deux colonnes (60% pour le texte à gauche, 40% pour le bouton à droite)
-    col_instructions, col_bouton = st.columns([0.6, 0.4], vertical_alignment="center")
-    
-    with col_instructions:
-        st.html("""
-        <div style="background-color: #f9f9f9; padding: 22px; border-radius: 8px; border-left: 6px solid #003366;">
-            <p style="font-size: 22px; font-weight: bold; margin-top: 0; color: #003366;">💡 Comment ça fonctionne ?</p>
-            <ol style="font-size: 19px; line-height: 1.6; margin-bottom: 0; padding-left: 20px; color: #111;">
-                <li>Cliquez sur le bouton bleu <b>Ouvrir le scanner</b>.</li>
-                <li>Scannez le code-barres de votre produit.</li>
-                <li>Une fois scanné, cliquez sur le bouton <b>Copier</b> dans l'utilitaire de scan.</li>
-                <li>Fermez l'application de scan, revenez ici et <b>collez</b> le code barre dans la case de recherche manuelle !</li>
-            </ol>
-        </div>
-        """)
+    if image_chargee:
+        # Transformation du fichier téléversé pour OpenCV
+        file_bytes = np.asarray(bytearray(image_chargee.read()), dtype=np.uint8)
+        image_cv = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         
-    with col_bouton:
-        # Affichage du bouton bleu avec votre style
-        st.html(f"""
-        <div style="text-align: center;">
-            <a href="{url_scanner_external}" target="_blank" style="text-decoration: none;">
-                <button style="background-color: #003366; color: white; font-size: 22px; font-weight: bold; padding: 22px 35px; border-radius: 10px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    🚀 OUVRIR LE SCANNER HAUTE VITESSE
-                </button>
-            </a>
-        </div>
-        """)
+        st.subheader("📸 Photo transmise :")
+        st.image(image_cv, use_container_width=True)
+        
+        # Prétraitement d'image haute performance (Filtre OTSU issu de vos tests concluants)
+        gris = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
+        _, gris_ameliore = cv2.threshold(gris, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        with st.spinner("🔍 Décodage du code-barres en cours..."):
+            # Essai 1 : Image brute
+            codes_detectes = decode(image_cv)
+            # Essai 2 : Image améliorée par filtre si l'essai 1 échoue
+            if not codes_detectes:
+                codes_detectes = decode(gris_ameliore)
+                
+            if codes_detectes:
+                for code in codes_detectes:
+                    code_upc_extrait = code.data.decode('utf-8').strip()
+                    st.success(f"🎯 Code-barres lu avec succès : {code_upc_extrait}")
+                    
+                    # MAGIE DE L'INTÉGRATION : On force l'application à utiliser ce code pour la suite du script
+                    saisie_net = code_upc_extrait
+                    break
+            else:
+                st.error("❌ Aucun code-barres n'a pu être détecté. Assurez-vous que l'image est bien éclairée, stable et que les lignes du code-barres soient horizontales.")
 
 resultats = None
 message_erreur_recherche = None

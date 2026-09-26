@@ -17,6 +17,19 @@ st.html("""
     /* Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
     .stRadio label p { font-size: 26px !important; font-weight: bold !important; color: #111111 !important; }
     div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
+    /* Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
+div[data-testid="stColumns"] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+}
+div[data-testid="column"] {
+    flex: 1 1 calc(33.333% - 10px) !important;
+    min-width: calc(33.333% - 10px) !important;
+    max-width: calc(33.333% - 10px) !important;
+}
+
 </style>
 """)
 

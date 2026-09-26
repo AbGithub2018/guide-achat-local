@@ -250,9 +250,9 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     
     if image_chargee:
         # Transformation du fichier téléversé pour OpenCV
-    # Transformation et redimensionnement automatique pour les caméras haute résolution
-    from PIL import Image
-    import io
+        # Transformation et redimensionnement automatique pour les caméras haute résolution
+        from PIL import Image
+        import io
     
         # 1. Ouvrir l'image en mémoire avec Pillow pour la compresser
         image_pil = Image.open(image_chargee)

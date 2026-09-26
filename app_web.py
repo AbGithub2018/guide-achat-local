@@ -225,16 +225,6 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     
     image_chargee = st.file_uploader("Prendre une photo du code-barres", type=["jpg", "jpeg", "png"], key="scanner_camera_local")
 
-        const observer = new MutationObserver(() => {
-            const inputs = window.parent.document.querySelectorAll('input[type="file"]');
-            inputs.forEach(input => {
-                if (!input.hasAttribute('capture')) {
-                    input.setAttribute('accept', 'image/*');
-                    input.setAttribute('capture', 'environment');
-                }
-            });
-        });
-        observer.observe(window.parent.document.body, { childList: true, subtree: true });
         </script>
         """,
         height=0,

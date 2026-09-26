@@ -183,23 +183,27 @@ with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Clique
 # Boutons rapides de sélection de bannières
 st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
 
-# Première rangée de 3 boutons (IGA, Maxi, Metro)
-col_iga, col_maxi, col_metro = st.columns(3)
+# Rangée 1 : IGA et Maxi
+col_iga, col_maxi = st.columns(2)
 if col_iga.button("🔴 IGA", use_container_width=True):
     st.session_state['banniere_active'] = "IGA"
 if col_maxi.button("🟡 Maxi", use_container_width=True):
     st.session_state['banniere_active'] = "Maxi"
+
+# Rangée 2 : Metro et Super C
+col_metro, col_super_c = st.columns(2)
 if col_metro.button("🟢 Metro", use_container_width=True):
     st.session_state['banniere_active'] = "Metro"
-
-# Deuxième rangée de 3 boutons (Super C, Walmart, Toutes)
-col_super_c, col_walmart, col_tous = st.columns(3)
 if col_super_c.button("🔵 Super C", use_container_width=True):
     st.session_state['banniere_active'] = "Super_C"
+
+# Rangée 3 : Walmart et Toutes
+col_walmart, col_tous = st.columns(2)
 if col_walmart.button("🔵 Walmart", use_container_width=True):
     st.session_state['banniere_active'] = "Walmart"
 if col_tous.button("🔄 Toutes", use_container_width=True):
     st.session_state['banniere_active'] = "Tous"
+
 
 
 banniere = st.session_state['banniere_active']

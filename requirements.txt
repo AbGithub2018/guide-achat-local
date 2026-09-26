@@ -3,4 +3,3 @@ pandas
 st-gsheets-connection
 opencv-python-headless
 pyzbar
-protobuf==5.26.1

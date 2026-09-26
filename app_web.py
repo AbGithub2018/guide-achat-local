@@ -250,21 +250,20 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     
     if image_chargee:
         # Transformation du fichier téléversé pour OpenCV
-        if image_chargee:
     # Transformation et redimensionnement automatique pour les caméras haute résolution
     from PIL import Image
     import io
     
-    # 1. Ouvrir l'image en mémoire avec Pillow pour la compresser
-    image_pil = Image.open(image_chargee)
-    # Raccourcir la taille maximale à 1280px (conserve la netteté sans le poids)
-    image_pil.thumbnail((1280, 1280)) 
+        # 1. Ouvrir l'image en mémoire avec Pillow pour la compresser
+        image_pil = Image.open(image_chargee)
+        # Raccourcir la taille maximale à 1280px (conserve la netteté sans le poids)
+        image_pil.thumbnail((1280, 1280)) 
     
-    # 2. Reconvertir en octets pour OpenCV
-    byte_arr = io.BytesIO()
-    image_pil.save(byte_arr, format='JPEG', quality=85) # Compression à 85%
-    file_bytes = np.asarray(bytearray(byte_arr.getvalue()), dtype=np.uint8)
-    image_cv = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        # 2. Reconvertir en octets pour OpenCV
+        byte_arr = io.BytesIO()
+        image_pil.save(byte_arr, format='JPEG', quality=85) # Compression à 85%
+        file_bytes = np.asarray(bytearray(byte_arr.getvalue()), dtype=np.uint8)
+        image_cv = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
         
         st.subheader("📸 Photo transmise :")

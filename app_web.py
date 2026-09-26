@@ -221,24 +221,10 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     from pyzbar.pyzbar import decode
 
     st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📸 Scanneur Local Haute Performance</h2>")
-    st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone pour analyser le produit.</p>") 
-        # Active l'objectif de la caméra directement dans l'application web sans passer par les menus du cell
-    image_chargee = st.file_uploader("Prendre une photo du code-barres", type=["jpg", "jpeg", "png"], key="scanner_camera_local")
-    elif choix_mode == "📸 Scanner un Code-Barres":
-    import cv2
-    import numpy as np
-    from pyzbar.pyzbar import decode
-
-    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📸 Scanneur Local Haute Performance</h2>")
     st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone pour analyser le produit.</p>")
     
-    # Ligne 226 d'origine
     image_chargee = st.file_uploader("Prendre une photo du code-barres", type=["jpg", "jpeg", "png"], key="scanner_camera_local")
-    
-    # LE NOUVEAU CODE À COLLER S'INSERRE ICI :
-    st.components.v1.html(
-        """
-        <script>
+
         const observer = new MutationObserver(() => {
             const inputs = window.parent.document.querySelectorAll('input[type="file"]');
             inputs.forEach(input => {

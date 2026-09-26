@@ -225,7 +225,6 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     
     image_chargee = st.file_uploader("Prendre une photo du code-barres", type=["jpg", "jpeg", "png"], key="scanner_camera_local")
 
-        </script>
         """,
         height=0,
     )

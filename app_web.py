@@ -217,6 +217,9 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[condition_distribution]
 
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO
+resultats = None
+message_erreur_recherche = None
+
 # Remplacement des onglets récalcitrants par de gros boutons radio géants horizontaux
 choix_mode = st.radio(
     "👉 MODE DE RECHERCHE :",
@@ -225,6 +228,7 @@ choix_mode = st.radio(
     label_visibility="collapsed"
 )
 saisie_net = ""
+
 # 4. INTERCEPTION AUTOMATIQUE DU SCANNER EXTERNE
 if "cup" in st.query_params:
     saisie_net = str(st.query_params["cup"]).strip()
@@ -263,8 +267,8 @@ elif choix_mode == "📸 Scanner un Code-Barres":
         st.session_state['code_barre_input'] = str(code_detecte)
         saisie_net = str(code_detecte)
 
-    resultats = None
-    message_erreur_recherche = None
+   # resultats = None
+   # message_erreur_recherche = None
 
     # --- CETTE LOGIQUE DE RECHERCHE DOIT RESTER ICI POUR LE CLAVIER ---
 

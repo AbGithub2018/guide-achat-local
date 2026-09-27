@@ -34,7 +34,7 @@ if st.button("🚀 Interroger le site d'IGA en direct", type="primary"):
         # 🟢 REQUÊTE DIRECTE SUR L'API PUBLIQUE D'IGA
         # Nous nettoyons le code UPC pour la recherche (enlèvement du 0 devant si nécessaire)
         upc_clean = upc_selectionne.strip()
-        url_api_iga = f"https://iga.net{upc_clean}"
+        url_api_iga = f"https://www.iga.net/api/fr/Search/GetResults?searchTerm={upc_clean}"
         
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

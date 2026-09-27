@@ -37,7 +37,7 @@ marques_quebecoises = [
     "saputo", "multi vert", "multivert", "lesters", "olymel", "quebon", 
     "riviera", "le grec", "lafleur", "tour eiffel", "irresistibles", 
     "selection", "compliments", "bens original", "bistro express", "nutrinor",
-    "coaticook"  # 🟢 Ajout de la laiterie Coaticook
+    "coaticook"
 ]
 
 # Exclusions strictes : USA, marques canadiennes hors-Québec ET Lactantia
@@ -77,7 +77,8 @@ if st.button("🚀 Mettre à jour la liste avec Coaticook dans le Nuage", type="
             st.cache_data.clear()
             
             st.balloons()
-            st.success(f"🎉 Filtrage réussi ! La liste inclut maintenant la crème glacée Coaticook et le lait Québon.")
+            # 🟢 LA CORRECTION EST ICI : Ajout du nombre exact dans le message
+            st.success(f"🎉 Filtrage réussi ! Le robot a trouvé et marqué {total_final} produits 100% Québec dans votre Google Sheet.")
             
             # Aperçu du catalogue épuré à l'écran
             st.markdown("### 📋 Aperçu de vos produits prioritaires 100% Québec :")

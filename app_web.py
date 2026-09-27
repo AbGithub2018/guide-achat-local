@@ -238,10 +238,7 @@ if  choix_mode == "⌨️ Recherche manuelle":
     if "cup" in st.query_params:
         st.query_params.clear()
 elif choix_mode == "📸 Scanner un Code-Barres":
-    import cv2
-    import numpy as np
-    from pyzbar.pyzbar import decode
-
+    
     st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📸 Scanneur Local Haute Performance</h2>")
     st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone pour analyser le produit.</p>")
     

@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
-st.set_page_config(page_title="🤖 Auto-Priorité", layout="centered")
-st.title("🤖 Automatisation de vos produits indispensables")
-st.write("Ce script marque d'un 'Oui' automatique les articles de votre liste personnalisée.")
+st.set_page_config(page_title="🤖 Auto-Priorité Restreint", layout="centered")
+st.title("🎯 Ciblage Ultra-Sélectif des Essentiels")
+st.write("Ce script affine la sélection pour ne garder que les produits les plus importants.")
 
-# 1. Connexion au Google Sheet
+# 1. Connexion en direct sans cache
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df = conn.read(worksheet="Sheet1", ttl=0)
@@ -16,34 +16,37 @@ except Exception as e:
     st.error(f"Erreur de connexion : {e}")
     st.stop()
 
-# 2. Vérification de la colonne
-if 'priorite' not in df.columns:
-    st.error("❌ Veuillez d'abord renommer la colonne 'prix_produit' par 'priorite' dans votre Google Sheets.")
-    st.stop()
-
-# 3. Mots-clés basés exactement sur vos exemples québécois
-st.markdown("### 📋 Liste de vos produits ciblés :")
-mots_cles = [
-    "papier toilette", "papier de toilette", "lait", "pain", "oeuf", "beurre", 
-    "riz", "kleenex", "mouchoir", "essuie-tout", "essuietout", "eau", "savon", 
-    "patate", "pomme de terre", "carotte", "beurre de peanut", "beurre d'arachide", 
-    "poisson", "saumon", "truite", "salade", "laitue"
+# 2. Mots-clés très précis pour réduire le volume
+st.markdown("### 📋 Liste restreinte des essentiels :")
+mots_cles_strictes = [
+    "lait 2%", "lait 1%", "lait ecresme", "lait de vache",
+    "pain blanc", "pain tranche", "pain de menage",
+    "oeufs gros", "oeuf gros",
+    "beurre sal", "beurre non sal",
+    "riz blanc", "riz long", "riz jasmin",
+    "papier hygi", "papier de toilette",
+    "mouchoirs en boite", "kleenex boite",
+    "essuie-tout", "essuietout",
+    "beurre d'arachide", "beurre de peanut",
+    "saumon frais", "filet de saumon",
+    "laitue romaine", "salade frisee",
+    "sac de patates", "pommes de terre", "sac de carottes"
 ]
-st.write(", ".join(mots_cles))
+st.write(", ".join(mots_cles_strictes))
 
-# 4. Bouton pour lancer le marquage automatique
-if st.button("🚀 Lancer le marquage automatique dans le Nuage", type="primary"):
-    with st.spinner("Analyse de vos 10 445 produits..."):
+# 3. Bouton d'action
+if st.button("🚀 Réduire et mettre à jour la sélection dans le Nuage", type="primary"):
+    with st.spinner("Filtrage chirurgical de vos 10 445 produits..."):
         
-        # On remet à zéro pour ne garder que votre sélection propre
+        # On nettoie d'abord l'ancienne sélection de 1000 produits
         df['priorite'] = ""
         
-        # Le robot cherche si le nom du produit contient l'un de vos mots-clés
-        masque_essentiel = df['nom'].astype(str).str.lower().str.contains("|".join(mots_cles), na=False)
+        # Application du nouveau filtre strict
+        masque_strict = df['nom'].astype(str).str.lower().str.contains("|".join(mots_cles_strictes), na=False)
         
-        # On inscrit "Oui" sur les lignes trouvées
-        df.loc[masque_essentiel, 'priorite'] = "Oui"
-        total_marques = len(df[df['priorite'] == "Oui"])
+        # On marque d'un "Oui"
+        df.loc[masque_strict, 'priorite'] = "Oui"
+        total_restreint = len(df[df['priorite'] == "Oui"])
         
         try:
             # Envoi vers Google Sheets
@@ -51,11 +54,11 @@ if st.button("🚀 Lancer le marquage automatique dans le Nuage", type="primary"
             st.cache_data.clear()
             
             st.balloons()
-            st.success(f"🎉 Succès ! {total_marques} produits correspondants ont été marqués 'Oui' dans votre Google Sheet.")
+            st.success(f"🎉 Parfait ! Nous sommes passés de 1000 à {total_restreint} produits essentiels dans votre Google Sheet.")
             
-            # Aperçu des premiers résultats
-            st.markdown("### 🔍 Aperçu des fiches configurées :")
-            st.dataframe(df[df['priorite'] == "Oui"][['code_upc', 'nom', 'priorite']].head(30), use_container_width=True)
+            # Aperçu des lignes sélectionnées
+            st.markdown("### 🔍 Aperçu de la nouvelle liste de course du robot :")
+            st.dataframe(df[df['priorite'] == "Oui"][['code_upc', 'nom', 'priorite']], use_container_width=True)
             
         except Exception as e:
             st.error(f"Erreur lors de l'enregistrement : {e}")

@@ -6,30 +6,33 @@ code_upc = "code_upc"
 
 # 1. CONFIGURATION ET STYLE VISUEL DE LA PAGE
 st.set_page_config(page_title="Acheter Québécois & Canadien", page_icon="📦", layout="wide")
-
-# Injection CSS pour la barre de recherche géante
+# Injection CSS pour cacher l'entête Streamlit et gérer le style visuel
 st.html("""
 <style>
-    /* Grossir la barre de recherche géante */
+    /* 1. Masquer l'entête grise, le menu et le bouton de code pour le public */
+    header, footer, #MainMenu { visibility: hidden !important; display: none !important; }
+    .stAppDeployButton, [data-testid="stStatusWidget"] { display: none !important; }
+    
+    /* 2. Grossir la barre de recherche géante */
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
     
-    /* Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
+    /* 3. Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
     .stRadio label p { font-size: 26px !important; font-weight: bold !important; color: #111111 !important; }
     div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
-    /* Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
-div[data-testid="stColumns"] {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    gap: 10px !important;
-}
-div[data-testid="column"] {
-    flex: 1 1 calc(33.333% - 10px) !important;
-    min-width: calc(33.333% - 10px) !important;
-    max-width: calc(33.333% - 10px) !important;
-}
-
+    
+    /* 4. Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
+    div[data-testid="stColumns"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+    }
+    div[data-testid="column"] {
+        flex: 1 1 calc(33.333% - 10px) !important;
+        min-width: calc(33.333% - 10px) !important;
+        max-width: calc(33.333% - 10px) !important;
+    }
 </style>
 """)
 

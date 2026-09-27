@@ -252,7 +252,6 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     # Lancement du module de scan vidéo local (très rapide, aucun transfert de fichier lourd)
     from streamlit_qrcode_scanner import qrcode_scanner
     code_detecte = qrcode_scanner(key="scanner_officiel_live")
-
     # Si le décodeur vidéo intercepte un numéro de code-barres
     if code_detecte:
         st.success(f"🎉 Code-barres détecté avec succès : {code_detecte}")
@@ -260,25 +259,12 @@ elif choix_mode == "📸 Scanner un Code-Barres":
         # On injecte le code dans la mémoire de l'application et on fait le lien avec la recherche
         st.session_state['code_barre_input'] = str(code_detecte)
         saisie_net = str(code_detecte)
-        
-        # Lancement de la recherche automatique du produit
-        with st.spinner("Recherche du produit en cours..."):
-            info_produit = obtenir_info_produit(str(code_detecte))
-            
-            if info_produit:
-                nom_produit = info_produit.get('product_name', 'Nom inconnu')
-                banniere_trouvee = info_produit.get('banniere', 'Inconnue')
-                st.session_state['produit_trouve'] = info_produit
-                st.session_state['nom_produit_input'] = nom_produit
-                st.success(f"✅ Produit trouvé : {nom_produit} ({banniere_trouvee})")
-            else:
-                st.session_state['produit_trouve'] = None
-                st.warning("⚠️ Ce produit n'est pas encore inscrit. Vous pouvez l'ajouter ci-dessous.")
 
-resultats = None
-message_erreur_recherche = None
+    resultats = None
+    message_erreur_recherche = None
 
-# --- CETTE LOGIQUE DE RECHERCHE DOIT RESTER ICI POUR LE CLAVIER ---
+    # --- CETTE LOGIQUE DE RECHERCHE DOIT RESTER ICI POUR LE CLAVIER ---
+
 if saisie_net:
     cup_saisi = saisie_net.strip()
     terme_recherche_minuscule = cup_saisi.lower()

@@ -3,8 +3,8 @@ import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
 st.set_page_config(page_title="🤖 Auto-Priorité Grand Québec", layout="centered")
-st.title("🇨🇦 Aliments et Fleurons du Québec")
-st.write("Ce script élargit la sélection aux catégories phares de l'agroalimentaire québécois.")
+st.title("🇨🇦 Liste Finale des Fleurons Québécois")
+st.write("Ce script intègre vos 18 entreprises et marques 100% québécoises.")
 
 # 1. Connexion en direct sans cache
 try:
@@ -17,7 +17,7 @@ except Exception as e:
     st.stop()
 
 # 2. Configuration des filtres élargis 100% Québec
-st.markdown("### 🔍 Paramètres du filtre élargi")
+st.markdown("### 🔍 Paramètres du filtre agroalimentaire")
 
 # Aliments de base et spécialités locales du Québec
 aliments = [
@@ -26,16 +26,17 @@ aliments = [
     "arachide", "peanut", "poisson", "saumon", "salade", "laitue",
     "porc", "saucisse", "bacon", "jambon", "fromage", "crotte", "skouik",
     "yogourt", "creme", "erable", "pomme", "bleuet", "fraise", "framboise",
-    "tomate", "concombre", "creton"
+    "tomate", "concombre", "creton", "biscuit", "jus", "pates", "spaghetti",
+    "vinaigrette", "sauce"
 ]
 
-# Les grands fleurons et distributeurs de chez nous
+# Vos 18 entreprises et marques québécoises intégrées stratégiquement
 marques_quebecoises = [
-    "quebon", "natrel", "lactantia", "olymel", "exceldor", "st-hubert", 
-    "st hubert", "lafleur", "tour eiffel", "irresistibles", "selection", 
-    "compliments", "bens original", "bistro express", "nutrinor", "agropur",
-    "riviera", "dubreton", "f. menard", "f.menard", "cordon bleu", "clark",
-    "ready", "patates dolbec", "savoura"
+    "leclerc", "agropur", "lassonde", "oasis", "nutri", "nutrilait", 
+    "boivin", "st-methode", "st methode", "catelli", "natrel", "exceldor", 
+    "saputo", "multi vert", "multivert", "lesters", "olymel", "quebon", 
+    "riviera", "le grec", "lactantia", "lafleur", "tour eiffel", "irresistibles", 
+    "selection", "compliments", "bens original", "bistro express"
 ]
 
 # Exclusions des marques américaines et canadiennes hors-Québec
@@ -47,7 +48,7 @@ exclusions_hors_quebec = [
 
 # 3. Bouton de filtrage québécois
 if st.button("🚀 Mettre à jour la grande liste québécoise dans le Nuage", type="primary"):
-    with st.spinner("Analyse et sélection exclusive des marques d'ici..."):
+    with st.spinner("Analyse et marquage de vos fleurons québécois..."):
         
         # Étape A : On vide l'ancienne sélection par sécurité
         df['priorite'] = ""
@@ -55,18 +56,18 @@ if st.button("🚀 Mettre à jour la grande liste québécoise dans le Nuage", t
         # Étape B : On cherche les aliments ciblés
         masque_aliments = df['nom'].astype(str).str.lower().str.contains("|".join(aliments), na=False)
         
-        # Étape C : On cherche les marques québécoises
+        # Étape C : On cherche vos marques québécoises
         masque_marques = df['nom'].astype(str).str.lower().str.contains("|".join(marques_quebecoises), na=False)
         
         # Étape D : On identifie les produits hors-Québec à bannir
         masque_hors_qc = df['nom'].astype(str).str.lower().str.contains("|".join(exclusions_hors_quebec), na=False)
         
-        # COMBINAISON : L'aliment doit être d'une marque québécoise ET ne pas faire partie des exclusions
+        # COMBINAISON : L'aliment doit appartenir à vos marques québécoises ET ne pas être exclu
         masque_final = (masque_aliments & masque_marques) & ~masque_hors_qc
         
         # On applique le "Oui"
         df.loc[masque_final, 'priorite'] = "Oui"
-        total_quebec_large = len(df[df['priorite'] == "Oui"])
+        total_final = len(df[df['priorite'] == "Oui"])
         
         try:
             # Envoi automatique vers votre Google Sheets
@@ -74,10 +75,10 @@ if st.button("🚀 Mettre à jour la grande liste québécoise dans le Nuage", t
             st.cache_data.clear()
             
             st.balloons()
-            st.success(f"🎉 Filtrage réussi ! Le robot a maintenant retenu {total_quebec_large} produits fièrement québécois.")
+            st.success(f"🎉 Filtrage réussi ! Le robot a retenu {total_final} produits 100% de chez nous.")
             
-            # Aperçu du nouveau catalogue épuré
-            st.markdown("### 📋 Aperçu de vos produits 100% Québécois :")
+            # Aperçu du catalogue épuré à l'écran
+            st.markdown("### 📋 Aperçu de vos produits prioritaires québécois :")
             st.dataframe(df[df['priorite'] == "Oui"][['code_upc', 'nom', 'priorite']], use_container_width=True)
             
         except Exception as e:

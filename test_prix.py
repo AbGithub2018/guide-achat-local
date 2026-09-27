@@ -37,7 +37,7 @@ marques_quebecoises = [
     "saputo", "multi vert", "multivert", "lesters", "olymel", "quebon", 
     "riviera", "le grec", "lafleur", "tour eiffel", "irresistibles", 
     "selection", "compliments", "bens original", "bistro express", "nutrinor",
-    "coaticook", "domtar", benny
+    "coaticook", "domtar", "benny",
 ]
 
 # Exclusions strictes : USA, marques canadiennes hors-Québec ET Lactantia

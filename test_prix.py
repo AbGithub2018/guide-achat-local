@@ -33,11 +33,11 @@ aliments = [
 # Vos entreprises d'ici (Québon et Coaticook bien verrouillés)
 marques_quebecoises = [
     "leclerc", "agropur", "lassonde", "oasis", "nutri", "nutrilait", 
-    "boivin", "st-methode", "st methode", "catelli", "natrel", "exceldor", 
+    "boivin", "st-methode", "boulangerie st methode", "catelli", "natrel", "exceldor", 
     "saputo", "multi vert", "multivert", "lesters", "olymel", "quebon", 
     "riviera", "le grec", "lafleur", "tour eiffel", "irresistibles", 
     "selection", "compliments", "bens original", "bistro express", "nutrinor",
-    "coaticook"
+    "coaticook", "domtar", benny
 ]
 
 # Exclusions strictes : USA, marques canadiennes hors-Québec ET Lactantia

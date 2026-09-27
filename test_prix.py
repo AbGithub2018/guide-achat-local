@@ -3,8 +3,8 @@ import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
 st.set_page_config(page_title="🤖 Auto-Priorité Grand Québec", layout="centered")
-st.title("🇨🇦 Liste des Fleurons Québécois (Avec St-Méthode)")
-st.write("Ce script intègre la boulangerie St-Méthode comme exception officielle de l'achat local.")
+st.title("🇨🇦 Liste des Fleurons Québécois (Avec Eska et St-Méthode)")
+st.write("Ce script intègre l'eau Eska et règle l'affichage de la boulangerie St-Méthode d'Adstock.")
 
 # 1. Connexion en direct sans cache
 try:
@@ -21,7 +21,7 @@ st.markdown("### 🔍 Paramètres du filtre agroalimentaire")
 
 # Aliments de base, spécialités locales et desserts glacés du Québec
 aliments = [
-    "lait", "pain", "oeuf", "beurre", "riz", "mouchoir", "kleenex", 
+    "lait", "pain", "boulangerie", "boulange", "oeuf", "beurre", "riz", "mouchoir", "kleenex", 
     "essuie-tout", "essuietout", "eau", "savon", "patate", "carotte", 
     "arachide", "peanut", "poisson", "saumon", "salade", "laitue",
     "porc", "saucisse", "bacon", "jambon", "fromage", "crotte", "skouik",
@@ -30,14 +30,15 @@ aliments = [
     "vinaigrette", "sauce", "glace", "creme glacee"
 ]
 
-# Vos entreprises d'ici (St-Méthode est de retour !)
+# Vos entreprises d'ici (St-Méthode et Eska ajoutés)
 marques_quebecoises = [
     "leclerc", "agropur", "lassonde", "oasis", "nutri", "nutrilait", 
     "boivin", "catelli", "natrel", "exceldor", "saputo", "multi vert", 
     "multivert", "lesters", "olymel", "quebon", "riviera", "le grec", 
     "lafleur", "tour eiffel", "irresistibles", "selection", "compliments", 
     "bens original", "bistro express", "nutrinor", "coaticook",
-    "st-methode", "st methode", "campagnolo", "les grains", "la recolte"
+    "st-methode", "st methode", "campagnolo", "les grains", "la recolte",
+    "eska"  # 🟢 Ajout de l'eau Eska
 ]
 
 # Exclusions strictes : USA, hors-Québec, Lactantia
@@ -49,8 +50,8 @@ exclusions_hors_quebec = [
 ]
 
 # 3. Bouton de filtrage québécois
-if st.button("🚀 Re-calculer la liste avec St-Méthode dans le Nuage", type="primary"):
-    with st.spinner("Analyse avec l'exception St-Méthode..."):
+if st.button("🚀 Re-calculer la liste avec Eska et St-Méthode dans le Nuage", type="primary"):
+    with st.spinner("Analyse et inclusion des fleurons..."):
         
         # Étape A : On vide l'ancienne sélection par sécurité
         df['priorite'] = ""
@@ -64,12 +65,12 @@ if st.button("🚀 Re-calculer la liste avec St-Méthode dans le Nuage", type="p
         # Étape D : On identifie les produits à bannir (USA, Lactantia...)
         masque_hors_qc = df['nom'].astype(str).str.lower().str.contains("|".join(exclusions_hors_quebec), na=False)
         
-        # Étape E : RÈGLE SPÉCIALE D'EXCEPTION POUR ST-MÉTHODE
-        # Si le nom contient St-Méthode ou ses gammes, on l'autorise de force
-        masque_exception_st_methode = df['nom'].astype(str).str.lower().str.contains("st-methode|st methode|campagnolo|les grains|la recolte", na=False)
+        # Étape E : RÈGLE SPÉCIALE D'EXCEPTION POUR ST-MÉTHODE ET ESKA
+        # On force l'acceptation pour ces marques québécoises quoi qu'il arrive
+        masque_exception_locales = df['nom'].astype(str).str.lower().str.contains("st-methode|st methode|campagnolo|les grains|la recolte|eska", na=False)
         
-        # COMBINAISON : L'aliment doit appartenir aux marques québécoises ET ne pas être exclu, SAUF si c'est St-Méthode !
-        masque_final = (masque_aliments & masque_marques) & (~masque_hors_qc | masque_exception_st_methode)
+        # COMBINAISON : L'aliment doit appartenir aux marques québécoises ET ne pas être exclu, SAUF si c'est St-Méthode ou Eska !
+        masque_final = (masque_aliments & masque_marques) & (~masque_hors_qc | masque_exception_locales)
         
         # On applique le "Oui"
         df.loc[masque_final, 'priorite'] = "Oui"
@@ -81,7 +82,7 @@ if st.button("🚀 Re-calculer la liste avec St-Méthode dans le Nuage", type="p
             st.cache_data.clear()
             
             st.balloons()
-            st.success(f"🎉 Filtrage réussi ! Le robot a trouvé et marqué {total_final} produits 100% Québec (incluant maintenant vos pains St-Méthode).")
+            st.success(f"🎉 Filtrage réussi ! Le robot a trouvé et marqué {total_final} produits 100% Québec (incluant Eska et Boulangerie St-Méthode).")
             
             # Aperçu du catalogue épuré à l'écran
             st.markdown("### 📋 Aperçu de vos produits prioritaires 100% Québec :")

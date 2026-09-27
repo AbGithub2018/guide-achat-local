@@ -3,3 +3,4 @@ pandas
 st-gsheets-connection
 opencv-python-headless
 pyzbar
+streamlit-qrcode-scanner

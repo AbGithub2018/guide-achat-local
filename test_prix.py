@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
-st.set_page_config(page_title="🤖 Auto-Priorité Restreint", layout="centered")
-st.title("🎯 Ciblage Ultra-Sélectif des Essentiels")
-st.write("Ce script affine la sélection pour ne garder que les produits les plus importants.")
+st.set_page_config(page_title="🤖 Auto-Priorité 100% Québec", layout="centered")
+st.title("🇨🇦 Aliments et Marques du Québec")
+st.write("Ce script élimine les produits américains et canadiens hors-Québec pour l'achat local.")
 
 # 1. Connexion en direct sans cache
 try:
@@ -16,49 +16,64 @@ except Exception as e:
     st.error(f"Erreur de connexion : {e}")
     st.stop()
 
-# 2. Mots-clés très précis pour réduire le volume
-st.markdown("### 📋 Liste restreinte des essentiels :")
-mots_cles_strictes = [
-    "lait 2%", "lait 1%", "lait ecresme", "lait de vache",
-    "pain blanc", "pain tranche", "pain de menage",
-    "oeufs gros", "oeuf gros",
-    "beurre sal", "beurre non sal",
-    "riz blanc", "riz long", "riz jasmin",
-    "papier hygi", "papier de toilette",
-    "mouchoirs en boite", "kleenex boite",
-    "essuie-tout", "essuietout",
-    "beurre d'arachide", "beurre de peanut",
-    "saumon frais", "filet de saumon",
-    "laitue romaine", "salade frisee",
-    "sac de patates", "pommes de terre", "sac de carottes"
-]
-st.write(", ".join(mots_cles_strictes))
+# 2. Configuration des filtres (Inclusions strictes Québec vs Exclusions USA/Canada)
+st.markdown("### 🔍 Paramètres du filtre Aliments du Québec")
 
-# 3. Bouton d'action
-if st.button("🚀 Réduire et mettre à jour la sélection dans le Nuage", type="primary"):
-    with st.spinner("Filtrage chirurgical de vos 10 445 produits..."):
+# Aliments de base recherchés
+aliments = [
+    "lait", "pain", "oeuf", "beurre", "riz", "mouchoir", "kleenex", 
+    "essuie-tout", "essuietout", "eau", "savon", "patate", "carotte", 
+    "arachide", "peanut", "poisson", "saumon", "salade", "laitue"
+]
+
+# Uniquement des fleurons de l'agroalimentaire ou bannières nées au Québec
+marques_quebecoises = [
+    "quebon", "natrel", "lactantia", "olymel", "exceldor", "st-hubert", 
+    "st hubert", "lafleur", "tour eiffel", "irresistibles", "selection", 
+    "compliments", "bens original", "bistro express", "nutrinor", "agropur"
+]
+
+# Exclusions strictes des USA ET des marques canadiennes hors-Québec (ex: Loblaws Ontario)
+exclusions_hors_quebec = [
+    "usa", "u.s.", "united states", "import", "kraft", "kellogg", 
+    "campbell", "folgers", "jif", "heinz", "oscar mayer",
+    "sans nom", "le choix du president", "pc", "no name"
+]
+
+# 3. Bouton de filtrage québécois
+if st.button("🚀 Filtrer et mettre à jour l'achat québécois dans le Nuage", type="primary"):
+    with st.spinner("Analyse et sélection exclusive des marques d'ici..."):
         
-        # On nettoie d'abord l'ancienne sélection de 1000 produits
+        # Étape A : On vide l'ancienne sélection par sécurité
         df['priorite'] = ""
         
-        # Application du nouveau filtre strict
-        masque_strict = df['nom'].astype(str).str.lower().str.contains("|".join(mots_cles_strictes), na=False)
+        # Étape B : On cherche les aliments de base
+        masque_aliments = df['nom'].astype(str).str.lower().str.contains("|".join(aliments), na=False)
         
-        # On marque d'un "Oui"
-        df.loc[masque_strict, 'priorite'] = "Oui"
-        total_restreint = len(df[df['priorite'] == "Oui"])
+        # Étape C : On cherche les marques québécoises d'ici
+        masque_marques = df['nom'].astype(str).str.lower().str.contains("|".join(marques_quebecoises), na=False)
+        
+        # Étape D : On identifie les produits USA et canadiens hors-Québec à bannir
+        masque_hors_qc = df['nom'].astype(str).str.lower().str.contains("|".join(exclusions_hors_quebec), na=False)
+        
+        # COMBINAISON : Il faut que ce soit un aliment ET une marque québécoise, et SURTOUT PAS hors-Québec
+        masque_final = (masque_aliments & masque_marques) & ~masque_hors_qc
+        
+        # On applique le "Oui"
+        df.loc[masque_final, 'priorite'] = "Oui"
+        total_quebec_strict = len(df[df['priorite'] == "Oui"])
         
         try:
-            # Envoi vers Google Sheets
+            # Envoi automatique vers votre Google Sheets
             conn.update(worksheet="Sheet1", data=df)
             st.cache_data.clear()
             
             st.balloons()
-            st.success(f"🎉 Parfait ! Nous sommes passés de 1000 à {total_restreint} produits essentiels dans votre Google Sheet.")
+            st.success(f"🎉 Filtrage réussi ! Le robot a retenu {total_quebec_strict} produits fièrement québécois.")
             
-            # Aperçu des lignes sélectionnées
-            st.markdown("### 🔍 Aperçu de la nouvelle liste de course du robot :")
+            # Aperçu du nouveau catalogue épuré
+            st.markdown("### 📋 Aperçu de vos produits 100% Québécois :")
             st.dataframe(df[df['priorite'] == "Oui"][['code_upc', 'nom', 'priorite']], use_container_width=True)
             
         except Exception as e:
-            st.error(f"Erreur lors de l'enregistrement : {e}")
+            st.error(f"Erreur d'enregistrement : {e}")

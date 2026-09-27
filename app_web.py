@@ -253,13 +253,13 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     from streamlit_qrcode_scanner import qrcode_scanner
     code_detecte = qrcode_scanner(key="scanner_officiel_live")
 
-
     # Si le décodeur vidéo intercepte un numéro de code-barres
     if code_detecte:
         st.success(f"🎉 Code-barres détecté avec succès : {code_detecte}")
         
-        # On injecte automatiquement le code détecté dans le champ de texte de l'application
+        # On injecte le code dans la mémoire de l'application et on fait le lien avec la recherche
         st.session_state['code_barre_input'] = str(code_detecte)
+        saisie_net = str(code_detecte)
         
         # Lancement de la recherche automatique du produit
         with st.spinner("Recherche du produit en cours..."):

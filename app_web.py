@@ -246,50 +246,36 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone pour analyser le produit.</p>")
     
     # Zone d'importation de l'image (active la caméra native sur appareil mobile)
-    image_chargee = st.file_uploader("Prendre une photo du code-barres", type=["jpg", "jpeg", "png"], key="scanner_camera_local")
+        image_chargee = None
     
-    if image_chargee:
-        # Transformation du fichier téléversé pour OpenCV
-        # Transformation et redimensionnement automatique pour les caméras haute résolution
-        from PIL import Image
-        import io
-    
-        # 1. Ouvrir l'image en mémoire avec Pillow pour la compresser
-        image_pil = Image.open(image_chargee)
-        # Raccourcir la taille maximale à 1280px (conserve la netteté sans le poids)
-        image_pil.thumbnail((1280, 1280)) 
-    
-        # 2. Reconvertir en octets pour OpenCV
-        byte_arr = io.BytesIO()
-        image_pil.save(byte_arr, format='JPEG', quality=85) # Compression à 85%
-        file_bytes = np.asarray(bytearray(byte_arr.getvalue()), dtype=np.uint8)
-        image_cv = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    # Option 2 : Scanner un code-barres via la caméra vidéo en direct
+    st.markdown("### 📷 Scanner le code-barres en direct")
+    st.write("Présentez le code-barres bien net devant la caméra arrière de votre cellulaire.")
 
+    # Lancement du module de scan vidéo local (très rapide, aucun transfert de fichier lourd)
+    from streamlit_qrcode_scanner import qrcode_scanner
+    code_detecte = qrcode_scanner(key="scanner_officiel_live")
+
+    # Si le décodeur vidéo intercepte un numéro de code-barres
+    if code_detecte:
+        st.success(f"🎉 Code-barres détecté avec succès : {code_detecte}")
         
-        st.subheader("📸 Photo transmise :")
-        st.image(image_cv, use_container_width=True)
+        # On injecte automatiquement le code détecté dans le champ de texte de l'application
+        st.session_state['code_barre_input'] = str(code_detecte)
         
-        # Prétraitement d'image haute performance (Filtre OTSU issu de vos tests concluants)
-        gris = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
-        _, gris_ameliore = cv2.threshold(gris, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        with st.spinner("🔍 Décodage du code-barres en cours..."):
-            # Essai 1 : Image brute
-            codes_detectes = decode(image_cv)
-            # Essai 2 : Image améliorée par filtre si l'essai 1 échoue
-            if not codes_detectes:
-                codes_detectes = decode(gris_ameliore)
-                
-            if codes_detectes:
-                for code in codes_detectes:
-                    code_upc_extrait = code.data.decode('utf-8').strip()
-                    st.success(f"🎯 Code-barres lu avec succès : {code_upc_extrait}")
-                    
-                    # MAGIE DE L'INTÉGRATION : On force l'application à utiliser ce code pour la suite du script
-                    saisie_net = code_upc_extrait
-                    break
+        # Lancement de la recherche automatique du produit
+        with st.spinner("Recherche du produit en cours..."):
+            info_produit = obtenir_info_produit(str(code_detecte))
+            
+            if info_produit:
+                nom_produit = info_produit.get('product_name', 'Nom inconnu')
+                banniere_trouvee = info_produit.get('banniere', 'Inconnue')
+                st.session_state['produit_trouve'] = info_produit
+                st.session_state['nom_produit_input'] = nom_produit
+                st.success(f"✅ Produit trouvé : {nom_produit} ({banniere_trouvee})")
             else:
-                st.error("❌ Aucun code-barres n'a pu être détecté. Assurez-vous que l'image est bien éclairée, stable et que les lignes du code-barres soient horizontales.")
+                st.session_state['produit_trouve'] = None
+                st.warning("⚠️ Ce produit n'est pas encore inscrit. Vous pouvez l'ajouter ci-dessous.")
 
 resultats = None
 message_erreur_recherche = None

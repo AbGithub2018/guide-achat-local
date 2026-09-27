@@ -9,7 +9,7 @@ st.write("Ce script marque d'un 'Oui' automatique les articles de votre liste pe
 # 1. Connexion au Google Sheet
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
-    df = conn.read(worksheet="Sheet1")
+    df = conn.read(worksheet="Sheet1", ttl=0)
     df.columns = [c.strip().lower() for c in df.columns]
     st.success("✅ Connexion à la base de données réussie.")
 except Exception as e:

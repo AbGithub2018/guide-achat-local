@@ -3,8 +3,8 @@ import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
 st.set_page_config(page_title="🤖 Auto-Priorité Grand Québec", layout="centered")
-st.title("🇨🇦 Liste des Fleurons Québécois (Avec Eska et St-Méthode)")
-st.write("Ce script intègre l'eau Eska et règle l'affichage de la boulangerie St-Méthode d'Adstock.")
+st.title("🇨🇦 Règle Absolue : Boulangerie St-Méthode & Eska")
+st.write("Ce script force l'inclusion de TOUS les produits St-Méthode et Eska, sans exception.")
 
 # 1. Connexion en direct sans cache
 try:
@@ -19,7 +19,7 @@ except Exception as e:
 # 2. Configuration des filtres 100% Québec
 st.markdown("### 🔍 Paramètres du filtre agroalimentaire")
 
-# Aliments de base, spécialités locales et desserts glacés du Québec
+# Aliments de base et spécialités locales du Québec (Règle générale)
 aliments = [
     "lait", "pain", "boulangerie", "boulange", "oeuf", "beurre", "riz", "mouchoir", "kleenex", 
     "essuie-tout", "essuietout", "eau", "savon", "patate", "carotte", 
@@ -30,15 +30,13 @@ aliments = [
     "vinaigrette", "sauce", "glace", "creme glacee"
 ]
 
-# Vos entreprises d'ici (St-Méthode et Eska ajoutés)
+# Vos entreprises d'ici (Règle générale)
 marques_quebecoises = [
     "leclerc", "agropur", "lassonde", "oasis", "nutri", "nutrilait", 
     "boivin", "catelli", "natrel", "exceldor", "saputo", "multi vert", 
     "multivert", "lesters", "olymel", "quebon", "riviera", "le grec", 
     "lafleur", "tour eiffel", "irresistibles", "selection", "compliments", 
-    "bens original", "bistro express", "nutrinor", "coaticook",
-    "st-methode", "st methode", "campagnolo", "les grains", "la recolte",
-    "eska"  # 🟢 Ajout de l'eau Eska
+    "bens original", "bistro express", "nutrinor", "coaticook"
 ]
 
 # Exclusions strictes : USA, hors-Québec, Lactantia
@@ -50,27 +48,26 @@ exclusions_hors_quebec = [
 ]
 
 # 3. Bouton de filtrage québécois
-if st.button("🚀 Re-calculer la liste avec Eska et St-Méthode dans le Nuage", type="primary"):
-    with st.spinner("Analyse et inclusion des fleurons..."):
+if st.button("🚀 Forcer l'inclusion absolue de St-Méthode et Eska", type="primary"):
+    with st.spinner("Application des règles absolues sur votre catalogue..."):
         
         # Étape A : On vide l'ancienne sélection par sécurité
         df['priorite'] = ""
         
-        # Étape B : On cherche les aliments ciblés
+        # Étape B : RÈGLE GÉNÉRALE (Aliment + Marque d'ici, sans exclusion)
         masque_aliments = df['nom'].astype(str).str.lower().str.contains("|".join(aliments), na=False)
-        
-        # Étape C : On cherche vos marques québécoises
         masque_marques = df['nom'].astype(str).str.lower().str.contains("|".join(marques_quebecoises), na=False)
-        
-        # Étape D : On identifie les produits à bannir (USA, Lactantia...)
         masque_hors_qc = df['nom'].astype(str).str.lower().str.contains("|".join(exclusions_hors_quebec), na=False)
         
-        # Étape E : RÈGLE SPÉCIALE D'EXCEPTION POUR ST-MÉTHODE ET ESKA
-        # On force l'acceptation pour ces marques québécoises quoi qu'il arrive
-        masque_exception_locales = df['nom'].astype(str).str.lower().str.contains("st-methode|st methode|campagnolo|les grains|la recolte|eska", na=False)
+        filtre_general = (masque_aliments & masque_marques) & ~masque_hors_qc
         
-        # COMBINAISON : L'aliment doit appartenir aux marques québécoises ET ne pas être exclu, SAUF si c'est St-Méthode ou Eska !
-        masque_final = (masque_aliments & masque_marques) & (~masque_hors_qc | masque_exception_locales)
+        # 🟢 Étape C : LA RÈGLE ABSOLUE IMMUNITAIRE (St-Méthode, Eska et variantes de fautes de frappe)
+        # Si la ligne contient une de ces écritures, elle passe DIRECTEMENT à "Oui", peu importe le nom
+        mots_absolus = "st-methode|st methode|campagnolo|les grains|la recolte|loulangerie|boulangerie st|eska"
+        filtre_absolu = df['nom'].astype(str).str.lower().str.contains(mots_absolus, na=False)
+        
+        # COMBINAISON : On accepte les produits du filtre général OU de la règle absolue
+        masque_final = filtre_general | filtre_absolu
         
         # On applique le "Oui"
         df.loc[masque_final, 'priorite'] = "Oui"
@@ -82,7 +79,7 @@ if st.button("🚀 Re-calculer la liste avec Eska et St-Méthode dans le Nuage",
             st.cache_data.clear()
             
             st.balloons()
-            st.success(f"🎉 Filtrage réussi ! Le robot a trouvé et marqué {total_final} produits 100% Québec (incluant Eska et Boulangerie St-Méthode).")
+            st.success(f"🎉 Terminé ! Le robot a trouvé et marqué {total_final} produits. Tout St-Méthode et Eska est maintenant inclus d'office.")
             
             # Aperçu du catalogue épuré à l'écran
             st.markdown("### 📋 Aperçu de vos produits prioritaires 100% Québec :")

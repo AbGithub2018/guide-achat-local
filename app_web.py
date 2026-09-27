@@ -239,19 +239,20 @@ if  choix_mode == "⌨️ Recherche manuelle":
         st.query_params.clear()
 elif choix_mode == "📸 Scanner un Code-Barres":
     
-    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📸 Scanneur Local Haute Performance</h2>")
-    st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone pour analyser le produit.</p>")
+    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📷 Scanneur Local Haute Performance</h2>")
+    st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone</p>")
     
     # Zone d'importation de l'image (active la caméra native sur appareil mobile)
-        image_chargee = None
+    image_chargee = None
     
     # Option 2 : Scanner un code-barres via la caméra vidéo en direct
     st.markdown("### 📷 Scanner le code-barres en direct")
     st.write("Présentez le code-barres bien net devant la caméra arrière de votre cellulaire.")
-
+    
     # Lancement du module de scan vidéo local (très rapide, aucun transfert de fichier lourd)
     from streamlit_qrcode_scanner import qrcode_scanner
     code_detecte = qrcode_scanner(key="scanner_officiel_live")
+
 
     # Si le décodeur vidéo intercepte un numéro de code-barres
     if code_detecte:

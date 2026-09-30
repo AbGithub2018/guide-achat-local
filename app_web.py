@@ -112,7 +112,7 @@ recherche_mot_cle = st.sidebar.text_input("🔍 Filtrer la liste par mot-clé (e
 if recherche_mot_cle:
     mot_cle = recherche_mot_cle.lower().strip()
     conditions_barre = pd.Series(False, index=df_filtre.index)
-    for col in ['nom', 'siege_social', 'lieu_usine', 'entreprise_proprietaire']:
+        for col in ['nom', 'entreprise_proprietaire', 'lieu_usine']:
         if col in df_filtre.columns:
             conditions_barre |= df_filtre[col].astype(str).str.lower().str.contains(mot_cle, na=False, regex=False)
     df_filtre = df_filtre[conditions_barre]
@@ -228,8 +228,8 @@ if saisie_net:
             conditions = pd.Series(False, index=df_filtre.index)
             if 'nom' in df_filtre.columns:
                 conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-            if 'siege_social' in df_filtre.columns:
-                conditions |= df_filtre['siege_social'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'entreprise_proprietaire' in df_filtre.columns:
+            conditions |= df_filtre['entreprise_proprietaire'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
             if 'lieu_usine' in df_filtre.columns:
                 conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
                 
@@ -250,7 +250,7 @@ for c in df_affichage.columns:
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large"),
-    "siege_social": st.column_config.TextColumn("Entreprise"),
+    "entreprise_proprietaire": st.column_config.TextColumn("Entreprise"),
     "entreprise_province_etat": st.column_config.TextColumn("Province/État"),
     "distribution": st.column_config.TextColumn("Réseau d'épicerie")
 }

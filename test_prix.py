@@ -243,7 +243,7 @@ if saisie_net:
             else:
                 message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
-colonnes_dispo = [c for c in ['code_upc', 'categorie_et_marque', 'entreprise_proprietaire', 'entreprise_province_etat', 'bannieres_disponibles'] if c in df_filtre.columns]
+colonnes_dispo = [c for c in ['code_upc', 'nom', 'siege_social', 'entreprise_province_etat', 'bannieres_disponibles'] if c in df_filtre.columns]
 df_affichage = df_filtre[colonnes_dispo].copy()
 
 for c in df_affichage.columns:

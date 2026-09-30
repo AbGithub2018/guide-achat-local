@@ -466,12 +466,20 @@ else:
             
             st.write("---")
             st.write("**Entrez les prix constatés en magasin (optionnel) :**")
+            # Rangée 1 de prix
             col1, col2, col3, col4 = st.columns(4)
             with col1: prix_iga = st.text_input("Prix IGA ($)", value="")
             with col2: prix_superc = st.text_input("Prix Super C ($)", value="")
             with col3: prix_maxi = st.text_input("Prix Maxi ($)", value="")
             with col4: prix_metro = st.text_input("Prix Metro ($)", value="")
-            
+        
+            # Rangée 2 de prix
+            col5, col6, col7, col8 = st.columns(4)
+            with col5: prix_walmart = st.text_input("Prix Walmart ($)", value="")
+            with col6: prix_tigre = st.text_input("Prix Tigre Géant ($)", value="")
+            with col7: prix_dollarama = st.text_input("Prix Dollarama ($)", value="")
+            with col8: prix_provigo = st.text_input("Prix Provigo ($)", value="")
+
             bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
             
             if bouton_creer:
@@ -482,6 +490,11 @@ else:
                             p_super_c_val = prix_superc.strip() if prix_superc.strip() else "Non inscrit"
                             p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else "Non inscrit"
                             p_metro_val = prix_metro.strip() if prix_metro.strip() else "Non inscrit"
+                            p_walmart_val = prix_walmart.strip() if prix_walmart.strip() else "Non inscrit"
+                            p_tigre_val = prix_tigre.strip() if prix_tigre.strip() else "Non inscrit"
+                            p_dollarama_val = prix_dollarama.strip() if prix_dollarama.strip() else "Non inscrit"
+                            p_provigo_val = prix_provigo.strip() if prix_provigo.strip() else "Non inscrit"
+
                             
                             nouvelle_ligne = {
                                 'code_upc': cup_final,
@@ -493,7 +506,12 @@ else:
                                 'prix_iga': p_iga_val,
                                 'prix_super_c': p_super_c_val,
                                 'prix_maxi': p_maxi_val,
-                                'prix_metro': p_metro_val
+                                'prix_metro': p_metro_val,
+                                'prix_walmart': p_walmart_val,
+                                'prix_tigre_geant': p_tigre_val,
+                                'prix_dollarama': p_dollarama_val,
+                                'prix_provigo': p_provigo_val,
+
                             }
                             
                             import pandas as pd
@@ -544,20 +562,50 @@ if resultats is not None and not resultats.empty:
     p_super_c = str(row.get('prix_super_c', '')).strip()
     p_maxi = str(row.get('prix_maxi', '')).strip()
     p_metro = str(row.get('prix_metro', '')).strip()
+    p_walmart = str(row.get('prix_walmart', '')).strip()
+    p_tigre = str(row.get('prix_tigre_geant', '')).strip()
+    p_dollarama = str(row.get('prix_dollarama', '')).strip()
+    p_provigo = str(row.get('prix_provigo', '')).strip()
+
     
     affichage_iga = p_iga if p_iga and p_iga.lower() != "nan" else "Non inscrit"
     affichage_super_c = p_super_c if p_super_c and p_super_c.lower() != "nan" else "Non inscrit"
     affichage_maxi = p_maxi if p_maxi and p_maxi.lower() != "nan" else "Non inscrit"
     affichage_metro = p_metro if p_metro and p_metro.lower() != "nan" else "Non inscrit"
+    affichage_walmart = p_walmart if p_walmart and p_walmart.lower() != "nan" else "Non inscrit"
+    affichage_tigre = p_tigre if p_tigre and p_tigre.lower() != "nan" else "Non inscrit"
+    affichage_dollarama = p_dollarama if p_dollarama and p_dollarama.lower() != "nan" else "Non inscrit"
+
+    affichage_provigo = p_provigo if p_provigo and p_provigo.lower() != "nan" else "Non inscrit"
+
+    usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
+    
+    bloc_prix_html = f"""
+<div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px; color: #1a1a1a;">🔴 IGA : {affichage_iga}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px; color: #1a1a1a;">🔵 SUPER C : {affichage_super_c}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px; color: #1a1a1a;">🟡 MAXI : {affichage_maxi}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px; color: #1a1a1a;">🟢 METRO : {affichage_metro}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0071dc; border-radius: 5px; color: #1a1a1a;">🔵 WALMART : {affichage_walmart}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31837; border-radius: 5px; color: #1a1a1a;">🐯 TIGRE GÉANT : {affichage_tigre}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #006a4e; border-radius: 5px; color: #1a1a1a;">💵 DOLLARAMA : {affichage_dollarama}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31b23; border-radius: 5px; color: #1a1a1a;">🟢 PROVIGO : {affichage_provigo}</span>
+</div>
+"""
+
+    affichage_provigo = p_provigo if p_provigo and p_provigo.lower() != "nan" else "Non inscrit"
     
     usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
-
     bloc_prix_html = f"""
     <div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">
-        <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px; color: #1a1a1a;">🔴 IGA : {affichage_iga}</span>
-        <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px; color: #1a1a1a;">🔵 SUPER C : {affichage_super_c}</span>
-        <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px; color: #1a1a1a;">🟡 MAXI : {affichage_maxi}</span>
-        <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px; color: #1a1a1a;">🟢 METRO : {affichage_metro}</span>
+    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px; color: #1a1a1a;">🔴 IGA : {affichage_iga}</span>
+    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px; color: #1a1a1a;">🔵 SUPER C : {affichage_super_c}</span>
+    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px; color: #1a1a1a;">🟡 MAXI : {affichage_maxi}</span>
+    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px; color: #1a1a1a;">🟢 METRO : {affichage_metro}</span>
+    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0071dc; border-radius: 5px; color: #1a1a1a;">🔵 WALMART : {affichage_walmart}</span>
+    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31837; border-radius: 5px; color: #1a1a1a;">🐯 TIGRE GÉANT : {affichage_tigre}</span>
+    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #006a4e; border-radius: 5px; color: #1a1a1a;">💵 DOLLARAMA : {affichage_dollarama}</span>
+    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31b23; border-radius: 5px; color: #1a1a1a;">🟢 PROVIGO : {affichage_provigo}</span>
     </div>
     """
 

@@ -109,6 +109,7 @@ if 'entreprise_province_etat' in df_filtre.columns:
 
 # RECHERCHE PAR MOT-CLÉ DANS LA BARRE LATERALE (Amélioration)
 recherche_mot_cle = st.sidebar.text_input("🔍 Filtrer la liste par mot-clé (ex: lait, biscuit) :", value="")
+df_filtre = st.session_state['df_produits'].copy()
 if recherche_mot_cle:
     mot_cle = recherche_mot_cle.lower().strip()
     conditions_barre = pd.Series(False, index=df_filtre.index)

@@ -13,35 +13,41 @@ st.set_page_config(
 
 code_upc = "code_upc"
 
-# Injection CSS corrigée pour effacer la barre développeur et sécuriser le code
+# Injection CSS ultra-ciblée : protège le code et maintient la flèche mobile active
 st.html("""
 <style>
     /* 1. Masquer le menu hamburger, le footer et le widget de statut */
     #MainMenu, footer { visibility: hidden !important; display: none !important; }
     [data-testid="stStatusWidget"] { display: none !important; }
     
-    /* 2. BLOCAGE ABSOLU DE LA BARRE D'OUTILS (Share, Star, Edit, Script GitHub, Deploy) */
-    [data-testid="stToolbar"], 
-    .stAppDeployButton, 
-    [data-testid="stHeaderActionElements"], 
-    .stViewerBadge, 
-    .stGitHubIcon { 
+    /* 2. Éliminer chirurgicalement les boutons d'édition (crayon, étoile, partage) */
+    [data-testid="stHeaderActionElements"] { 
         display: none !important; 
         visibility: hidden !important; 
     }
     
-    /* 3. Laisser l'en-tête transparent pour préserver uniquement la flèche > du volet mobile */
-    header { background-color: transparent !important; }
+    /* 3. Supprimer de façon absolue l'accès au script et le logo GitHub */
+    .stViewerBadge, .stGitHubIcon, a[href*="github.com"] { 
+        display: none !important; 
+        visibility: hidden !important; 
+    }
     
-    /* 4. Grossir la barre de recherche géante */
+    /* 4. Laisser l'en-tête transparent et forcer la flèche de la barre latérale à rester visible */
+    header { background-color: transparent !important; }
+    [data-testid="stSidebarCollapseButton"], [data-testid="collapsedControl"] {
+        display: flex !important;
+        visibility: visible !important;
+    }
+    
+    /* 5. Grossir la barre de recherche géante */
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
     
-    /* 5. Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
+    /* 6. Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
     .stRadio label p { font-size: 26px !important; font-weight: bold !important; color: #111111 !important; }
     div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
     
-    /* 6. Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
+    /* 7. Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
     div[data-testid="stColumns"] {
         display: flex !important;
         flex-direction: row !important;

@@ -326,24 +326,36 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
             if sauvegarder_donnees(st.session_state['df_produits']):
                 st.success("🎉 Nouveau produit enregistré !")
                 st.rerun()
-# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX
+# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (VERSION AMÉLIORÉE)
 if resultats is not None and not resultats.empty:
     index_produit_reel = resultats.index[0]
     row = resultats.iloc[0]
     
-    prov = str(row.get('entreprise_province_etat', '')).strip()
-    pays = str(row.get('entreprise_pays', '')).strip()
+    prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
+    pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
+    compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
+    usine_actuelle = str(row.get('lieu_usine', row.get('usine_principale', ''))).strip().replace('nan', '')
+    reseau = str(row.get('distribution', '')).strip().replace('nan', '')
     
-    if "québec" in prov.lower():
-        couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
-        verdict = "⚜️ PRODUIT QUÉBÉCOIS (Décisions et Siège au Québec)"
-    elif "canada" in pays.lower():
-        couleur_boite, couleur_texte = "#e8f5e9", "#1b5e20"
-        verdict = "🍁 PRODUIT CANADIEN (Décisions au Canada)"
-    else:
-        couleur_boite, couleur_texte = "#fafafa", "#424242"
-        verdict = "🌍 PROPRIÉTÉ ÉTRANGÈRE (L'argent quitte le pays)"
+    # Formatage de la localisation pour le consommateur
+    localisation_siege = f"{prov}" if prov else ""
+    if pays:
+        localisation_siege += f" ({pays})" if localisation_siege else pays
+    if not localisation_siege:
+        localisation_siege = "Non spécifié"
 
+    # Détermination du verdict d'achat local
+    if "québec" in prov.lower():
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">⚜️ ACHAT QUÉBÉCOIS</span>'
+        verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+    elif "canada" in pays.lower() or "canada" in prov.lower():
+        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">🍁 ACHAT CANADIEN</span>'
+        verdict = "Ce produit encourage l'économie canadienne."
+    else:
+        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
+        verdict = "Les profits de ce produit quittent le pays."
+
+    # Configuration et détection du meilleur prix
     bannières_config = {
         'prix_iga': ('🔴 IGA', '#d32f2f'),
         'prix_super_c': ('🔵 SUPER C', '#0056b3'),
@@ -355,30 +367,74 @@ if resultats is not None and not resultats.empty:
         'prix_provigo': ('🟢 PROVIGO', '#e31b23')
     }
 
-    bloc_prix_html = '<div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">'
+    # Calcul du prix le plus bas pour l'économie du consommateur
+    prix_valides = {}
+    for col_key, (label, _) in bannières_config.items():
+        v_prix = str(row.get(col_key, '')).strip().replace('nan', '').replace('$', '').replace(',', '.').strip()
+        if v_prix and v_prix.lower() != "non inscrit" and v_prix != "":
+            try:
+                prix_valides[col_key] = float(v_prix)
+            except ValueError:
+                pass
+
+    meilleure_banniere_col = min(prix_valides, key=prix_valides.get) if prix_valides else None
+
+    # Génération visuelle des blocs de prix
+    bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
     for col_key, (label, color) in bannières_config.items():
-        v_prix = str(row.get(col_key, '')).strip()
-        affichage = v_prix if v_prix and v_prix.lower() != "nan" else "Non inscrit"
-        bloc_prix_html += f'<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid {color}; border-radius: 5px; color: #1a1a1a;">{label} : {affichage}</span>'
+        v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
+        affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
+        
+        # Effet visuel si c'est le prix le moins cher trouvé
+        if meilleure_banniere_col and col_key == meilleure_banniere_col:
+            style_card = f'background-color: #e8f5e9; border: 3px solid #2e7d32; box-shadow: 0px 4px 10px rgba(0,0,0,0.15);'
+            label_display = f'🔥 {label}'
+        else:
+            style_card = f'background-color: #ffffff; border: 1px solid #e0e0e0;'
+            label_display = label
+            
+        bloc_prix_html += f"""
+        <div style="padding: 10px 15px; border-radius: 8px; color: #1a1a1a; font-weight: bold; font-size: 15px; min-width: 140px; text-align: center; {style_card}">
+            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">{label_display}</div>
+            <div style="font-size: 18px; color: #1a1a1a;">{affichage}</div>
+        </div>
+        """
     bloc_prix_html += '</div>'
 
-    usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
-    
+    # Bannière d'alerte économie
+    alerte_economie_html = ""
+    if meilleure_banniere_col:
+        nom_gagnant, _ = bannières_config[meilleure_banniere_col]
+        alerte_economie_html = f"""
+        <div style="background-color: #e8f5e9; color: #1b5e20; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 16px; margin-bottom: 15px; border-left: 5px solid #2e7d32;">
+            💡 ÉCONOMIE : Le meilleur prix actuel est chez <b>{nom_gagnant}</b> ({prix_valides[meilleure_banniere_col]:.2f}$) !
+        </div>
+        """
+
+    # Rendu final épuré "Expérience Consommateur"
     st.html(f"""
-<div style="background-color: {couleur_boite}; padding: 22px; border-radius: 10px; border-left: 12px solid {couleur_texte}; margin-bottom: 15px; font-family: Arial, sans-serif;">
-    <h3 style="color: {couleur_texte}; margin-top: 0; font-size: 22px;">{verdict}</h3>
-    <p style="font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #1a1a1a;">📦 {row.get('nom', 'Produit sans nom')}</p>
-    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #ccc;">
-    <table style="width: 100%; font-size: 17px; color: #333; line-height: 1.8; border-collapse: collapse;">
-        <tr><td style="width: 25%; padding: 4px 0;"><b>🏭 Compagnie :</b></td><td><b>{row.get('entreprise_proprietaire', 'À déterminer')}</b></td></tr>
-        <tr><td style="padding: 4px 0;"><b>📍 Siège social :</b></td><td>{prov} ({pays})</td></tr>
-        <tr><td style="padding: 4px 0;"><b>🏪 Usine principale :</b></td><td>{usine_actuelle}</td></tr>
-        <tr><td style="padding: 4px 0;"><b>🛍️ Réseau d'épicerie :</b></td><td>{row.get('distribution', 'Général')}</td></tr>
-    </table>
+<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+        <span style="font-size: 13px; color: #555; letter-spacing: 1px; font-weight: 500;">UPC : {str(row.get('code_upc', ''))}</span>
+        {badge_html}
+    </div>
+    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('nom', 'Produit sans nom')}</h2>
+    <p style="color: {couleur_texte}; font-size: 15px; margin: 0 0 20px 0; font-weight: 500;">{verdict}</p>
+    
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px;">
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏭 Compagnie :</b> {compagnie if compagnie else 'Non spécifié'}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>📍 Siège :</b> {localisation_siege}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏪 Usine principale :</b> {usine_actuelle if usine_actuelle else 'Non spécifiée'}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🛍️ Dispo chez :</b> {reseau if reseau else 'Général'}</span>
+    </div>
+    
+    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">💰 Comparatif des prix en magasin :</h4>
+    {alerte_economie_html}
     {bloc_prix_html}
 </div>
 """)
 
+    # Formulaire de collaboration des prix inchangé pour garder la compatibilité
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)

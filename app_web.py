@@ -91,10 +91,11 @@ def charger_donnees():
         else:
             df_initial['code_upc'] = ""
         
-        for col_prix in ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']:
+        for col_prix in ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']:
             if col_prix not in df_initial.columns:
                 df_initial[col_prix] = ""
-            df_initial[col_prix] = df_initial[col_prix].replace('nan', '').str.strip()
+            df_initial[col_prix] = df_initial[col_prix].fillna("").astype(str).str.strip().replace("nan", "")
+
             
         # Sécurité pour la colonne distribution (gère vos deux colonnes E et K)
         if 'distribution' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:

@@ -318,9 +318,17 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
         
         bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
         if bouton_creer and nom_nouveau:
-            nouvelle_ligne = {
-            'code_upc': saisie_net.strip(), 'nom': nom_nouveau.strip(), 'entreprise_proprietaire': entreprise.strip(),
-            'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'distribution': reseau.strip(),
+          nouvelle_ligne = {
+            'code_upc': saisie_net.strip(),
+            'nom': nom_nouveau.strip(),
+            'siege_social': province.strip() + " (Canada)" if pays.lower() == "canada" else province.strip(),
+            'lieu_usine': "",
+            'distribution': distribution.strip() if 'distribution' in locals() else "",
+            'entreprise_proprietaire': entreprise.strip(),
+            'entreprise_province_etat': province.strip(),
+            'entreprise_pays': pays.strip(),
+            'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
+        }
             'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
              }
             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)

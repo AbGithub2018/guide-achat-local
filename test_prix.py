@@ -278,11 +278,11 @@ else:
     if message_erreur_recherche and not saisie_net.strip().isdigit():
         st.warning(message_erreur_recherche)
 
-# Détection de sélection sur le tableau (CORRECTION SYNTAXE)
+# Détection de sélection sur le tableau (CORRECTIONS INDEXATION UNIQUE)
 if selection_tableau and selection_tableau.get("selection") and selection_tableau["selection"]["rows"]:
     lignes_selectionnees = selection_tableau["selection"]["rows"]
     if len(lignes_selectionnees) > 0:
-        index_ligne = lignes_selectionnees[0] # Extraction de l'index sous forme d'entier pur
+        index_ligne = lignes_selectionnees[0] # EXTRACTION DU PREMIER CHIFFRE DE LA LISTE
         cup_selectionne = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
         resultats = df[df['code_upc'] == cup_selectionne]
 
@@ -341,10 +341,10 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
                 st.success("🎉 Nouveau produit enregistré !")
                 st.rerun()
 
-# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (VERSION AMÉLIORÉE - CORRIGÉE)
+# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (CORRIGÉE)
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index[0]
-    row = resultats.iloc[0] # Extraction de la ligne brute pure (Série)
+    index_produit_reel = resultats.index[0] # RÉCUPÈRE L'INDEX RÉEL UNIQUE
+    row = resultats.loc[index_produit_reel] # EXTRAIT LA LIGNE BRUTE DÉFINITIVE
     
     prov = str(row.get('siege_social_ville_province', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')

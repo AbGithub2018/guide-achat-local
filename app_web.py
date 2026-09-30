@@ -115,7 +115,7 @@ if recherche_mot_cle:
 for col in ['nom', 'entreprise_proprietaire', 'lieu_usine']:
         if col in df_filtre.columns:
             conditions_barre |= df_filtre[col].astype(str).str.lower().str.contains(mot_cle, na=False, regex=False)
-    df_filtre = df_filtre[conditions_barre]
+            df_filtre = df_filtre[conditions_barre]
 
 # Gestion Admin
 st.sidebar.markdown("---") 

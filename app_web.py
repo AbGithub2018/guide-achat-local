@@ -320,7 +320,7 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
         if bouton_creer and nom_nouveau:
             nouvelle_ligne = {
             'code_upc': saisie_net.strip(), 'nom': nom_nouveau.strip(), 'entreprise_proprietaire': entreprise.strip(),
-            'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'bannieres_disponibles': distribution.strip(),
+            'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'distribution': reseau.strip(),
             'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
              }
             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)

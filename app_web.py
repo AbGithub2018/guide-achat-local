@@ -113,10 +113,10 @@ df_filtre = st.session_state['df_produits'].copy()
 if recherche_mot_cle:
     mot_cle = recherche_mot_cle.lower().strip()
     conditions_barre = pd.Series(False, index=df_filtre.index)
-for col in ['nom', 'entreprise_proprietaire', 'lieu_usine']:
-        if col in df_filtre.columns:
-            conditions_barre |= df_filtre[col].astype(str).str.lower().str.contains(mot_cle, na=False, regex=False)
-            df_filtre = df_filtre[conditions_barre]
+    for col in ['nom', 'entreprise_proprietaire', 'lieu_usine']:
+         if col in df_filtre.columns:
+             conditions_barre |= df_filtre[col].astype(str).str.lower().str.contains(mot_cle, na=False, regex=False)
+    df_filtre = df_filtre[conditions_barre]
 
 # Gestion Admin
 st.sidebar.markdown("---") 

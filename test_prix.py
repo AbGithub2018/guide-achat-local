@@ -278,14 +278,13 @@ else:
     if message_erreur_recherche and not saisie_net.strip().isdigit():
         st.warning(message_erreur_recherche)
 
-# Détection de sélection sur le tableau (CORRIGÉE avec extraction de l'index int)
+# Détection de sélection sur le tableau (CORRECTION SYNTAXE)
 if selection_tableau and selection_tableau.get("selection") and selection_tableau["selection"]["rows"]:
     lignes_selectionnees = selection_tableau["selection"]["rows"]
     if len(lignes_selectionnees) > 0:
-        index_ligne_cliquee = lignes_selectionnees[0]
-        if index_ligne_cliquee < len(df_affichage):
-            cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
-            resultats = df[df['code_upc'] == cup_selectionne]
+        index_ligne = lignes_selectionnees[0] # Extraction de l'index sous forme d'entier pur
+        cup_selectionne = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
+        resultats = df[df['code_upc'] == cup_selectionne]
 
 # --- RÉCUPÉRATION ET AFFICHAGE PHOTO DANS LA BARRE LATERALE ---
 st.sidebar.markdown("---") 
@@ -341,10 +340,11 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
             if sauvegarder_donnees(st.session_state['df_produits']):
                 st.success("🎉 Nouveau produit enregistré !")
                 st.rerun()
+
 # 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (VERSION AMÉLIORÉE - CORRIGÉE)
 if resultats is not None and not resultats.empty:
     index_produit_reel = resultats.index[0]
-    row = resultats.iloc[0] # Extraction de la ligne brute sous forme de série de données
+    row = resultats.iloc[0] # Extraction de la ligne brute pure (Série)
     
     prov = str(row.get('siege_social_ville_province', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
@@ -454,7 +454,7 @@ if resultats is not None and not resultats.empty:
 </div>
 """)
 
-    # Formulaire de collaboration des prix inchangé pour garder la compatibilité
+    # Formulaire de collaboration des prix
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)

@@ -58,15 +58,12 @@ def charger_donnees():
                 df_initial[col_prix] = ""
             df_initial[col_prix] = df_initial[col_prix].fillna("").astype(str).str.strip().replace("nan", "")
             
-        # Secours de compatibilité automatique pour la distribution
-        if 'bannieres_disponibles' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:
-            df_initial['bannieres_disponibles'] = df_initial['reseau_distribution']
-        elif 'bannieres_disponibles' not in df_initial.columns and 'distribution' in df_initial.columns:
-            df_initial['bannieres_disponibles'] = df_initial['distribution']
-        elif 'bannieres_disponibles' not in df_initial.columns:
-            df_initial['bannieres_disponibles'] = ""
+        if 'distribution' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:
+            df_initial['distribution'] = df_initial['reseau_distribution']
+        elif 'distribution' not in df_initial.columns:
+            df_initial['distribution'] = ""
             
-        df_initial['bannieres_disponibles'] = df_initial['bannieres_disponibles'].replace('nan', '').str.strip()      
+        df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip()      
         return df_initial
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")
@@ -103,18 +100,18 @@ if 'entreprise_pays' in df.columns:
 else:
     df_filtre = df.copy()
 
-if 'siege_social_ville_province' in df_filtre.columns:
-    liste_prov = ["Toutes"] + sorted([str(p) for p in df_filtre['siege_social_ville_province'].unique() if pd.notna(p) and p != ""])
+if 'entreprise_province_etat' in df_filtre.columns:
+    liste_prov = ["Toutes"] + sorted([str(p) for p in df_filtre['entreprise_province_etat'].unique() if pd.notna(p) and p != ""])
     choix_prov = st.sidebar.selectbox("Filtrer par Province / État :", liste_prov)
     if choix_prov != "Toutes":
-        df_filtre = df_filtre[df_filtre['siege_social_ville_province'] == choix_prov]
+        df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
 
-# RECHERCHE PAR MOT-CLÉ DANS LA BARRE LATERALE (Adaptée aux nouveaux noms)
+# RECHERCHE PAR MOT-CLÉ DANS LA BARRE LATERALE
 recherche_mot_cle = st.sidebar.text_input("🔍 Filtrer la liste par mot-clé (ex: lait, biscuit) :", value="")
 if recherche_mot_cle:
     mot_cle = recherche_mot_cle.lower().strip()
     conditions_barre = pd.Series(False, index=df_filtre.index)
-    for col in ['categorie_et_marque', 'siege_social_ville_province', 'ville_usine_1', 'provenance_fabrication', 'siege_social_entreprise']:
+    for col in ['nom', 'siege_social', 'lieu_usine', 'entreprise_proprietaire']:
         if col in df_filtre.columns:
             conditions_barre |= df_filtre[col].astype(str).str.lower().str.contains(mot_cle, na=False, regex=False)
     df_filtre = df_filtre[conditions_barre]
@@ -182,9 +179,9 @@ if col_provigo.button("🟢 Provigo", use_container_width=True): st.session_stat
 if col_tous.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"
 
 banniere = st.session_state['banniere_active']
-if banniere != "Tous" and 'bannieres_disponibles' in df_filtre.columns:
+if banniere != "Tous" and 'distribution' in df_filtre.columns:
     nom_banniere_recherche = banniere.replace('_', ' ')
-    df_filtre = df_filtre[df_filtre['bannieres_disponibles'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)]
+    df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)]
 
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO
 choix_mode = st.radio(
@@ -229,14 +226,12 @@ if saisie_net:
             resultats = recherche_cup
         else:
             conditions = pd.Series(False, index=df_filtre.index)
-            if 'categorie_et_marque' in df_filtre.columns:
-                conditions |= df_filtre['categorie_et_marque'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-            if 'siege_social_ville_province' in df_filtre.columns:
-                conditions |= df_filtre['siege_social_ville_province'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-            if 'ville_usine_1' in df_filtre.columns:
-                conditions |= df_filtre['ville_usine_1'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-            if 'provenance_fabrication' in df_filtre.columns:
-                conditions |= df_filtre['provenance_fabrication'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'nom' in df_filtre.columns:
+                conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'siege_social' in df_filtre.columns:
+                conditions |= df_filtre['siege_social'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'lieu_usine' in df_filtre.columns:
+                conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
                 
             recherche_texte = df_filtre[conditions]
             if not recherche_texte.empty:
@@ -246,7 +241,7 @@ if saisie_net:
             else:
                 message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
-colonnes_dispo = [c for c in ['code_upc', 'categorie_et_marque', 'siege_social_entreprise', 'siege_social_ville_province', 'bannieres_disponibles'] if c in df_filtre.columns]
+colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
 df_affichage = df_filtre[colonnes_dispo].copy()
 
 for c in df_affichage.columns:
@@ -254,10 +249,10 @@ for c in df_affichage.columns:
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
-    "categorie_et_marque": st.column_config.TextColumn("Nom du produit", width="large"),
-    "siege_social_entreprise": st.column_config.TextColumn("Entreprise"),
-    "siege_social_ville_province": st.column_config.TextColumn("Province/État"),
-    "bannieres_disponibles": st.column_config.TextColumn("Réseau d'épicerie")
+    "nom": st.column_config.TextColumn("Nom du produit", width="large"),
+    "siege_social": st.column_config.TextColumn("Entreprise"),
+    "entreprise_province_etat": st.column_config.TextColumn("Province/État"),
+    "distribution": st.column_config.TextColumn("Réseau d'épicerie")
 }
 
 st.markdown("---")
@@ -278,12 +273,11 @@ else:
     if message_erreur_recherche and not saisie_net.strip().isdigit():
         st.warning(message_erreur_recherche)
 
-# Détection de sélection sur le tableau (CORRECTIONS INDEXATION UNIQUE)
+# Détection de sélection sur le tableau
 if selection_tableau and selection_tableau.get("selection") and selection_tableau["selection"]["rows"]:
-    lignes_selectionnees = selection_tableau["selection"]["rows"]
-    if len(lignes_selectionnees) > 0:
-        index_ligne = lignes_selectionnees[0] # EXTRACTION DU PREMIER CHIFFRE DE LA LISTE
-        cup_selectionne = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
+    index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
+    if index_ligne_cliquee < len(df_affichage):
+        cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
         resultats = df[df['code_upc'] == cup_selectionne]
 
 # --- RÉCUPÉRATION ET AFFICHAGE PHOTO DANS LA BARRE LATERALE ---
@@ -315,78 +309,43 @@ if resultats is not None and not resultats.empty:
 if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats is None or resultats.empty):
     st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit.")
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
-        nom_nouveau = st.text_input("Nom exact du produit (Catégorie et Marque)")
-        entreprise = st.text_input("Siège social de l'entreprise (Compagnie parent)")
-        province = st.text_input("Siège social (Ville, Province / État)", value="Québec")
+        nom_nouveau = st.text_input("Nom exact du produit")
+        entreprise = st.text_input("Entreprise propriétaire / Marque")
+        province = st.text_input("Province / État", value="Québec")
         pays = st.text_input("Pays", value="Canada")
-        ville_usine = st.text_input("Ville de l'usine (Ville Usine 1)")
-        adresse_usine = st.text_input("Provenance / lieu complet de fabrication")
-        distribution = st.text_input("Réseau d'épicerie (Bannières disponibles)")
+        distribution = st.text_input("Réseau d'épicerie")
         
         bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
         if bouton_creer and nom_nouveau:
             nouvelle_ligne = {
-                'code_upc': saisie_net.strip(), 
-                'categorie_et_marque': nom_nouveau.strip(), 
-                'siege_social_entreprise': entreprise.strip(),
-                'siege_social_ville_province': province.strip(), 
-                'entreprise_pays': pays.strip(), 
-                'ville_usine_1': ville_usine.strip(),
-                'provenance_fabrication': adresse_usine.strip(),
-                'bannieres_disponibles': distribution.strip(),
+                'code_upc': saisie_net.strip(), 'nom': nom_nouveau.strip(), 'siege_social': entreprise.strip(),
+                'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'distribution': distribution.strip(),
                 'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
             }
             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
             if sauvegarder_donnees(st.session_state['df_produits']):
                 st.success("🎉 Nouveau produit enregistré !")
                 st.rerun()
-
-# 6A. EXTRACTION DES DONNÉES GÉOGRAPHIQUES (SÉCURISÉE ET POSITIONNELLE)
+# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (RESTAURÉE)
 if resultats is not None and not resultats.empty:
-    # Extraction de la première ligne sous forme de liste indexée numériquement
-    row_brute = resultats.iloc[0]
+    index_produit_reel = resultats.index[0]
+    row = resultats.iloc[0]
     
-    # Sécurité : création d'un dictionnaire avec toutes les clés en minuscules
-    row = {str(k).strip().lower(): v for k, v in row_brute.to_dict().items()}
-    
-    # 1. Extraction du Nom du produit (Nom ou 2e colonne)
-    nom_produit = str(row.get('categorie_et_marque', row.get('nom', ''))).strip().replace('nan', '')
-    if not nom_produit or nom_produit == "Produit sans nom":
-        nom_produit = str(row_brute.iloc[1]).strip().replace('nan', '')
-
-    # 2. Extraction de la Compagnie propriétaire (Entreprise ou 5e colonne)
-    compagnie = str(row.get('siege_social_entreprise', row.get('entreprise_proprietaire', ''))).strip().replace('nan', '')
-    if not compagnie or compagnie == "À déterminer":
-        compagnie = str(row_brute.iloc[4]).strip().replace('nan', '')
-
-    # 3. Extraction de la Province / État du siège social (Province ou 6e colonne)
-    prov = str(row.get('siege_social_ville_province', row.get('entreprise_province_etat', ''))).strip().replace('nan', '')
-    if not prov:
-        prov = str(row_brute.iloc[5]).strip().replace('nan', '')
-
-    # 4. Extraction du Pays (7e colonne)
+    prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
-    if not pays:
-        pays = str(row_brute.iloc[6]).strip().replace('nan', '')
+    compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
+    usine_actuelle = str(row.get('lieu_usine', row.get('usine_principale', ''))).strip().replace('nan', '')
+    reseau = str(row.get('distribution', '')).strip().replace('nan', '')
     
-    # 5. Extraction de la localisation de l'usine (Lieu complet ou Ville brute)
-    usine_ville = str(row.get('ville_usine_1', row.get('lieu_usine', ''))).strip().replace('nan', '')
-    usine_complete = str(row.get('provenance_fabrication', row.get('adresse_complete_usine', row.get('usine_principale', ''))).strip().replace('nan', '')
-    usine_actuelle = usine_complete if usine_complete else usine_ville
-    if not usine_actuelle or usine_actuelle == "À déterminer":
-        usine_actuelle = str(row_brute.iloc[8]).strip().replace('nan', '')
-
-    # 6. Réseau de distribution
-    reseau = str(row.get('bannieres_disponibles', row.get('distribution', ''))).strip().replace('nan', '')
-
     # Formatage de la localisation pour le consommateur
     localisation_siege = f"{prov}" if prov else ""
     if pays:
         localisation_siege += f" ({pays})" if localisation_siege else pays
     if not localisation_siege:
         localisation_siege = "Non spécifié"
-    # 6B. DÉTERMINATION DU VERDICT, GRILLE DE PRIX ET RENDU VISUEL HTML
-    if "québec" in prov.lower() or "qc" in prov.lower():
+
+    # Détermination du verdict d'achat local
+    if "québec" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">⚜️ ACHAT QUÉBÉCOIS</span>'
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
     elif "canada" in pays.lower() or "canada" in prov.lower():
@@ -396,7 +355,7 @@ if resultats is not None and not resultats.empty:
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
 
-    # Configuration des bannières de prix
+    # Configuration et détection du meilleur prix
     bannières_config = {
         'prix_iga': ('🔴 IGA', '#d32f2f'),
         'prix_super_c': ('🔵 SUPER C', '#0056b3'),
@@ -408,7 +367,7 @@ if resultats is not None and not resultats.empty:
         'prix_provigo': ('🟢 PROVIGO', '#e31b23')
     }
 
-    # Calcul du prix le plus bas
+    # Calcul du prix le plus bas pour l'économie du consommateur
     prix_valides = {}
     for col_key, (label, _) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '').replace('$', '').replace(',', '.').strip()
@@ -426,6 +385,7 @@ if resultats is not None and not resultats.empty:
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         
+        # Effet visuel si c'est le prix le moins cher trouvé
         if meilleure_banniere_col and col_key == meilleure_banniere_col:
             style_card = f'background-color: #e8f5e9; border: 3px solid #2e7d32; box-shadow: 0px 4px 10px rgba(0,0,0,0.15);'
             label_display = f'🔥 {label}'
@@ -458,13 +418,13 @@ if resultats is not None and not resultats.empty:
         <span style="font-size: 13px; color: #555; letter-spacing: 1px; font-weight: 500;">UPC : {str(row.get('code_upc', ''))}</span>
         {badge_html}
     </div>
-    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {nom_produit}</h2>
+    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('nom', 'Produit sans nom')}</h2>
     <p style="color: {couleur_texte}; font-size: 15px; margin: 0 0 20px 0; font-weight: 500;">{verdict}</p>
     
     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px;">
-        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏭 Compagnie :</b> {compagnie}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏭 Compagnie :</b> {compagnie if compagnie else 'Non spécifié'}</span>
         <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>📍 Siège :</b> {localisation_siege}</span>
-        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏪 Usine principale :</b> {usine_actuelle}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏪 Usine principale :</b> {usine_actuelle if usine_actuelle else 'Non spécifiée'}</span>
         <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🛍️ Dispo chez :</b> {reseau if reseau else 'Général'}</span>
     </div>
     
@@ -492,14 +452,14 @@ if resultats is not None and not resultats.empty:
         bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
 
     if bouton_soumettre:
-        st.session_state['df_produits'].at[resultats.index, 'prix_iga'] = nouveau_iga.strip()
-        st.session_state['df_produits'].at[resultats.index, 'prix_super_c'] = nouveau_super_c.strip()
-        st.session_state['df_produits'].at[resultats.index, 'prix_maxi'] = nouveau_maxi.strip()
-        st.session_state['df_produits'].at[resultats.index, 'prix_metro'] = nouveau_metro.strip()
-        st.session_state['df_produits'].at[resultats.index, 'prix_walmart'] = nouveau_walmart.strip()
-        st.session_state['df_produits'].at[resultats.index, 'prix_tigre_geant'] = nouveau_tigre.strip()
-        st.session_state['df_produits'].at[resultats.index, 'prix_dollarama'] = nouveau_dollarama.strip()
-        st.session_state['df_produits'].at[resultats.index, 'prix_provigo'] = nouveau_provigo.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_walmart'] = nouveau_walmart.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_tigre_geant'] = nouveau_tigre.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
 
         if sauvegarder_donnees(st.session_state['df_produits']):
             st.success("🎉 Grille des 8 bannières synchronisée avec succès !")

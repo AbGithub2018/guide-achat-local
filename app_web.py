@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 from streamlit_gsheets import GSheetsConnection
+st.set_page_config(initial_sidebar_state="expanded")
 code_upc = "code_upc"
 
 # 1. CONFIGURATION ET STYLE VISUEL DE LA PAGE

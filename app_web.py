@@ -14,24 +14,31 @@ st.set_page_config(
 code_upc = "code_upc"
 
 # Injection CSS corrigée pour ne pas bloquer le bouton du menu mobile
+# Injection CSS corrigée pour verrouiller la barre d'outils et protéger le code
 st.html("""
 <style>
-    /* Masquer les éléments inutiles sans bloquer la flèche du menu mobile */
+    /* 1. Masquer les éléments inutiles et TOUTE la barre d'outils technique (crayon, étoile, partage, GitHub) */
     .stAppDeployButton, footer, #MainMenu { visibility: hidden !important; display: none !important; }
     [data-testid="stStatusWidget"] { display: none !important; }
     
-    /* Supprimer l'arrière-plan du header tout en permettant au bouton de la barre latérale de rester cliquable */
+    /* Blocage ciblé de la barre d'action de l'en-tête (Share, Star, Edit, Script GitHub) */
+    [data-testid="stHeaderActionElements"], .stViewerBadge, .stGitHubIcon, #tabs-bcontainer-v2 { 
+        display: none !important; 
+        visibility: hidden !important; 
+    }
+    
+    /* 2. Supprimer l'arrière-plan du header pour laisser la flèche du menu mobile cliquable */
     header { background-color: transparent !important; }
     
-    /* Grossir la barre de recherche géante */
+    /* 3. Grossir la barre de recherche géante */
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
     
-    /* Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
+    /* 4. Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
     .stRadio label p { font-size: 26px !important; font-weight: bold !important; color: #111111 !important; }
     div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
     
-    /* Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
+    /* 5. Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
     div[data-testid="stColumns"] {
         display: flex !important;
         flex-direction: row !important;

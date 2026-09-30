@@ -625,21 +625,6 @@ if resultats is not None and not resultats.empty:
 """)
 
 st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
-with st.form("formulaire_prix_epicerie"):
-    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-    nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=p_iga if p_iga.lower() != "nan" else "", key="edit_iga")
-    nouveau_super_c = col_p2.text_input("Prix Super C ($) :", value=p_super_c if p_super_c.lower() != "nan" else "", key="edit_super_c")
-    nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=p_maxi if p_maxi.lower() != "nan" else "", key="edit_maxi")
-    nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=p_metro if p_metro.lower() != "nan" else "", key="edit_metro")
-
-    col_p5, col_p6, col_p7, col_p8 = st.columns(4)
-    nouveau_walmart = col_p5.text_input("Prix Walmart ($) :", value=p_walmart if p_walmart.lower() != "nan" else "", key="edit_walmart")
-    nouveau_tigre = col_p6.text_input("Prix Tigre Géant ($) :", value=p_tigre if p_tigre.lower() != "nan" else "", key="edit_tigre")
-    nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=p_dollarama if p_dollarama.lower() != "nan" else "", key="edit_dollarama")
-    nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=p_provigo if p_provigo.lower() != "nan" else "", key="edit_provigo")
-
-    bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
-
 if bouton_soumettre:
     st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
     st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
@@ -649,7 +634,6 @@ if bouton_soumettre:
     st.session_state['df_produits'].at[index_produit_reel, 'prix_tigre_geant'] = nouveau_tigre.strip()
     st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
     st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
-
     if sauvegarder_donnees(st.session_state['df_produits']):
         st.success("Base de données collaborative mise à jour avec succès !")
         time.sleep(1)

@@ -338,7 +338,7 @@ if resultats is not None and not resultats.empty:
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
     usine_actuelle = str(row.get('lieu_usine', row.get('usine_principale', ''))).strip().replace('nan', '')
-    reseau = str(row.get('distribution', '')).strip().replace('nan', '')
+    reseau = str(row.get('bannieres_disponibles', '')).strip().replace('nan', '')
     
     # Formatage de la localisation pour le consommateur
     localisation_siege = f"{prov}" if prov else ""

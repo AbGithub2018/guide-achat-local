@@ -341,10 +341,11 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
                 st.success("🎉 Nouveau produit enregistré !")
                 st.rerun()
 
-# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (CORRIGÉE)
+# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (CORRECTION DÉFINITIVE)
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index[0] # RÉCUPÈRE L'INDEX RÉEL UNIQUE
-    row = resultats.loc[index_produit_reel] # EXTRAIT LA LIGNE BRUTE DÉFINITIVE
+    index_produit_reel = resultats.index[0]
+    # Forcer row à être une ligne brute (Series) pour que .get() fonctionne enfin !
+    row = resultats.loc[index_produit_reel]
     
     prov = str(row.get('siege_social_ville_province', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')

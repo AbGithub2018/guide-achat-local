@@ -228,7 +228,7 @@ if saisie_net:
             conditions = pd.Series(False, index=df_filtre.index)
             if 'nom' in df_filtre.columns:
                 conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-            if 'entreprise_proprietaire' in df_filtre.columns:
+        if 'entreprise_proprietaire' in df_filtre.columns:
             conditions |= df_filtre['entreprise_proprietaire'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
             if 'lieu_usine' in df_filtre.columns:
                 conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)

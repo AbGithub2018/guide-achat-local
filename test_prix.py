@@ -3,7 +3,6 @@ import pandas as pd
 import time
 import requests
 from streamlit_gsheets import GSheetsConnection
-
 # 1. UNIQUE CONFIGURATION DE LA PAGE
 st.set_page_config(
     page_title="Acheter Québécois & Canadien", 
@@ -421,7 +420,7 @@ if resultats is not None and not resultats.empty:
         <span style="font-size: 13px; color: #555; letter-spacing: 1px; font-weight: 500;">UPC : {str(row.get('code_upc', ''))}</span>
         {badge_html}
     </div>
-    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('categorie_et_marque', 'Produit sans nom')}</h2>
+    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('categorie_et_marque', row.get('nom', 'Produit sans nom'))}</h2>
     <p style="color: {couleur_texte}; font-size: 15px; margin: 0 0 20px 0; font-weight: 500;">{verdict}</p>
     
     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px;">

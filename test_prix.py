@@ -38,7 +38,7 @@ st.html("""
 """)
 
 def charger_donnees():
-    """Se connecte automatiquement au Google Sheet."""
+    """Se connecte automatiquement au Google Sheet grâce aux secrets."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_initial = conn.read(worksheet="Sheet1", ttl="2m")
@@ -71,18 +71,17 @@ def charger_donnees():
         return pd.DataFrame()
 
 def sauvegarder_donnees(df_a_enregistrer):
-    """Enregistre les prix automatiquement."""
+    """Enregistre instantanément les prix en Nuage sans figer l'application."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         conn.update(worksheet="Sheet1", data=df_a_enregistrer)
         st.cache_data.clear()
-        if 'df_produits' in st.session_state:
-            del st.session_state['df_produits']
+        st.session_state['df_produits'] = df_a_enregistrer.copy()
         return True
     except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")
         return False
-# Initialisation des variables d'état de session
+# Initialisation de la session de données
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()
 if 'banniere_active' not in st.session_state:
@@ -92,7 +91,7 @@ if "admin_connecte" not in st.session_state:
 
 df = st.session_state['df_produits']
 
-# 2. BARRE LATERALE (Filtres Géopolitiques)
+# 2. BARRE LATERALE (Filtres Géopolitiques et Textuels)
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits</h2>")
 
 if 'entreprise_pays' in df.columns:
@@ -108,7 +107,17 @@ if 'entreprise_province_etat' in df_filtre.columns:
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
 
-# Panneau Administration
+# RECHERCHE PAR MOT-CLÉ DANS LA BARRE LATERALE (Amélioration)
+recherche_mot_cle = st.sidebar.text_input("🔍 Filtrer la liste par mot-clé (ex: lait, biscuit) :", value="")
+if recherche_mot_cle:
+    mot_cle = recherche_mot_cle.lower().strip()
+    conditions_barre = pd.Series(False, index=df_filtre.index)
+    for col in ['nom', 'siege_social', 'lieu_usine', 'entreprise_proprietaire']:
+        if col in df_filtre.columns:
+            conditions_barre |= df_filtre[col].astype(str).str.lower().str.contains(mot_cle, na=False, regex=False)
+    df_filtre = df_filtre[conditions_barre]
+
+# Gestion Admin
 st.sidebar.markdown("---") 
 with st.sidebar.expander("🔑 Administration"):
     if not st.session_state["admin_connecte"]:
@@ -134,7 +143,7 @@ with st.sidebar.expander("🔑 Administration"):
                 if 'df_produits' in st.session_state:
                     del st.session_state['df_produits']
                 st.success("Produit supprimé avec succès !")
-                time.sleep(1)
+                time.sleep(0.5)
                 st.rerun()
             else:
                 st.warning("Veuillez entrer un code_upc valide.")
@@ -145,7 +154,7 @@ st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un
 with st.expander("ℹ️ Comment utiliser l'application et économiser ?"):
     st.markdown("""
     ### 🛒 Protégeons notre portefeuille, encourageons l'achat local !
-    Bienvenue sur **AchatQuébec**, votre outil citoyen pour dénicher les meilleurs prix à l'épicerie.
+    Bienvenue sur **AchatQuébec**, votre outil citoyen collaboratif pour dénicher les meilleurs prix à l'épicerie.
     1. **Recherchez un produit :** Tapez un mot-clé ou le code_upc.
     2. **Identifiez la provenance :** Repérez les drapeaux (Québec ⚜️, Canada 🍁).
     3. **Comparez les prix :** Voyez d'un coup d'œil quelle bannière est la moins chère.
@@ -174,7 +183,7 @@ banniere = st.session_state['banniere_active']
 if banniere != "Tous" and 'distribution' in df_filtre.columns:
     nom_banniere_recherche = banniere.replace('_', ' ')
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)]
-# 4. ZONE DE RECHERCHE ET SCANNER
+# 4. ZONE DE RECHERCHE ET SCANNER PHOTO
 choix_mode = st.radio(
     "👉 MODE DE RECHERCHE :",
     ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"],
@@ -202,7 +211,7 @@ else:
         st.success(f"🎉 Code-barres détecté : {code_detecte}")
         saisie_net = str(code_detecte).strip()
 
-# Logique de filtrage par recherche
+# Logique algorithmique de filtrage
 resultats = None
 message_erreur_recherche = None
 
@@ -230,11 +239,10 @@ if saisie_net:
                 if len(recherche_texte) == 1:
                     resultats = recherche_texte
             else:
-                message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}'."
-# 5. CONFIGURATION ET RENDU DU TABLEAU
-colonnes_prix_tableau = ['prix_iga', 'prix_super_c', 'prix_maxi', 'prix_metro']
+                message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+# 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
-df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
+df_affichage = df_filtre[colonnes_dispo].copy()
 
 for c in df_affichage.columns:
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
@@ -250,7 +258,6 @@ config_colonnes = {
 st.markdown("---")
 st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés) :")
 
-# Rendu sécurisé du Tableau interactif
 selection_tableau = None
 if not saisie_net or (not df_filtre.empty and len(df_filtre) < len(df)):
     selection_tableau = st.dataframe(
@@ -266,14 +273,14 @@ else:
     if message_erreur_recherche and not saisie_net.strip().isdigit():
         st.warning(message_erreur_recherche)
 
-# Détection sécurisée de la ligne cliquée
+# Détection de sélection sur le tableau
 if selection_tableau and selection_tableau.get("selection") and selection_tableau["selection"]["rows"]:
     index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
     if index_ligne_cliquee < len(df_affichage):
         cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
         resultats = df[df['code_upc'] == cup_selectionne]
 
-# --- IMAGE DANS LA BARRE LATERALE APRES ACTION TABLEAU ---
+# --- RÉCUPÉRATION ET AFFICHAGE PHOTO DANS LA BARRE LATERALE ---
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
 
@@ -283,7 +290,7 @@ if resultats is not None and not resultats.empty:
         cup_actuel = str(int(float(raw_cup))).strip()
         if cup_actuel:
             st.sidebar.success(f"📦 Image du CUP : {cup_actuel}")
-            with st.sidebar.spinner("Recherche..."):
+            with st.sidebar.spinner("Recherche de la photo..."):
                 try:
                     url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                     reponse = requests.get(url_api, headers={"User-Agent": "AchatQuebecApp-Web"}, timeout=3)
@@ -292,13 +299,13 @@ if resultats is not None and not resultats.empty:
                         if lien_photo:
                             st.sidebar.image(lien_photo, use_container_width=True)
                         else:
-                            st.sidebar.warning("⚠️ Aucune photo trouvée.")
+                            st.sidebar.warning("⚠️ Photo non disponible.")
                 except:
-                    st.sidebar.error("⚠️ Erreur Open Food Facts.")
+                    st.sidebar.error("⚠️ Serveur d'images indisponible.")
     except:
         pass
 
-# FORMULAIRE POUR NOUVEAU PRODUIT (CUP inconnu)
+# FORMULAIRE DE CRÉATION DE NOUVEAU PRODUIT (CUP INCONNU)
 if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats is None or resultats.empty):
     st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit.")
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
@@ -308,7 +315,7 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
         pays = st.text_input("Pays", value="Canada")
         distribution = st.text_input("Réseau d'épicerie")
         
-        bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit", type="primary", use_container_width=True)
+        bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
         if bouton_creer and nom_nouveau:
             nouvelle_ligne = {
                 'code_upc': saisie_net.strip(), 'nom': nom_nouveau.strip(), 'siege_social': entreprise.strip(),
@@ -317,64 +324,89 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
             }
             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
             if sauvegarder_donnees(st.session_state['df_produits']):
-                st.success("🎉 Produit ajouté !")
-                time.sleep(1)
+                st.success("🎉 Nouveau produit enregistré !")
                 st.rerun()
-
-# 6. AFFICHAGE DE LA FICHE DÉTAILLÉE CONSOMMATEUR
+# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX
 if resultats is not None and not resultats.empty:
-    row = resultats.iloc[0]
     index_produit_reel = resultats.index[0]
+    row = resultats.iloc[0]
     
     prov = str(row.get('entreprise_province_etat', '')).strip()
     pays = str(row.get('entreprise_pays', '')).strip()
     
     if "québec" in prov.lower():
         couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
-        verdict = "⚜️ PRODUIT QUÉBÉCOIS"
+        verdict = "⚜️ PRODUIT QUÉBÉCOIS (Décisions et Siège au Québec)"
     elif "canada" in pays.lower():
         couleur_boite, couleur_texte = "#e8f5e9", "#1b5e20"
-        verdict = "🍁 PRODUIT CANADIEN"
+        verdict = "🍁 PRODUIT CANADIEN (Décisions au Canada)"
     else:
         couleur_boite, couleur_texte = "#fafafa", "#424242"
-        verdict = "🌍 PROPRIÉTÉ ÉTRANGÈRE"
+        verdict = "🌍 PROPRIÉTÉ ÉTRANGÈRE (L'argent quitte le pays)"
 
-    bloc_prix_html = f"""
-    <div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px;">🔴 IGA : {row.get('prix_iga', 'Non inscrit')}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px;">🔵 SUPER C : {row.get('prix_super_c', 'Non inscrit')}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px;">🟡 MAXI : {row.get('prix_maxi', 'Non inscrit')}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px;">🟢 METRO : {row.get('prix_metro', 'Non inscrit')}</span>
-    </div>
-    """
+    bannières_config = {
+        'prix_iga': ('🔴 IGA', '#d32f2f'),
+        'prix_super_c': ('🔵 SUPER C', '#0056b3'),
+        'prix_maxi': ('🟡 MAXI', '#f9d71c'),
+        'prix_metro': ('🟢 METRO', '#28a745'),
+        'prix_walmart': ('🔵 WALMART', '#0071dc'),
+        'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#e31837'),
+        'prix_dollarama': ('💵 DOLLARAMA', '#006a4e'),
+        'prix_provigo': ('🟢 PROVIGO', '#e31b23')
+    }
 
+    bloc_prix_html = '<div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">'
+    for col_key, (label, color) in bannières_config.items():
+        v_prix = str(row.get(col_key, '')).strip()
+        affichage = v_prix if v_prix and v_prix.lower() != "nan" else "Non inscrit"
+        bloc_prix_html += f'<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid {color}; border-radius: 5px; color: #1a1a1a;">{label} : {affichage}</span>'
+    bloc_prix_html += '</div>'
+
+    usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
+    
     st.html(f"""
-    <div style="background-color: {couleur_boite}; padding: 22px; border-radius: 10px; border-left: 12px solid {couleur_texte}; margin-bottom: 15px;">
-        <h3 style="color: {couleur_texte}; margin-top: 0;">{verdict}</h3>
-        <p style="font-size: 22px; font-weight: bold;">📦 {row.get('nom', 'Sans nom')}</p>
-        {bloc_prix_html}
-    </div>
-    """)
+<div style="background-color: {couleur_boite}; padding: 22px; border-radius: 10px; border-left: 12px solid {couleur_texte}; margin-bottom: 15px; font-family: Arial, sans-serif;">
+    <h3 style="color: {couleur_texte}; margin-top: 0; font-size: 22px;">{verdict}</h3>
+    <p style="font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #1a1a1a;">📦 {row.get('nom', 'Produit sans nom')}</p>
+    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #ccc;">
+    <table style="width: 100%; font-size: 17px; color: #333; line-height: 1.8; border-collapse: collapse;">
+        <tr><td style="width: 25%; padding: 4px 0;"><b>🏭 Compagnie :</b></td><td><b>{row.get('entreprise_proprietaire', 'À déterminer')}</b></td></tr>
+        <tr><td style="padding: 4px 0;"><b>📍 Siège social :</b></td><td>{prov} ({pays})</td></tr>
+        <tr><td style="padding: 4px 0;"><b>🏪 Usine principale :</b></td><td>{usine_actuelle}</td></tr>
+        <tr><td style="padding: 4px 0;"><b>🛍️ Réseau d'épicerie :</b></td><td>{row.get('distribution', 'Général')}</td></tr>
+    </table>
+    {bloc_prix_html}
+</div>
+""")
 
-    # Formulaire de collaboration des prix
+    st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=row.get('prix_iga', ''))
-        nouveau_super_c = col_p2.text_input("Prix Super C ($) :", value=row.get('prix_super_c', ''))
-        nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=row.get('prix_maxi', ''))
-        nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=row.get('prix_metro', ''))
-        
-        bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix", type="primary", use_container_width=True)
+        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=str(row.get('prix_iga', '')).replace('nan',''), key="edit_iga")
+        nouveau_super_c = col_p2.text_input("Prix Super C ($) :", value=str(row.get('prix_super_c', '')).replace('nan',''), key="edit_super_c")
+        nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=str(row.get('prix_maxi', '')).replace('nan',''), key="edit_maxi")
+        nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=str(row.get('prix_metro', '')).replace('nan',''), key="edit_metro")
+
+        col_p5, col_p6, col_p7, col_p8 = st.columns(4)
+        nouveau_walmart = col_p5.text_input("Prix Walmart ($) :", value=str(row.get('prix_walmart', '')).replace('nan',''), key="edit_walmart")
+        nouveau_tigre = col_p6.text_input("Prix Tigre Géant ($) :", value=str(row.get('prix_tigre_geant', '')).replace('nan',''), key="edit_tigre")
+        nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=str(row.get('prix_dollarama', '')).replace('nan',''), key="edit_dollarama")
+        nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=str(row.get('prix_provigo', '')).replace('nan',''), key="edit_provigo")
+
+        bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
 
     if bouton_soumettre:
         st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
         st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
         st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
         st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_walmart'] = nouveau_walmart.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_tigre_geant'] = nouveau_tigre.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
 
         if sauvegarder_donnees(st.session_state['df_produits']):
-            st.success("Mise à jour réussie !")
-            time.sleep(1)
+            st.success("🎉 Grille des 8 bannières synchronisée avec succès !")
             st.rerun()
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")

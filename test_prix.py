@@ -111,7 +111,8 @@ recherche_mot_cle = st.sidebar.text_input("🔍 Filtrer la liste par mot-clé (e
 if recherche_mot_cle:
     mot_cle = recherche_mot_cle.lower().strip()
     conditions_barre = pd.Series(False, index=df_filtre.index)
-    for col in ['nom', 'siege_social', 'lieu_usine', 'entreprise_proprietaire']:
+    if 'categorie_et_marque' in df_filtre.columns:
+    conditions |= df_filtre['categorie_et_marque'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
         if col in df_filtre.columns:
             conditions_barre |= df_filtre[col].astype(str).str.lower().str.contains(mot_cle, na=False, regex=False)
     df_filtre = df_filtre[conditions_barre]
@@ -226,8 +227,8 @@ if saisie_net:
             resultats = recherche_cup
         else:
             conditions = pd.Series(False, index=df_filtre.index)
-            if 'nom' in df_filtre.columns:
-                conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'categorie_et_marque' in df_filtre.columns:
+    conditions |= df_filtre['categorie_et_marque'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
             if 'siege_social' in df_filtre.columns:
                 conditions |= df_filtre['siege_social'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
             if 'lieu_usine' in df_filtre.columns:
@@ -241,7 +242,7 @@ if saisie_net:
             else:
                 message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
-colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
+colonnes_dispo = [c for c in ['code_upc', 'categorie_et_marque', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
 df_affichage = df_filtre[colonnes_dispo].copy()
 
 for c in df_affichage.columns:
@@ -249,7 +250,7 @@ for c in df_affichage.columns:
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
-    "nom": st.column_config.TextColumn("Nom du produit", width="large"),
+    "categorie_et_marque": st.column_config.TextColumn("Nom du produit", width="large"),
     "siege_social": st.column_config.TextColumn("Entreprise"),
     "entreprise_province_etat": st.column_config.TextColumn("Province/État"),
     "distribution": st.column_config.TextColumn("Réseau d'épicerie")
@@ -317,11 +318,11 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
         
         bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
         if bouton_creer and nom_nouveau:
-            nouvelle_ligne = {
-                'code_upc': saisie_net.strip(), 'nom': nom_nouveau.strip(), 'siege_social': entreprise.strip(),
-                'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'distribution': distribution.strip(),
-                'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
-            }
+                nouvelle_ligne = {
+        'code_upc': saisie_net.strip(), 'categorie_et_marque': nom_nouveau.strip(), 'siege_social': entreprise.strip(),
+        'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'distribution': distribution.strip(),
+        'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
+    }
             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
             if sauvegarder_donnees(st.session_state['df_produits']):
                 st.success("🎉 Nouveau produit enregistré !")
@@ -418,7 +419,7 @@ if resultats is not None and not resultats.empty:
         <span style="font-size: 13px; color: #555; letter-spacing: 1px; font-weight: 500;">UPC : {str(row.get('code_upc', ''))}</span>
         {badge_html}
     </div>
-    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('nom', 'Produit sans nom')}</h2>
+    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('categorie_et_marque', 'Produit sans nom')}</h2>
     <p style="color: {couleur_texte}; font-size: 15px; margin: 0 0 20px 0; font-weight: 500;">{verdict}</p>
     
     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px;">

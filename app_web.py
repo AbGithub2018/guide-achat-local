@@ -557,7 +557,6 @@ if resultats is not None and not resultats.empty:
     else:
         couleur_boite, couleur_texte = "#fafafa", "#424242"
         verdict = "🌍 PROPRIÉTÉ ÉTRANGÈRE (L'argent quitte le pays)"
-
     p_iga = str(row.get('prix_iga', '')).strip()
     p_super_c = str(row.get('prix_super_c', '')).strip()
     p_maxi = str(row.get('prix_maxi', '')).strip()
@@ -567,7 +566,6 @@ if resultats is not None and not resultats.empty:
     p_dollarama = str(row.get('prix_dollarama', '')).strip()
     p_provigo = str(row.get('prix_provigo', '')).strip()
 
-    
     affichage_iga = p_iga if p_iga and p_iga.lower() != "nan" else "Non inscrit"
     affichage_super_c = p_super_c if p_super_c and p_super_c.lower() != "nan" else "Non inscrit"
     affichage_maxi = p_maxi if p_maxi and p_maxi.lower() != "nan" else "Non inscrit"
@@ -575,23 +573,6 @@ if resultats is not None and not resultats.empty:
     affichage_walmart = p_walmart if p_walmart and p_walmart.lower() != "nan" else "Non inscrit"
     affichage_tigre = p_tigre if p_tigre and p_tigre.lower() != "nan" else "Non inscrit"
     affichage_dollarama = p_dollarama if p_dollarama and p_dollarama.lower() != "nan" else "Non inscrit"
-
-    affichage_provigo = p_provigo if p_provigo and p_provigo.lower() != "nan" else "Non inscrit"
-
-    usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
-    
-    bloc_prix_html = f"""
-<div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px; color: #1a1a1a;">🔴 IGA : {affichage_iga}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px; color: #1a1a1a;">🔵 SUPER C : {affichage_super_c}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px; color: #1a1a1a;">🟡 MAXI : {affichage_maxi}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px; color: #1a1a1a;">🟢 METRO : {affichage_metro}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0071dc; border-radius: 5px; color: #1a1a1a;">🔵 WALMART : {affichage_walmart}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31837; border-radius: 5px; color: #1a1a1a;">🐯 TIGRE GÉANT : {affichage_tigre}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #006a4e; border-radius: 5px; color: #1a1a1a;">💵 DOLLARAMA : {affichage_dollarama}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31b23; border-radius: 5px; color: #1a1a1a;">🟢 PROVIGO : {affichage_provigo}</span>
-</div>
-"""
     affichage_provigo = p_provigo if p_provigo and p_provigo.lower() != "nan" else "Non inscrit"
 
     usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
@@ -624,22 +605,37 @@ if resultats is not None and not resultats.empty:
 </div>
 """)
 
-st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
-if bouton_soumettre:
-    st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
-    st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
-    st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
-    st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
-    st.session_state['df_produits'].at[index_produit_reel, 'prix_walmart'] = nouveau_walmart.strip()
-    st.session_state['df_produits'].at[index_produit_reel, 'prix_tigre_geant'] = nouveau_tigre.strip()
-    st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
-    st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
-    if sauvegarder_donnees(st.session_state['df_produits']):
-        st.success("Base de données collaborative mise à jour avec succès !")
-        time.sleep(1)
-        st.rerun()
+    st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
+    with st.form("formulaire_prix_epicerie"):
+        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=p_iga if p_iga.lower() != "nan" else "", key="edit_iga")
+        nouveau_super_c = col_p2.text_input("Prix Super C ($) :", value=p_super_c if p_super_c.lower() != "nan" else "", key="edit_super_c")
+        nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=p_maxi if p_maxi.lower() != "nan" else "", key="edit_maxi")
+        nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=p_metro if p_metro.lower() != "nan" else "", key="edit_metro")
+
+        col_p5, col_p6, col_p7, col_p8 = st.columns(4)
+        nouveau_walmart = col_p5.text_input("Prix Walmart ($) :", value=p_walmart if p_walmart.lower() != "nan" else "", key="edit_walmart")
+        nouveau_tigre = col_p6.text_input("Prix Tigre Géant ($) :", value=p_tigre if p_tigre.lower() != "nan" else "", key="edit_tigre")
+        nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=p_dollarama if p_dollarama.lower() != "nan" else "", key="edit_dollarama")
+        nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=p_provigo if p_provigo.lower() != "nan" else "", key="edit_provigo")
+
+        bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
+
+    if bouton_soumettre:
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_walmart'] = nouveau_walmart.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_tigre_geant'] = nouveau_tigre.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
+
+        if sauvegarder_donnees(st.session_state['df_produits']):
+            st.success("Base de données collaborative mise à jour avec succès !")
+            time.sleep(1)
+            st.rerun()
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-
 
 # ==================

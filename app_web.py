@@ -592,40 +592,38 @@ if resultats is not None and not resultats.empty:
 <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31b23; border-radius: 5px; color: #1a1a1a;">🟢 PROVIGO : {affichage_provigo}</span>
 </div>
 """
-
     affichage_provigo = p_provigo if p_provigo and p_provigo.lower() != "nan" else "Non inscrit"
-    
+
     usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
+    
     bloc_prix_html = f"""
-    <div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px; color: #1a1a1a;">🔴 IGA : {affichage_iga}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px; color: #1a1a1a;">🔵 SUPER C : {affichage_super_c}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px; color: #1a1a1a;">🟡 MAXI : {affichage_maxi}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px; color: #1a1a1a;">🟢 METRO : {affichage_metro}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0071dc; border-radius: 5px; color: #1a1a1a;">🔵 WALMART : {affichage_walmart}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31837; border-radius: 5px; color: #1a1a1a;">🐯 TIGRE GÉANT : {affichage_tigre}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #006a4e; border-radius: 5px; color: #1a1a1a;">💵 DOLLARAMA : {affichage_dollarama}</span>
-    <span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31b23; border-radius: 5px; color: #1a1a1a;">🟢 PROVIGO : {affichage_provigo}</span>
-    </div>
-    """
+<div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px; color: #1a1a1a;">🔴 IGA : {affichage_iga}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px; color: #1a1a1a;">🔵 SUPER C : {affichage_super_c}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px; color: #1a1a1a;">🟡 MAXI : {affichage_maxi}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px; color: #1a1a1a;">🟢 METRO : {affichage_metro}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0071dc; border-radius: 5px; color: #1a1a1a;">🔵 WALMART : {affichage_walmart}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31837; border-radius: 5px; color: #1a1a1a;">🐯 TIGRE GÉANT : {affichage_tigre}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #006a4e; border-radius: 5px; color: #1a1a1a;">💵 DOLLARAMA : {affichage_dollarama}</span>
+<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31b23; border-radius: 5px; color: #1a1a1a;">🟢 PROVIGO : {affichage_provigo}</span>
+</div>
+"""
 
     st.html(f"""
-    <div style="background-color: {couleur_boite}; padding: 22px; border-radius: 10px; border-left: 12px solid {couleur_texte}; margin-bottom: 15px; font-family: Arial, sans-serif;">
-        <h3 style="color: {couleur_texte}; margin-top: 0; font-size: 22px;">{verdict}</h3>
-        <p style="font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #1a1a1a;">📦 {row.get('nom', 'Produit sans nom')}</p>
-        <p style="font-size: 24px; color: #d32f2f; font-weight: bold; background-color: #ffffff; display: inline-block; padding: 4px 12px; border-radius: 5px; border: 2px solid #d32f2f; margin: 5px 0;">🔢 CUP : {row.get('code_upc', 'Inconnu')}</p>
-        {bloc_prix_html}
-        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #ccc;">
-        <table style="width: 100%; font-size: 17px; color: #333; line-height: 1.8; border-collapse: collapse;">
-            <tr><td style="width: 25%; padding: 4px 0;"><b>🏢 Compagnie :</b></td><td><b>{row.get('entreprise_proprietaire', 'À déterminer')}</b></td></tr>
-            <tr><td style="padding: 4px 0;"><b>📍 Siège social :</b></td><td>{prov} ({pays})</td></tr>
-            <tr><td style="padding: 4px 0;"><b>🏭 Usine principale :</b></td><td>{usine_actuelle}</td></tr>
-            <tr><td style="padding: 4px 0;"><b>🏪 Réseau d'épicerie :</b></td><td>{row.get('distribution', 'Général')}</td></tr>
-        </table>
-    </div>
-    """)
+<div style="background-color: {couleur_boite}; padding: 22px; border-radius: 10px; border-left: 12px solid {couleur_texte}; margin-bottom: 15px; font-family: Arial, sans-serif;">
+    <h3 style="color: {couleur_texte}; margin-top: 0; font-size: 22px;">{verdict}</h3>
+    <p style="font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #1a1a1a;">📦 {row.get('nom', 'Produit sans nom')}</p>
+    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #ccc;">
+    <table style="width: 100%; font-size: 17px; color: #333; line-height: 1.8; border-collapse: collapse;">
+        <tr><td style="width: 25%; padding: 4px 0;"><b>🏭 Compagnie :</b></td><td><b>{row.get('entreprise_proprietaire', 'À déterminer')}</b></td></tr>
+        <tr><td style="padding: 4px 0;"><b>📍 Siège social :</b></td><td>{prov} ({pays})</td></tr>
+        <tr><td style="padding: 4px 0;"><b>🏪 Usine principale :</b></td><td>{usine_actuelle}</td></tr>
+        <tr><td style="padding: 4px 0;"><b>🛍️ Réseau d'épicerie :</b></td><td>{row.get('distribution', 'Général')}</td></tr>
+    </table>
+    {bloc_prix_html}
 </div>
-    """
+""")
+
 st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
 with st.form("formulaire_prix_epicerie"):
     col_p1, col_p2, col_p3, col_p4 = st.columns(4)

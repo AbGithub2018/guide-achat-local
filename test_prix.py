@@ -251,7 +251,11 @@ for c in df_affichage.columns:
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
-    "nom": st.column_config.TextColumn("Nom du produit", width="large", help="Inscrire la catégorie suivie de la marque. Exemple : Papiers mouchoirs Scotties."),
+    "nom": st.column_config.TextColumn(
+        "Nom du produit", 
+        width="large", 
+        help="Inscrire la catégorie suivie de la marque. Exemple : Papiers mouchoirs Scotties."
+    ),
     "siege_social": st.column_config.TextColumn("Entreprise"),
     "entreprise_province_etat": st.column_config.TextColumn("Province/État"),
     "bannieres_disponibles": st.column_config.TextColumn("Réseau d'épicerie")

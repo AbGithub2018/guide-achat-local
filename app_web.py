@@ -227,13 +227,13 @@ if saisie_net:
             resultats = recherche_cup
         else:
             conditions = pd.Series(False, index=df_filtre.index)
-            if 'nom' in df_filtre.columns:
-                conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-        if 'entreprise_proprietaire' in df_filtre.columns:
-            conditions |= df_filtre['entreprise_proprietaire'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-            if 'lieu_usine' in df_filtre.columns:
-                conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-                
+    if 'nom' in df_filtre.columns:
+        conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+    if 'entreprise_proprietaire' in df_filtre.columns:
+        conditions |= df_filtre['entreprise_proprietaire'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+    if 'lieu_usine' in df_filtre.columns:
+        conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+                            
             recherche_texte = df_filtre[conditions]
             if not recherche_texte.empty:
                 df_filtre = recherche_texte

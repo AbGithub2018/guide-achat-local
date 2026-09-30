@@ -2,27 +2,36 @@ import streamlit as st
 import pandas as pd
 import time
 from streamlit_gsheets import GSheetsConnection
-st.set_page_config(initial_sidebar_state="expanded")
+
+# 1. UNIQUE CONFIGURATION DE LA PAGE (TOUT EST FUSIONNÉ ICI)
+st.set_page_config(
+    page_title="Acheter Québécois & Canadien", 
+    page_icon="📦", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 code_upc = "code_upc"
 
-# 1. CONFIGURATION ET STYLE VISUEL DE LA PAGE
-st.set_page_config(page_title="Acheter Québécois & Canadien", page_icon="📦", layout="wide")
-# Injection CSS pour cacher l'entête Streamlit et gérer le style visuel
+# Injection CSS corrigée pour ne pas bloquer le bouton du menu mobile
 st.html("""
 <style>
-    /* 1. Masquer l'entête grise, le menu et le bouton de code pour le public */
-    header, footer, #MainMenu { visibility: hidden !important; display: none !important; }
-    .stAppDeployButton, [data-testid="stStatusWidget"] { display: none !important; }
+    /* Masquer les éléments inutiles sans bloquer la flèche du menu mobile */
+    .stAppDeployButton, footer, #MainMenu { visibility: hidden !important; display: none !important; }
+    [data-testid="stStatusWidget"] { display: none !important; }
     
-    /* 2. Grossir la barre de recherche géante */
+    /* Supprimer l'arrière-plan du header tout en permettant au bouton de la barre latérale de rester cliquable */
+    header { background-color: transparent !important; }
+    
+    /* Grossir la barre de recherche géante */
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
     
-    /* 3. Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
+    /* Grossir de façon spectaculaire les textes des boutons de sélection (Radio) */
     .stRadio label p { font-size: 26px !important; font-weight: bold !important; color: #111111 !important; }
     div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
     
-    /* 4. Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
+    /* Forcer les colonnes à rester côte à côte (3 par ligne) même sur cellulaire */
     div[data-testid="stColumns"] {
         display: flex !important;
         flex-direction: row !important;

@@ -57,13 +57,15 @@ def charger_donnees():
             if col_prix not in df_initial.columns:
                 df_initial[col_prix] = ""
             df_initial[col_prix] = df_initial[col_prix].fillna("").astype(str).str.strip().replace("nan", "")
-            
-        if 'distribution' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:
-            df_initial['distribution'] = df_initial['reseau_distribution']
-        elif 'distribution' not in df_initial.columns:
-            df_initial['distribution'] = ""
-            
-        df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip()      
+     if 'bannieres_disponibles' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:
+    df_initial['bannieres_disponibles'] = df_initial['reseau_distribution']
+elif 'bannieres_disponibles' not in df_initial.columns and 'distribution' in df_initial.columns:
+    df_initial['bannieres_disponibles'] = df_initial['distribution']
+elif 'bannieres_disponibles' not in df_initial.columns:
+    df_initial['bannieres_disponibles'] = ""
+
+df_initial['bannieres_disponibles'] = df_initial['bannieres_disponibles'].replace('nan', '').str.strip()
+      
         return df_initial
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")
@@ -180,9 +182,9 @@ if col_provigo.button("🟢 Provigo", use_container_width=True): st.session_stat
 if col_tous.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"
 
 banniere = st.session_state['banniere_active']
-if banniere != "Tous" and 'distribution' in df_filtre.columns:
+if banniere != "Tous" and 'bannieres_disponibles' in df_filtre.columns:
     nom_banniere_recherche = banniere.replace('_', ' ')
-    df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)]
+    df_filtre = df_filtre[df_filtre['bannieres_disponibles'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)]
 
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO
 choix_mode = st.radio(
@@ -242,7 +244,7 @@ if saisie_net:
             else:
                 message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
-colonnes_dispo = [c for c in ['code_upc', 'categorie_et_marque', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
+colonnes_dispo = [c for c in ['code_upc', 'categorie_et_marque', 'entreprise_proprietaire', 'entreprise_province_etat', 'bannieres_disponibles'] if c in df_filtre.columns]
 df_affichage = df_filtre[colonnes_dispo].copy()
 
 for c in df_affichage.columns:
@@ -253,7 +255,7 @@ config_colonnes = {
     "categorie_et_marque": st.column_config.TextColumn("Nom du produit", width="large"),
     "siege_social": st.column_config.TextColumn("Entreprise"),
     "entreprise_province_etat": st.column_config.TextColumn("Province/État"),
-    "distribution": st.column_config.TextColumn("Réseau d'épicerie")
+    "bannieres_disponibles": st.column_config.TextColumn("Réseau d'épicerie")
 }
 
 st.markdown("---")
@@ -320,7 +322,7 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
         if bouton_creer and nom_nouveau:
                 nouvelle_ligne = {
         'code_upc': saisie_net.strip(), 'categorie_et_marque': nom_nouveau.strip(), 'siege_social': entreprise.strip(),
-        'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'distribution': distribution.strip(),
+        'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'bannieres_disponibles': distribution.strip(),
         'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
     }
             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)

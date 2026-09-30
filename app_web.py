@@ -234,7 +234,7 @@ if saisie_net:
     if 'lieu_usine' in df_filtre.columns:
         conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
                             
-            recherche_texte = df_filtre[conditions]
+        recherche_texte = df_filtre[conditions]
             if not recherche_texte.empty:
                 df_filtre = recherche_texte
                 if len(recherche_texte) == 1:

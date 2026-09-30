@@ -236,12 +236,22 @@ if col_metro.button("🟢 Metro", use_container_width=True):
 if col_super_c.button("🔵 Super C", use_container_width=True):
     st.session_state['banniere_active'] = "Super_C"
 
-# Rangée 3 : Walmart et Toutes
-col_walmart, col_tous = st.columns(2)
+# Rangée 3 : Walmart et Tigre Géant
+col_walmart, col_tigre = st.columns(2)
 if col_walmart.button("🔵 Walmart", use_container_width=True):
     st.session_state['banniere_active'] = "Walmart"
+if col_tigre.button("🐯 Tigre Géant", use_container_width=True):
+    st.session_state['banniere_active'] = "Tigre_Geant"
+
+# Rangée 4 : Dollarama, Provigo et Toutes (Optionnel : sur 3 colonnes pour tout faire tenir)
+col_dollarama, col_provigo, col_tous = st.columns(3)
+if col_dollarama.button("💵 Dollarama", use_container_width=True):
+    st.session_state['banniere_active'] = "Dollarama"
+if col_provigo.button("🟢 Provigo", use_container_width=True):
+    st.session_state['banniere_active'] = "Provigo"
 if col_tous.button("🔄 Toutes", use_container_width=True):
     st.session_state['banniere_active'] = "Tous"
+
 
 
 

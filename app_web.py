@@ -14,7 +14,7 @@ st.set_page_config(
 
 code_upc = "code_upc"
 
-# Injection CSS de sécurité maximale
+# Injection CSS de sécurité maximale (Prend en compte la nouvelle mise en page des boutons radio)
 st.html("""
 <style>
     #MainMenu, footer { visibility: hidden !important; display: none !important; }
@@ -38,15 +38,17 @@ st.html("""
 """)
 
 def charger_donnees():
-    """Se connecte automatiquement au Google Sheet grâce aux secrets."""
+    """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
     try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
+        conn = st.connection("gsheets", type="streamlit_gsheets.GSheetsConnection")
         df_initial = conn.read(worksheet="Sheet1", ttl="2m")
         if df_initial is None or df_initial.empty:
             st.error("⚠️ Le fichier Google Sheet lu est vide. Vérifiez l'onglet 'Sheet1'.")
             return pd.DataFrame()
 
         df_initial = df_initial.astype(str)
+        
+        # Nettoyage automatique des noms de colonnes
         df_initial.columns = [c.strip().lower() for c in df_initial.columns]
         
         if 'code_upc' in df_initial.columns:
@@ -71,7 +73,7 @@ def charger_donnees():
         return pd.DataFrame()
 
 def sauvegarder_donnees(df_a_enregistrer):
-    """Enregistre instantanément les prix en Nuage sans figer l'application."""
+    """Enregistre les prix automatiquement grâce aux secrets de Streamlit Cloud."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         conn.update(worksheet="Sheet1", data=df_a_enregistrer)
@@ -107,7 +109,7 @@ if 'entreprise_province_etat' in df_filtre.columns:
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
 
-# RECHERCHE PAR MOT-CLÉ DANS LA BARRE LATERALE
+# RECHERCHE PAR MOT-CLÉ DANS LA BARRE LATERALE (Nouveauté pratique)
 recherche_mot_cle = st.sidebar.text_input("🔍 Filtrer la liste par mot-clé (ex: lait, biscuit) :", value="")
 if recherche_mot_cle:
     mot_cle = recherche_mot_cle.lower().strip()
@@ -117,7 +119,7 @@ if recherche_mot_cle:
              conditions_barre |= df_filtre[col].astype(str).str.lower().str.contains(mot_cle, na=False, regex=False)
     df_filtre = df_filtre[conditions_barre]
 
-# Gestion Admin
+# Gestion Admin Compacte Sécurisée
 st.sidebar.markdown("---") 
 with st.sidebar.expander("🔑 Administration"):
     if not st.session_state["admin_connecte"]:
@@ -184,7 +186,7 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     nom_banniere_recherche = banniere.replace('_', ' ')
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)]
 
-# 4. ZONE DE RECHERCHE ET SCANNER PHOTO
+# Mode de recherche
 choix_mode = st.radio(
     "👉 MODE DE RECHERCHE :",
     ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"],
@@ -212,7 +214,7 @@ else:
         st.success(f"🎉 Code-barres détecté : {code_detecte}")
         saisie_net = str(code_detecte).strip()
 
-# Logique de filtrage
+# Logique de filtrage algorithmique
 resultats = None
 message_erreur_recherche = None
 
@@ -241,7 +243,6 @@ if saisie_net:
                     resultats = recherche_texte
             else:
                 message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
-
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
 df_affichage = df_filtre[colonnes_dispo].copy()
@@ -275,8 +276,8 @@ else:
     if message_erreur_recherche and not saisie_net.strip().isdigit():
         st.warning(message_erreur_recherche)
 
-# Détection de sélection mécanique sur le tableau (Syntaxe rectifiée .iloc)
-if selection_tableau and selection_tableau.get("selection") and selection_tableau["selection"]["rows"]:
+# Détection de sélection stable (Mécanique exacte du 30 septembre)
+if selection_tableau and "selection" in selection_tableau and selection_tableau["selection"]["rows"]:
     index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
     if index_ligne_cliquee < len(df_affichage):
         cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
@@ -285,25 +286,24 @@ if selection_tableau and selection_tableau.get("selection") and selection_tablea
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
 
-cup_cible = None
+raw_cup = None
 
-# Détection croisée automatique de l'UPC actif
+# Extraction sécurisée du CUP selon la sélection ou recherche
 if resultats is not None and not resultats.empty:
-    cup_cible = str(resultats.iloc[0]['code_upc']).strip()
+    raw_cup = resultats.iloc[0]['code_upc']
 elif "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     if index_ligne < len(df_affichage):
-        cup_cible = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
+        raw_cup = df_affichage.iloc[index_ligne]['code_upc']
 
-# Interrogation réseau sécurisée de l'API Open Food Facts
-if cup_cible:
+if raw_cup:
     try:
-        cup_actuel = str(int(float(cup_cible))).strip()
+        cup_actuel = str(int(float(raw_cup))).strip()
         if cup_actuel:
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
                 try:
-                    # L'URL fonctionnelle absolue
+                    # L'adresse API robuste du 30 septembre
                     url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
@@ -314,15 +314,15 @@ if cup_cible:
                             lien_photo = donnees["product"]["image_url"]
                             st.sidebar.image(lien_photo, caption="Photo officielle OpenFoodFacts", use_container_width=True)
                         else:
-                            st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
+                            st.sidebar.warning("⚠️ Photo non disponible.")
                     else:
                         st.sidebar.error("❌ Serveur d'images indisponible.")
                 except Exception as e:
                     st.sidebar.error(f"⚠️ Erreur de connexion : {e}")
     except Exception as e:
-        st.sidebar.error(f"⚠️ Erreur de traitement du CUP : {e}")
+        st.sidebar.error(f"⚠️ Erreur de lecture du CUP : {e}")
 
-# FORMULAIRE DE CRÉATION DE NOUVEAU PRODUIT (SI CUP INCONNU)
+# Formulaire de création de nouveau produit
 if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats is None or resultats.empty):
     st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit.")
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
@@ -345,12 +345,11 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
                 'entreprise_pays': pays.strip(),
                 'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
             }
-
             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
             if sauvegarder_donnees(st.session_state['df_produits']):
                 st.success("🎉 Nouveau produit enregistré !")
                 st.rerun()
-# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (VERSION AMÉLIORÉE)
+# 6. GRILLE DE COMPARAISON COMPLÈTE DES 8 BANNIÈRES PRIX (VERSION NOUVELLE GÉNÉRATION)
 if resultats is not None and not resultats.empty:
     index_produit_reel = resultats.index[0]
     row = resultats.iloc[0]
@@ -358,15 +357,14 @@ if resultats is not None and not resultats.empty:
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
-    usine_actuelle = str(row.get('lieu_usine', row.get('usine_principale', ''))).strip().replace('nan', '')
-    reseau = str(row.get('distribution', '')).strip().replace('nan', '')
+    usine_actuelle = str(row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))).strip().replace('nan', '')
+    reseau = str(row.get('distribution', 'Général')).strip().replace('nan', '')
     
     localisation_siege = f"{prov}" if prov else ""
-    if pays:
-        localisation_siege += f" ({pays})" if localisation_siege else pays
-    if not localisation_siege:
-        localisation_siege = "Non spécifié"
+    if pays: localisation_siege += f" ({pays})" if localisation_siege else pays
+    if not localisation_siege: localisation_siege = "Non spécifié"
 
+    # Logique d'évaluation de la provenance
     if "québec" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">⚜️ ACHAT QUÉBÉCOIS</span>'
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
@@ -388,27 +386,27 @@ if resultats is not None and not resultats.empty:
         'prix_provigo': ('🟢 PROVIGO', '#e31b23')
     }
 
+    # Calcul dynamique de l'économie
     prix_valides = {}
     for col_key, (label, _) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '').replace('$', '').replace(',', '.').strip()
         if v_prix and v_prix.lower() != "non inscrit" and v_prix != "":
-            try:
-                prix_valides[col_key] = float(v_prix)
-            except ValueError:
-                pass
+            try: prix_valides[col_key] = float(v_prix)
+            except ValueError: pass
 
     meilleure_banniere_col = min(prix_valides, key=prix_valides.get) if prix_valides else None
 
+    # Construction des étiquettes HTML modernes
     bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
     for col_key, (label, color) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         
         if meilleure_banniere_col and col_key == meilleure_banniere_col:
-            style_card = f'background-color: #e8f5e9; border: 3px solid #2e7d32; box-shadow: 0px 4px 10px rgba(0,0,0,0.15);'
+            style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32; box-shadow: 0px 4px 10px rgba(0,0,0,0.15);'
             label_display = f'🔥 {label}'
         else:
-            style_card = f'background-color: #ffffff; border: 1px solid #e0e0e0;'
+            style_card = 'background-color: #ffffff; border: 1px solid #e0e0e0;'
             label_display = label
             
         bloc_prix_html += f"""
@@ -428,10 +426,11 @@ if resultats is not None and not resultats.empty:
         </div>
         """
 
+    # Rendu final carte consommateur
     st.html(f"""
-<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; margin-bottom: 20px; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
-        <span style="font-size: 13px; color: #555; letter-spacing: 1px; font-weight: 500;">UPC : {str(row.get('code_upc', ''))}</span>
+        <span style="font-size: 13px; color: #555; font-weight: 500;">UPC : {str(row.get('code_upc', ''))}</span>
         {badge_html}
     </div>
     <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('nom', 'Produit sans nom')}</h2>
@@ -440,17 +439,17 @@ if resultats is not None and not resultats.empty:
     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px;">
         <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏭 Compagnie :</b> {compagnie if compagnie else 'Non spécifié'}</span>
         <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>📍 Siège :</b> {localisation_siege}</span>
-        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏪 Usine principale :</b> {usine_actuelle if usine_actuelle else 'Non spécifiée'}</span>
-        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🛍️ Dispo chez :</b> {reseau if reseau else 'Général'}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏪 Usine principale :</b> {usine_actuelle}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🛍️ Dispo chez :</b> {reseau}</span>
     </div>
     
-    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">💰 Comparatif des prix en magasin :</h4>
+    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 16px; font-weight: 700; text-transform: uppercase;">💰 Comparatif des prix en magasin :</h4>
     {alerte_economie_html}
     {bloc_prix_html}
 </div>
 """)
 
-    # Formulaire de collaboration des prix
+    # Formulaire de collaboration
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)

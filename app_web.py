@@ -285,26 +285,47 @@ if selection_tableau and selection_tableau.get("selection") and selection_tablea
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
 
+# --- RÉCUPÉRATION ET AFFICHAGE PHOTO DANS LA BARRE LATERALE ---
+st.sidebar.markdown("---") 
+st.sidebar.subheader("Aperçu du produit")
+
+# 1. On détermine quel UPC utiliser (soit la recherche directe, soit le clic dans le tableau)
+cup_cible = None
+
 if resultats is not None and not resultats.empty:
-    raw_cup = resultats.iloc[0]['code_upc']
+    cup_cible = resultats.iloc[0]['code_upc']
+elif "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
+    index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
+    if index_ligne < len(df_affichage):
+        cup_cible = df_affichage.iloc[index_ligne]['code_upc']
+
+# 2. Si un produit est actif, on interroge l'API avec la bonne URL robuste du 30 septembre
+if cup_cible:
     try:
-        cup_actuel = str(int(float(raw_cup))).strip()
+        cup_actuel = str(int(float(cup_cible))).strip()
         if cup_actuel:
-            st.sidebar.success(f"📦 Image du CUP : {cup_actuel}")
+            st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
                 try:
+                    # Correction ici : Utilisation de l'adresse API complète et fonctionnelle
                     url_api = f"https://openfoodfacts.org{cup_actuel}.json"
-                    reponse = requests.get(url_api, headers={"User-Agent": "AchatQuebecApp-Web"}, timeout=3)
-                    if reponse.status_code == 200 and reponse.json().get("status") == 1:
-                        lien_photo = reponse.json()["product"].get("image_url")
-                        if lien_photo:
-                            st.sidebar.image(lien_photo, use_container_width=True)
+                    headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
+                    reponse = requests.get(url_api, headers=headers, timeout=5)
+                    
+                    if reponse.status_code == 200:
+                        donnees = reponse.json()
+                        if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
+                            lien_photo = donnees["product"]["image_url"]
+                            st.sidebar.image(lien_photo, caption="Photo officielle OpenFoodFacts", use_container_width=True)
                         else:
-                            st.sidebar.warning("⚠️ Photo non disponible.")
-                except:
-                    st.sidebar.error("⚠️ Serveur d'images indisponible.")
-    except:
+                            st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
+                    else:
+                        st.sidebar.error("❌ Serveur d'images indisponible.")
+                except Exception as e:
+                    st.sidebar.error(f"⚠️ Erreur de connexion : {e}")
+    except Exception as e:
         pass
+
 
 # FORMULAIRE DE CRÉATION DE NOUVEAU PRODUIT (CUP INCONNU)
 if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats is None or resultats.empty):

@@ -524,7 +524,7 @@ if bouton_creer:
                 }
                 
                                # 3. Ajout de la ligne au DataFrame de session
-                            import pandas as pd
+                import pandas as pd
                             st.session_state['df_produits'] = pd.concat(
                                 [st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], 
                                 ignore_index=True

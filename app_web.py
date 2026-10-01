@@ -138,7 +138,6 @@ st.sidebar.subheader("Aperçu du produit")
 if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     try:
-        # Configuration dynamique sécurisée des colonnes affichées pour l'extraction
         colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
         colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
         df_affichage_temp = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
@@ -146,17 +145,13 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
         cup_actuel = str(raw_cup).strip().split('.')[0]
         
-                if cup_actuel and cup_actuel != "nan":
+        if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
                 try:
-                    # LIGNE CORRIGÉE : Adresse officielle valide avec isolement du CUP propre
-                    cup_nettoye = str(raw_cup).strip().split('.')[0]
-                    url_api = f"https://openfoodfacts.org{cup_nettoye}.json"
-                    
+                    url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
-                    
                     if reponse.status_code == 200:
                         donnees = reponse.json()
                         if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
@@ -168,7 +163,6 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
                         st.sidebar.error("❌ Serveur d'images indisponible.")
                 except Exception as e:
                     st.sidebar.error(f"⚠️ Erreur de connexion : {e}")
-
         else:
             st.sidebar.warning("code_upc invalide ou vide.")
     except Exception as e:
@@ -214,7 +208,7 @@ st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un
 with st.expander("ℹ️ Comment utiliser l'application et économiser ? (Cliquez pour ouvrir)"):
     st.markdown("""
     ### 🛒 Protégeons notre portefeuille, encourageons l'achat local !
-    Bienvenue sur **AchatQuébec**, votre outil citoyen et collaboratif pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Together, reprenons le contrôle de notre panier d'épicerie !
+    Bienvenue sur **AchatQuébec**, votre outil citoyen et collaboratif pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Ensemble, reprenons le contrôle de notre panier d'épicerie !
     
     #### 🕵️‍♂️ Comment ça fonctionne ?
     1. **Recherchez un produit :** Tapez un mot-clé (ex: *pomme*) ou le code_upc.
@@ -405,7 +399,7 @@ else:
                             nouvelle_ligne = {
                                 'code_upc': cup_final,
                                 'nom': nom_nouveau.strip(),
-                                'siege_social': entreprise.strip(),
+                                'siege_social': blueprint.strip() if 'blueprint' in locals() else entreprise.strip(),
                                 'lieu_usine': "",
                                 'distribution': distribution.strip(),
                                 'entreprise_proprietaire': "",
@@ -444,7 +438,7 @@ if selection_tableau and "rows" in selection_tableau["selection"] and selection_
         cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
         resultats = df[df['code_upc'] == cup_selectionne]
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index[0]
+    index_produit_reel = resultats.index
     row = resultats.iloc[0]
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')

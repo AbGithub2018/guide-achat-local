@@ -142,14 +142,13 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
         df_affichage_temp = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
         
-        raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
-        cup_actuel = str(raw_cup).strip().split('.')[0]
-        
+        raw_cup = df_affichage_temp.iloc[index_ligne[0]]['code_upc']
+        cup_actuel = str(raw_cup).strip()
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
                 try:
-                    url_api = f"https://openfoodfacts.org{cup_actuel}.json"
+                    url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
                     if reponse.status_code == 200:

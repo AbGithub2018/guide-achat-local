@@ -484,58 +484,7 @@ else:
 
             bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
 # --- ADAPTATION CORRIGÉE DES LIGNES 487 À 520 ---
-if bouton_creer:
-    if nom_nouveau:
-        with st.spinner("Enregistrement de la nouvelle fiche produit..."):
-            try:
-                # 1. Nettoyage des prix (chaîne vide au lieu de "Non inscrit" pour préserver le type numérique)
-                p_iga_val = prix_iga.strip() if prix_iga.strip() else ""
-                p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else ""
-                p_metro_val = prix_metro.strip() if prix_metro.strip() else ""
-                p_super_c_val = prix_superc.strip() if prix_superc.strip() else ""
-                p_walmart_val = prix_walmart.strip() if prix_walmart.strip() else ""
-                p_tigre_val = prix_tigre.strip() if prix_tigre.strip() else ""
-                p_dollarama_val = prix_dollarama.strip() if prix_dollarama.strip() else ""
-                p_provigo_val = prix_provigo.strip() if prix_provigo.strip() else ""
-                
-                # 2. Construction du dictionnaire en suivant l'ordre exact de vos colonnes (A à U)
-                nouvelle_ligne = {
-                    'code_upc': cup_final,                        # Col A
-                    'nom': nom_nouveau.strip(),                   # Col B
-                    'siege_social': entreprise.strip(),           # Col C
-                    'lieu_usine': "",                             # Col D (à remplacer par votre variable si elle existe)
-                    'distribution': distribution.strip(),         # Col E
-                    'entreprise_proprietaire': "",                # Col F (à insérer si existant)
-                    'entreprise_province_etat': province.strip(), # Col G
-                    'entreprise_pays': pays.strip(),              # Col H
-                    'priorite': "",                               # Col I
-                    'usine_principale': "",                       # Col J
-                    'reseau_distribution': "",                    # Col K
-                    'prix_iga': p_iga_val,                        # Col L
-                    'prix_maxi': p_maxi_val,                      # Col M
-                    'prix_metro': p_metro_val,                    # Col N
-                    'prix_super_c': p_super_c_val,                # Col O
-                    'prix_walmart': p_walmart_val,                # Col P
-                    'prix_tigre_geant': p_tigre_val,              # Col Q
-                    'prix_dollarama': p_dollarama_val,            # Col R
-                    'prix_provigo': p_provigo_val,                # Col S
-                    'distribution.1': "",                         # Col T
-                    'bannieres_disponibles': ""                   # Col U
-                }
-                
-                               # 3. Ajout de la ligne au DataFrame de session
-        import pandas as pd
-        st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
-        if sauvegarder_donnees(st.session_state['df_produits']):
-            st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
-            st.balloons()
-            import time
-            time.sleep(1)
-            st.rerun()
-    except Exception as e:
-        st.error(f"Erreur lors de l'enregistrement : {e}")
-else:
-    st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
+
 
 
                     st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")

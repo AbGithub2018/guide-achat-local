@@ -212,7 +212,7 @@ else:
         st.success(f"🎉 Code-barres détecté : {code_detecte}")
         saisie_net = str(code_detecte).strip()
 
-# Logique algorithmique de filtrage
+# Logique de filtrage
 resultats = None
 message_erreur_recherche = None
 
@@ -241,6 +241,7 @@ if saisie_net:
                     resultats = recherche_texte
             else:
                 message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
 df_affichage = df_filtre[colonnes_dispo].copy()

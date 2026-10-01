@@ -285,29 +285,27 @@ if selection_tableau and selection_tableau.get("selection") and selection_tablea
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
 
-# --- RÉCUPÉRATION ET AFFICHAGE PHOTO DANS LA BARRE LATERALE ---
-st.sidebar.markdown("---") 
-st.sidebar.subheader("Aperçu du produit")
-
-# 1. On détermine quel UPC utiliser (soit la recherche directe, soit le clic dans le tableau)
 cup_cible = None
 
+# 1. On récupère le code UPC peu importe comment le produit a été sélectionné
 if resultats is not None and not resultats.empty:
-    cup_cible = resultats.iloc[0]['code_upc']
+    cup_cible = str(resultats.iloc[0]['code_upc']).strip()
 elif "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     if index_ligne < len(df_affichage):
-        cup_cible = df_affichage.iloc[index_ligne]['code_upc']
+        cup_cible = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
 
-# 2. Si un produit est actif, on interroge l'API avec la bonne URL robuste du 30 septembre
+# 2. Si on a trouvé un CUP, on interroge proprement l'API
 if cup_cible:
     try:
+        # Nettoyage du format du code barres
         cup_actuel = str(int(float(cup_cible))).strip()
+        
         if cup_actuel:
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
                 try:
-                    # Correction ici : Utilisation de l'adresse API complète et fonctionnelle
+                    # L'URL exacte et fonctionnelle du 30 septembre
                     url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
@@ -324,8 +322,7 @@ if cup_cible:
                 except Exception as e:
                     st.sidebar.error(f"⚠️ Erreur de connexion : {e}")
     except Exception as e:
-        pass
-
+        st.sidebar.error(f"⚠️ Erreur de traitement du CUP : {e}")
 
 # FORMULAIRE DE CRÉATION DE NOUVEAU PRODUIT (CUP INCONNU)
 if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats is None or resultats.empty):

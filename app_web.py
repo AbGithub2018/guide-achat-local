@@ -524,24 +524,19 @@ if bouton_creer:
                 }
                 
                                # 3. Ajout de la ligne au DataFrame de session
-                import pandas as pd
-                            st.session_state['df_produits'] = pd.concat(
-                                [st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], 
-                                ignore_index=True
-                            )
-                            
-                            # 4. Sauvegarde physique dans le Google Sheet et rétroaction
-                            if sauvegarder_donnees(st.session_state['df_produits']):
-                                st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
-                                st.balloons()
-                                import time
-                                time.sleep(1)
-                                st.rerun()
-                                
-                        except Exception as e:
-                            st.error(f"Erreur lors de l'enregistrement : {e}")
-            else:
-                st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
+        import pandas as pd
+        st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
+        if sauvegarder_donnees(st.session_state['df_produits']):
+            st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
+            st.balloons()
+            import time
+            time.sleep(1)
+            st.rerun()
+    except Exception as e:
+        st.error(f"Erreur lors de l'enregistrement : {e}")
+else:
+    st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
+
 
                     st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
 

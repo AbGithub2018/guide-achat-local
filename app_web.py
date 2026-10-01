@@ -483,39 +483,57 @@ else:
             with col8: prix_provigo = st.text_input("Prix Provigo ($)", value="")
 
             bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
-            
-            if bouton_creer:
-                if nom_nouveau:
-                    with st.spinner("Enregistrement de la nouvelle fiche produit..."):
-                        try:
-                            p_iga_val = prix_iga.strip() if prix_iga.strip() else "Non inscrit"
-                            p_super_c_val = prix_superc.strip() if prix_superc.strip() else "Non inscrit"
-                            p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else "Non inscrit"
-                            p_metro_val = prix_metro.strip() if prix_metro.strip() else "Non inscrit"
-                            p_walmart_val = prix_walmart.strip() if prix_walmart.strip() else "Non inscrit"
-                            p_tigre_val = prix_tigre.strip() if prix_tigre.strip() else "Non inscrit"
-                            p_dollarama_val = prix_dollarama.strip() if prix_dollarama.strip() else "Non inscrit"
-                            p_provigo_val = prix_provigo.strip() if prix_provigo.strip() else "Non inscrit"
-
-                            
-                            nouvelle_ligne = {
-                                'code_upc': cup_final,
-                                'nom': nom_nouveau.strip(),
-                                'siege_social': entreprise.strip(),
-                                'entreprise_province_etat': province.strip(),
-                                'entreprise_pays': pays.strip(),
-                                'distribution': distribution.strip(),
-                                'prix_iga': p_iga_val,
-                                'prix_super_c': p_super_c_val,
-                                'prix_maxi': p_maxi_val,
-                                'prix_metro': p_metro_val,
-                                'prix_walmart': p_walmart_val,
-                                'prix_tigre_geant': p_tigre_val,
-                                'prix_dollarama': p_dollarama_val,
-                                'prix_provigo': p_provigo_val,
-
-                            }
-                            
+# --- ADAPTATION CORRIGÉE DES LIGNES 487 À 520 ---
+if bouton_creer:
+    if nom_nouveau:
+        with st.spinner("Enregistrement de la nouvelle fiche produit..."):
+            try:
+                # 1. Nettoyage des prix (chaîne vide au lieu de "Non inscrit" pour préserver le type numérique)
+                p_iga_val = prix_iga.strip() if prix_iga.strip() else ""
+                p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else ""
+                p_metro_val = prix_metro.strip() if prix_metro.strip() else ""
+                p_super_c_val = prix_superc.strip() if prix_superc.strip() else ""
+                p_walmart_val = prix_walmart.strip() if prix_walmart.strip() else ""
+                p_tigre_val = prix_tigre.strip() if prix_tigre.strip() else ""
+                p_dollarama_val = prix_dollarama.strip() if prix_dollarama.strip() else ""
+                p_provigo_val = prix_provigo.strip() if prix_provigo.strip() else ""
+                
+                # 2. Construction du dictionnaire en suivant l'ordre exact de vos colonnes (A à U)
+                nouvelle_ligne = {
+                    'code_upc': cup_final,                        # Col A
+                    'nom': nom_nouveau.strip(),                   # Col B
+                    'siege_social': entreprise.strip(),           # Col C
+                    'lieu_usine': "",                             # Col D (à remplacer par votre variable si elle existe)
+                    'distribution': distribution.strip(),         # Col E
+                    'entreprise_proprietaire': "",                # Col F (à insérer si existant)
+                    'entreprise_province_etat': province.strip(), # Col G
+                    'entreprise_pays': pays.strip(),              # Col H
+                    'priorite': "",                               # Col I
+                    'usine_principale': "",                       # Col J
+                    'reseau_distribution': "",                    # Col K
+                    'prix_iga': p_iga_val,                        # Col L
+                    'prix_maxi': p_maxi_val,                      # Col M
+                    'prix_metro': p_metro_val,                    # Col N
+                    'prix_super_c': p_super_c_val,                # Col O
+                    'prix_walmart': p_walmart_val,                # Col P
+                    'prix_tigre_geant': p_tigre_val,              # Col Q
+                    'prix_dollarama': p_dollarama_val,            # Col R
+                    'prix_provigo': p_provigo_val,                # Col S
+                    'distribution.1': "",                         # Col T
+                    'bannieres_disponibles': ""                   # Col U
+                }
+                
+                # 3. Ajout sécurisé au DataFrame de la session Streamlit
+                import pandas as pd
+                st.session_state['df_produits'] = pd.concat(
+                    [st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], 
+                    ignore_index=True
+                )
+                st.success("✅ La nouvelle fiche produit a été ajoutée avec succès !")
+                
+            except Exception as e:
+                st.error(f"❌ Une erreur est survenue lors de la création : {e}")   
+                
                             import pandas as pd
                             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
                             
@@ -646,22 +664,34 @@ if resultats is not None and not resultats.empty:
 </div>
 """)
 
+# --- ENSEMBLE DES LIGNES 650 À 670 (À REMPLACER) ---
+st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
+with st.form("formulaire_prix_epicerie"):
+    
+    # Première rangée : Les 4 bannières principales (L, M, N, O)
+    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+    
+    # Fonction de nettoyage locale pour éviter le crash du .lower() sur les valeurs numériques
+    def clean_price(val):
+        v_str = str(val).strip()
+        return "" if v_str.lower() in ["nan", "none", ""] else v_str
 
-    st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
-    with st.form("formulaire_prix_epicerie"):
-        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=p_iga if p_iga.lower() != "nan" else "", key="edit_iga")
-        nouveau_super_c = col_p2.text_input("Prix Super C ($) :", value=p_super_c if p_super_c.lower() != "nan" else "", key="edit_super_c")
-        nouveau_maxi = col_p3.text_input("Prix Maxi ($) :", value=p_maxi if p_maxi.lower() != "nan" else "", key="edit_maxi")
-        nouveau_metro = col_p4.text_input("Prix Metro ($) :", value=p_metro if p_metro.lower() != "nan" else "", key="edit_metro")
+    nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(p_iga), key="edit_iga")
+    nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(p_maxi), key="edit_maxi")
+    nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(p_metro), key="edit_metro")
+    nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(p_super_c), key="edit_super_c")
+    
+    # Deuxième rangée : Les 4 bannières secondaires (P, Q, R, S)
+    col_p5, col_p6, col_p7, col_p8 = st.columns(4)
+    
+    nouveau_walmart = col_p5.text_input("Prix Walmart ($) :", value=clean_price(p_walmart), key="edit_walmart")
+    nouveau_tigre = col_p6.text_input("Prix Tigre Géant ($) :", value=clean_price(p_tigre_geant), key="edit_tigre")
+    nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=clean_price(p_dollarama), key="edit_dollarama")
+    nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=clean_price(p_provigo), key="edit_provigo")
+    
+    # Bouton officiel qui déclenche votre condition "if bouton_soumettre:" de la ligne 671
+    bouton_soumettre = st.form_submit_button("Enregistrer les modifications")
 
-        col_p5, col_p6, col_p7, col_p8 = st.columns(4)
-        nouveau_walmart = col_p5.text_input("Prix Walmart ($) :", value=p_walmart if p_walmart.lower() != "nan" else "", key="edit_walmart")
-        nouveau_tigre = col_p6.text_input("Prix Tigre Géant ($) :", value=p_tigre if p_tigre.lower() != "nan" else "", key="edit_tigre")
-        nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=p_dollarama if p_dollarama.lower() != "nan" else "", key="edit_dollarama")
-        nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=p_provigo if p_provigo.lower() != "nan" else "", key="edit_provigo")
-
-        bouton_soumettre = st.form_submit_button("💾 Enregistrer la grille de prix en direct dans le Nuage", type="primary", use_container_width=True)
 
     if bouton_soumettre:
         st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()

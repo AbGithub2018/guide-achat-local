@@ -146,13 +146,17 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
         cup_actuel = str(raw_cup).strip().split('.')[0]
         
-        if cup_actuel and cup_actuel != "nan":
+                if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
                 try:
-                    url_api = f"https://openfoodfacts.org{cup_actuel}.json"
+                    # LIGNE CORRIGÉE : Adresse officielle valide avec isolement du CUP propre
+                    cup_nettoye = str(raw_cup).strip().split('.')[0]
+                    url_api = f"https://openfoodfacts.org{cup_nettoye}.json"
+                    
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
+                    
                     if reponse.status_code == 200:
                         donnees = reponse.json()
                         if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
@@ -164,6 +168,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
                         st.sidebar.error("❌ Serveur d'images indisponible.")
                 except Exception as e:
                     st.sidebar.error(f"⚠️ Erreur de connexion : {e}")
+
         else:
             st.sidebar.warning("code_upc invalide ou vide.")
     except Exception as e:

@@ -485,8 +485,6 @@ else:
             bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
 # --- ADAPTATION CORRIGÉE DES LIGNES 487 À 520 ---
 
-
-
                     st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
 
 # Détection de la ligne cliquée dans le tableau interactif

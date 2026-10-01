@@ -212,7 +212,7 @@ else:
         st.success(f"🎉 Code-barres détecté : {code_detecte}")
         saisie_net = str(code_detecte).strip()
 
-# Logique de filtrage algorithmique
+# Logique algorithmique de filtrage
 resultats = None
 message_erreur_recherche = None
 
@@ -274,7 +274,7 @@ else:
     if message_erreur_recherche and not saisie_net.strip().isdigit():
         st.warning(message_erreur_recherche)
 
-# Détection de sélection sur le tableau
+# Détection de sélection mécanique sur le tableau (Syntaxe rectifiée .iloc)
 if selection_tableau and selection_tableau.get("selection") and selection_tableau["selection"]["rows"]:
     index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
     if index_ligne_cliquee < len(df_affichage):
@@ -286,7 +286,7 @@ st.sidebar.subheader("Aperçu du produit")
 
 cup_cible = None
 
-# Détection de la source de l'UPC (soit les résultats de recherche, soit le tableau tactile)
+# Détection croisée automatique de l'UPC actif
 if resultats is not None and not resultats.empty:
     cup_cible = str(resultats.iloc[0]['code_upc']).strip()
 elif "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
@@ -294,7 +294,7 @@ elif "tableau_consommateur" in st.session_state and st.session_state["tableau_co
     if index_ligne < len(df_affichage):
         cup_cible = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
 
-# Interrogation robuste et sécurisée de l'API
+# Interrogation réseau sécurisée de l'API Open Food Facts
 if cup_cible:
     try:
         cup_actuel = str(int(float(cup_cible))).strip()
@@ -302,7 +302,7 @@ if cup_cible:
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
                 try:
-                    # L'URL exacte et valide du protocole de recherche fonctionnel
+                    # L'URL fonctionnelle absolue
                     url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)

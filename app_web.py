@@ -142,8 +142,9 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
         df_affichage_temp = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
         
-        raw_cup = df_affichage_temp.iloc[index_ligne[0]]['code_upc']
-        cup_actuel = str(raw_cup).strip()
+        raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
+        cup_actuel = str(raw_cup).strip().split('.')[0]
+
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):

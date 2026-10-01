@@ -553,22 +553,26 @@ if resultats is not None and not resultats.empty:
         
         bouton_soumettre = st.form_submit_button("Enregistrer les modifications")
 
-    if bouton_soumettre:
-        try:
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip() if nouveau_iga else ""
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip() if nouveau_maxi else ""
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip() if nouveau_metro else ""
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip() if nouveau_super_c else ""
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_walmart'] = nouveau_walmart.strip() if nouveau_walmart else ""
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_tigre_geant'] = nouveau_tigre.strip() if nouveau_tigre else ""
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip() if nouveau_dollarama else ""
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip() if nouveau_provigo else ""
+ if bouton_soumettre:
+    try:
+        # Aligné ici (4 espaces après le try)
+        idx_unique = index_produit_reel[0]
+        
+        st.session_state['df_produits'].at[idx_unique, 'prix_iga'] = nouveau_iga.strip() if nouveau_iga else ""
+        st.session_state['df_produits'].at[idx_unique, 'prix_maxi'] = nouveau_maxi.strip() if nouveau_maxi else ""
+        st.session_state['df_produits'].at[idx_unique, 'prix_metro'] = nouveau_metro.strip() if nouveau_metro else ""
+        st.session_state['df_produits'].at[idx_unique, 'prix_super_c'] = nouveau_super_c.strip() if nouveau_super_c else ""
+        st.session_state['df_produits'].at[idx_unique, 'prix_walmart'] = nouveau_walmart.strip() if nouveau_walmart else ""
+        st.session_state['df_produits'].at[idx_unique, 'prix_tigre_geant'] = nouveau_tigre.strip() if nouveau_tigre else ""
+        st.session_state['df_produits'].at[idx_unique, 'prix_dollarama'] = nouveau_dollarama.strip() if nouveau_dollarama else ""
+        st.session_state['df_produits'].at[idx_unique, 'prix_provigo'] = nouveau_provigo.strip() if nouveau_provigo else ""
 
-            if sauvegarder_donnees(st.session_state['df_produits']):
-                st.success("Base de données collaborative mise à jour avec succès !")
-                time.sleep(1)
-                st.rerun()
-        except Exception as e:
-            st.error(f"❌ Erreur lors de la mise à jour des prix : {e}")
+        if sauvegarder_donnees(st.session_state['df_produits']):
+            st.success("Base de données collaborative mise à jour avec succès !")
+            time.sleep(1)
+            st.rerun()
+
+    except Exception as e:
+        st.error(f"❌ Erreur lors de la mise à jour des prix : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")

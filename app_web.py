@@ -398,7 +398,9 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
                 try:
                     # Lien officiel de l'API gratuite d'Open Food Facts
                     url_api = f"https://world.openfoodfacts.org/api/v0/product/{cup_actuel}.json"
-                    headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
+                    headers = {
+    "User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"
+}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
                     
                     if reponse.status_code == 200:

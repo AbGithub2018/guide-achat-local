@@ -81,6 +81,7 @@ def sauvegarder_donnees(df_a_enregistrer):
     except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")
         return False
+
 # Initialisation de la session de données
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()
@@ -90,7 +91,6 @@ if "admin_connecte" not in st.session_state:
     st.session_state["admin_connecte"] = False
 
 df = st.session_state['df_produits']
-
 # 2. BARRE LATERALE (Filtres Géopolitiques et Textuels)
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits</h2>")
 
@@ -107,9 +107,8 @@ if 'entreprise_province_etat' in df_filtre.columns:
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
 
-# RECHERCHE PAR MOT-CLÉ DANS LA BARRE LATERALE (Amélioration)
+# RECHERCHE PAR MOT-CLÉ DANS LA BARRE LATERALE
 recherche_mot_cle = st.sidebar.text_input("🔍 Filtrer la liste par mot-clé (ex: lait, biscuit) :", value="")
-df_filtre = st.session_state['df_produits'].copy()
 if recherche_mot_cle:
     mot_cle = recherche_mot_cle.lower().strip()
     conditions_barre = pd.Series(False, index=df_filtre.index)
@@ -184,6 +183,7 @@ banniere = st.session_state['banniere_active']
 if banniere != "Tous" and 'distribution' in df_filtre.columns:
     nom_banniere_recherche = banniere.replace('_', ' ')
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)]
+
 # 4. ZONE DE RECHERCHE ET SCANNER PHOTO
 choix_mode = st.radio(
     "👉 MODE DE RECHERCHE :",
@@ -212,7 +212,7 @@ else:
         st.success(f"🎉 Code-barres détecté : {code_detecte}")
         saisie_net = str(code_detecte).strip()
 
-# Logique algorithmique de filtrage
+# Logique de filtrage algorithmique
 resultats = None
 message_erreur_recherche = None
 
@@ -227,19 +227,19 @@ if saisie_net:
             resultats = recherche_cup
         else:
             conditions = pd.Series(False, index=df_filtre.index)
-    if 'nom' in df_filtre.columns:
-        conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-    if 'entreprise_proprietaire' in df_filtre.columns:
-        conditions |= df_filtre['entreprise_proprietaire'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-    if 'lieu_usine' in df_filtre.columns:
-        conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-                            
-        recherche_texte = df_filtre[conditions]
-    if not recherche_texte.empty:
+            if 'nom' in df_filtre.columns:
+                conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'entreprise_proprietaire' in df_filtre.columns:
+                conditions |= df_filtre['entreprise_proprietaire'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+            if 'lieu_usine' in df_filtre.columns:
+                conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
+                                    
+            recherche_texte = df_filtre[conditions]
+            if not recherche_texte.empty:
                 df_filtre = recherche_texte
                 if len(recherche_texte) == 1:
                     resultats = recherche_texte
-    else:
+            else:
                 message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
@@ -280,14 +280,13 @@ if selection_tableau and selection_tableau.get("selection") and selection_tablea
     if index_ligne_cliquee < len(df_affichage):
         cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
         resultats = df[df['code_upc'] == cup_selectionne]
-
 # --- RÉCUPÉRATION ET AFFICHAGE PHOTO DANS LA BARRE LATERALE ---
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
 
 cup_cible = None
 
-# 1. On récupère le code UPC peu importe comment le produit a été sélectionné
+# Détection de la source de l'UPC (soit les résultats de recherche, soit le tableau tactile)
 if resultats is not None and not resultats.empty:
     cup_cible = str(resultats.iloc[0]['code_upc']).strip()
 elif "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
@@ -295,17 +294,15 @@ elif "tableau_consommateur" in st.session_state and st.session_state["tableau_co
     if index_ligne < len(df_affichage):
         cup_cible = str(df_affichage.iloc[index_ligne]['code_upc']).strip()
 
-# 2. Si on a trouvé un CUP, on interroge proprement l'API
+# Interrogation robuste et sécurisée de l'API
 if cup_cible:
     try:
-        # Nettoyage du format du code barres
         cup_actuel = str(int(float(cup_cible))).strip()
-        
         if cup_actuel:
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
                 try:
-                    # L'URL exacte et fonctionnelle du 30 septembre
+                    # L'URL exacte et valide du protocole de recherche fonctionnel
                     url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
@@ -324,7 +321,7 @@ if cup_cible:
     except Exception as e:
         st.sidebar.error(f"⚠️ Erreur de traitement du CUP : {e}")
 
-# FORMULAIRE DE CRÉATION DE NOUVEAU PRODUIT (CUP INCONNU)
+# FORMULAIRE DE CRÉATION DE NOUVEAU PRODUIT (SI CUP INCONNU)
 if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats is None or resultats.empty):
     st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit.")
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
@@ -341,12 +338,12 @@ if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10 and (resultats
                 'nom': nom_nouveau.strip(),
                 'siege_social': province.strip() + " (Canada)" if pays.lower() == "canada" else province.strip(),
                 'lieu_usine': "",
-                'distribution': distribution.strip() if 'distribution' in locals() else "",
+                'distribution': distribution.strip(),
                 'entreprise_proprietaire': entreprise.strip(),
                 'entreprise_province_etat': province.strip(),
                 'entreprise_pays': pays.strip(),
                 'prix_iga': "", 'prix_super_c': "", 'prix_maxi': "", 'prix_metro': "", 'prix_walmart': "", 'prix_tigre_geant': "", 'prix_dollarama': "", 'prix_provigo': ""
-        }
+            }
 
             st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
             if sauvegarder_donnees(st.session_state['df_produits']):
@@ -363,14 +360,12 @@ if resultats is not None and not resultats.empty:
     usine_actuelle = str(row.get('lieu_usine', row.get('usine_principale', ''))).strip().replace('nan', '')
     reseau = str(row.get('distribution', '')).strip().replace('nan', '')
     
-    # Formatage de la localisation pour le consommateur
     localisation_siege = f"{prov}" if prov else ""
     if pays:
         localisation_siege += f" ({pays})" if localisation_siege else pays
     if not localisation_siege:
         localisation_siege = "Non spécifié"
 
-    # Détermination du verdict d'achat local
     if "québec" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">⚜️ ACHAT QUÉBÉCOIS</span>'
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
@@ -381,7 +376,6 @@ if resultats is not None and not resultats.empty:
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
 
-    # Configuration et détection du meilleur prix
     bannières_config = {
         'prix_iga': ('🔴 IGA', '#d32f2f'),
         'prix_super_c': ('🔵 SUPER C', '#0056b3'),
@@ -393,7 +387,6 @@ if resultats is not None and not resultats.empty:
         'prix_provigo': ('🟢 PROVIGO', '#e31b23')
     }
 
-    # Calcul du prix le plus bas pour l'économie du consommateur
     prix_valides = {}
     for col_key, (label, _) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '').replace('$', '').replace(',', '.').strip()
@@ -405,13 +398,11 @@ if resultats is not None and not resultats.empty:
 
     meilleure_banniere_col = min(prix_valides, key=prix_valides.get) if prix_valides else None
 
-    # Génération visuelle des blocs de prix
     bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
     for col_key, (label, color) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         
-        # Effet visuel si c'est le prix le moins cher trouvé
         if meilleure_banniere_col and col_key == meilleure_banniere_col:
             style_card = f'background-color: #e8f5e9; border: 3px solid #2e7d32; box-shadow: 0px 4px 10px rgba(0,0,0,0.15);'
             label_display = f'🔥 {label}'
@@ -427,7 +418,6 @@ if resultats is not None and not resultats.empty:
         """
     bloc_prix_html += '</div>'
 
-    # Bannière d'alerte économie
     alerte_economie_html = ""
     if meilleure_banniere_col:
         nom_gagnant, _ = bannières_config[meilleure_banniere_col]
@@ -437,7 +427,6 @@ if resultats is not None and not resultats.empty:
         </div>
         """
 
-    # Rendu final épuré "Expérience Consommateur"
     st.html(f"""
 <div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
@@ -460,7 +449,7 @@ if resultats is not None and not resultats.empty:
 </div>
 """)
 
-    # Formulaire de collaboration des prix inchangé pour garder la compatibilité
+    # Formulaire de collaboration des prix
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)

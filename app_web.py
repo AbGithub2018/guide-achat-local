@@ -539,73 +539,113 @@ if selection_tableau and "rows" in selection_tableau["selection"] and selection_
         resultats = df[df['code_upc'] == cup_selectionne]
 
 
-# 6. AFFICHAGE DE LA FICHE DÉTAILLÉE CONSOMMATEUR
+# =====================================================================
+# REMPLACEZ LE BLOC DE RENDU DE LA CARTE DE PRODUIT (TOUT EN BAS) PAR :
+# =====================================================================
 if resultats is not None and not resultats.empty:
-    st.markdown("---")
-    index_produit_reel = resultats.index[0]
-    row = resultats.iloc[0]
-    
-    prov = str(row.get('entreprise_province_etat', '')).strip()
-    pays = str(row.get('entreprise_pays', '')).strip()
-    
-    st.session_state['produit_selectionne'] = row
+    index_produit_reel = resultats.index
+    row = resultats.iloc[0]  # Extraction stable de la ligne Pandas
 
+    prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
+    pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
+    compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
+    usine_actuelle = str(row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))).strip().replace('nan', '')
+    reseau = str(row.get('distribution', 'Général')).strip().replace('nan', '')
+    
+    localisation_siege = f"{prov}" if prov else ""
+    if pays: 
+        localisation_siege += f" ({pays})" if localisation_siege else pays
+    if not localisation_siege: 
+        localisation_siege = "Non spécifié"
+
+    # Assignation des éléments thématiques et visuels selon l'origine
     if "québec" in prov.lower():
-        couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
-        verdict = "⚜️ PRODUIT QUÉBÉCOIS (Décisions et Siège au Québec)"
-    elif "canada" in pays.lower():
-        couleur_boite, couleur_texte = "#e8f5e9", "#1b5e20"
-        verdict = "🍁 PRODUIT CANADIEN (Décisions au Canada)"
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">⚜️ ACHAT QUÉBÉCOIS</span>'
+        verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+    elif "canada" in pays.lower() or "canada" in prov.lower():
+        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">🍁 ACHAT CANADIEN</span>'
+        verdict = "Ce produit encourage l'économie canadienne."
     else:
-        couleur_boite, couleur_texte = "#fafafa", "#424242"
-        verdict = "🌍 PROPRIÉTÉ ÉTRANGÈRE (L'argent quitte le pays)"
-    p_iga = str(row.get('prix_iga', '')).strip()
-    p_super_c = str(row.get('prix_super_c', '')).strip()
-    p_maxi = str(row.get('prix_maxi', '')).strip()
-    p_metro = str(row.get('prix_metro', '')).strip()
-    p_walmart = str(row.get('prix_walmart', '')).strip()
-    p_tigre = str(row.get('prix_tigre_geant', '')).strip()
-    p_dollarama = str(row.get('prix_dollarama', '')).strip()
-    p_provigo = str(row.get('prix_provigo', '')).strip()
+        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
+        verdict = "Les profits de ce produit quittent le pays."
 
-    affichage_iga = p_iga if p_iga and p_iga.lower() != "nan" else "Non inscrit"
-    affichage_super_c = p_super_c if p_super_c and p_super_c.lower() != "nan" else "Non inscrit"
-    affichage_maxi = p_maxi if p_maxi and p_maxi.lower() != "nan" else "Non inscrit"
-    affichage_metro = p_metro if p_metro and p_metro.lower() != "nan" else "Non inscrit"
-    affichage_walmart = p_walmart if p_walmart and p_walmart.lower() != "nan" else "Non inscrit"
-    affichage_tigre = p_tigre if p_tigre and p_tigre.lower() != "nan" else "Non inscrit"
-    affichage_dollarama = p_dollarama if p_dollarama and p_dollarama.lower() != "nan" else "Non inscrit"
-    affichage_provigo = p_provigo if p_provigo and p_provigo.lower() != "nan" else "Non inscrit"
+    # Configuration de la nouvelle disposition pour les 8 bannières
+    bannières_config = {
+        'prix_iga': ('🔴 IGA', '#d32f2f'),
+        'prix_super_c': ('🔵 SUPER C', '#0056b3'),
+        'prix_maxi': ('🟡 MAXI', '#f9d71c'),
+        'prix_metro': ('🟢 METRO', '#28a745'),
+        'prix_walmart': ('🔵 WALMART', '#0071dc'),
+        'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#e31837'),
+        'prix_dollarama': ('💵 DOLLARAMA', '#006a4e'),
+        'prix_provigo': ('🟢 PROVIGO', '#e31b23')
+    }
 
-    usine_actuelle = row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))
-    
-    bloc_prix_html = f"""
-<div style="margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap;">
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #d32f2f; border-radius: 5px; color: #1a1a1a;">🔴 IGA : {affichage_iga}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0056b3; border-radius: 5px; color: #1a1a1a;">🔵 SUPER C : {affichage_super_c}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #f9d71c; border-radius: 5px; color: #1a1a1a;">🟡 MAXI : {affichage_maxi}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #28a745; border-radius: 5px; color: #1a1a1a;">🟢 METRO : {affichage_metro}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #0071dc; border-radius: 5px; color: #1a1a1a;">🔵 WALMART : {affichage_walmart}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31837; border-radius: 5px; color: #1a1a1a;">🐯 TIGRE GÉANT : {affichage_tigre}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #006a4e; border-radius: 5px; color: #1a1a1a;">💵 DOLLARAMA : {affichage_dollarama}</span>
-<span style="font-size: 16px; font-weight: bold; background-color: #ffffff; padding: 6px 12px; border: 2px solid #e31b23; border-radius: 5px; color: #1a1a1a;">🟢 PROVIGO : {affichage_provigo}</span>
-</div>
-"""
+    # Calcul dynamique automatique de la meilleure enseigne
+    prix_valides = {}
+    for col_key, (label, _) in bannières_config.items():
+        v_prix = str(row.get(col_key, '')).strip().replace('nan', '').replace('$', '').replace(',', '.').strip()
+        if v_prix and v_prix.lower() != "non inscrit" and v_prix != "":
+            try: 
+                prix_valides[col_key] = float(v_prix)
+            except ValueError: 
+                pass
 
+    meilleure_banniere_col = min(prix_valides, key=prix_valides.get) if prix_valides else None
+
+    # Rendu graphique en blocs flexibles (Responsive Flexbox CSS)
+    bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
+    for col_key, (label, color) in bannières_config.items():
+        v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
+        affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
+        
+        if meilleure_banniere_col and col_key == meilleure_banniere_col:
+            style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32; box-shadow: 0px 4px 10px rgba(0,0,0,0.15);'
+            label_display = f'🔥 {label}'
+        else:
+            style_card = 'background-color: #ffffff; border: 1px solid #e0e0e0;'
+            label_display = label
+            
+        bloc_prix_html += f"""
+        <div style="padding: 10px 15px; border-radius: 8px; color: #1a1a1a; font-weight: bold; font-size: 15px; min-width: 140px; text-align: center; {style_card}">
+            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">{label_display}</div>
+            <div style="font-size: 18px; color: #1a1a1a;">{affichage}</div>
+        </div>
+        """
+    bloc_prix_html += '</div>'
+
+    alerte_economie_html = ""
+    if meilleure_banniere_col:
+        nom_gagnant, _ = bannières_config[meilleure_banniere_col]
+        alerte_economie_html = f"""
+        <div style="background-color: #e8f5e9; color: #1b5e20; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 16px; margin-bottom: 15px; border-left: 5px solid #2e7d32;">
+            💡 ÉCONOMIE : Le meilleur prix actuel est chez <b>{nom_gagnant}</b> ({prix_valides[meilleure_banniere_col]:.2f}$) !
+        </div>
+        """
+
+    # Affichage final injecté de manière sécurisée
     st.html(f"""
-<div style="background-color: {couleur_boite}; padding: 22px; border-radius: 10px; border-left: 12px solid {couleur_texte}; margin-bottom: 15px; font-family: Arial, sans-serif;">
-    <h3 style="color: {couleur_texte}; margin-top: 0; font-size: 22px;">{verdict}</h3>
-    <p style="font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #1a1a1a;">📦 {row.get('nom', 'Produit sans nom')}</p>
-    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #ccc;">
-    <table style="width: 100%; font-size: 17px; color: #333; line-height: 1.8; border-collapse: collapse;">
-        <tr><td style="width: 25%; padding: 4px 0;"><b>🏭 Compagnie :</b></td><td><b>{row.get('entreprise_proprietaire', 'À déterminer')}</b></td></tr>
-        <tr><td style="padding: 4px 0;"><b>📍 Siège social :</b></td><td>{prov} ({pays})</td></tr>
-        <tr><td style="padding: 4px 0;"><b>🏪 Usine principale :</b></td><td>{usine_actuelle}</td></tr>
-        <tr><td style="padding: 4px 0;"><b>🛍️ Réseau d'épicerie :</b></td><td>{row.get('distribution', 'Général')}</td></tr>
-    </table>
+<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; margin-bottom: 20px; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+        <span style="font-size: 13px; color: #555; font-weight: 500;">UPC : {str(row.get('code_upc', ''))}</span>
+        {badge_html}
+    </div>
+    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('nom', 'Produit sans nom')}</h2>
+    <p style="color: {couleur_texte}; font-size: 15px; margin: 0 0 20px 0; font-weight: 500;">{verdict}</p>
+    
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px;">
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏭 Compagnie :</b> {compagnie if compagnie else 'Non spécifié'}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>📍 Siège :</b> {localisation_siege}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏪 Usine principale :</b> {usine_actuelle}</span>
+        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🛍️ Dispo chez :</b> {reseau}</span>
+    </div>
+    
+    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 16px; font-weight: 700; text-transform: uppercase;">💰 Comparatif des prix en magasin :</h4>
+    {alerte_economie_html}
     {bloc_prix_html}
 </div>
 """)
+
 
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):

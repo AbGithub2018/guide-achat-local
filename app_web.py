@@ -158,7 +158,7 @@ def deviner_categorie(nom_produit):
         "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", 
         "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", 
         "prunes", "raisin", "raisins", "physalis", "sunsgold", "ginger", "gold", "paula", "red", "sunrise",
-        # Les Légumes et Herbes Fraîches (Le mot "haricots" seul a été retiré pour bloquer les secs)
+        # Les Légumes et Herbes Fraîches (Le mot "haricots" seul reste retiré pour bloquer les secs)
         "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
         "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
         "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", 
@@ -217,6 +217,7 @@ def deviner_categorie(nom_produit):
         return "❄️ Surgelés"
         
     return "🥫 Garde-manger"
+
 
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:

@@ -574,7 +574,7 @@ if resultats is not None and not resultats.empty:
         </style>
         """)
         
-        bouton_soumettre = st.form_submit_button("💾 Enregistrer les modifications", type="primary", use_container_width=True)
+        bouton_soumettre = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
 
     if bouton_soumettre:
 

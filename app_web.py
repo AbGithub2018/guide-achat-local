@@ -140,32 +140,36 @@ def deviner_categorie(nom_produit):
     # ÉTAPE 1 : LES GRANDES EXCLUSIONS PRIORITAIRES (PRODUITS TRANSFORMÉS)
     # =========================================================================
     
-    # A) Boissons (Intercepte Kombucha, Crush, Tropicana, Jus...)
+    # A) Boissons (Intercepte Simply Orange, Bio-K+, Kombucha, Jus...)
     mots_boissons = [
         "moût", "mout", "pétillant", "petillant", "cidre", "cocktail", "drink", "sirop",
-        "jus", "juice", "boisson", "soda", "liqueur", "eau", "kombucha", "tropicana", "crush"
+        "jus", "juice", "boisson", "soda", "liqueur", "eau", "kombucha", "tropicana", 
+        "crush", "simply orange", "bio-k", "k+plus"
     ]
     if any(m in nom for m in mots_boissons):
         return "☕ Boissons"
 
-    # B) Viandes, Poissons et Plats préparés (Intercepte Thon au citron, Sole, Croquettes Flamingo...)
+    # B) Viandes, Poissons, Œufs et Plats préparés (Intercepte Quiches, Croquettes...)
     mots_viandes_poissons = [
         "boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon", "filet", "aiglefin", 
         "saumon", "truite", "morue", "crevette", "pétoncle", "petoncle", "crabe", "homard", 
-        "poisson", "thon", "sole", "croquette", "flamingo", "farcis"
+        "poisson", "thon", "sole", "croquette", "flamingo", "farcis", "quiche", "quiches"
     ]
     if any(m in nom for m in mots_viandes_poissons):
         return "🥩 Viandes et poissons"
 
-    # C) Produits laitiers, Œufs et Substituts (Intercepte Yaourt, Skyr, Beurre/Butter...)
-    mots_laitiers = ["lait", "fromage", "beurre", "butter", "yogourt", "yaourt", "skyr", "crème", "creme", "œuf", "oeuf"]
+    # C) Produits laitiers, Fromages (Intercepte Philadelphia, Skyr, Yaourt, Pots de crème...)
+    mots_laitiers = [
+        "lait", "fromage", "beurre", "butter", "yogourt", "yaourt", "skyr", "crème", 
+        "creme", "œuf", "oeuf", "philadelphia", "ricotta", "pots vanille"
+    ]
     if any(m in nom for m in mots_laitiers):
         return "🥛 Produits laitiers et œufs"
 
-    # D) Boulangerie, Pâtisserie et Déjeuners (Intercepte Muffin, Tarte, Pain, Gruau, Céréales...)
+    # D) Boulangerie, Pâtisserie et Déjeuners (Intercepte Muffins, Gruau, Granola, Tartes...)
     mots_boulangerie = [
         "pain", "baguette", "croissant", "tortilla", "tarte", "gâteau", "gateau", "boulangerie", 
-        "muffin", "gruau", "céréale", "cereale", "cereals", "oat", "flocons", "bran"
+        "muffin", "gruau", "céréale", "cereale", "cereals", "oat", "flocons", "bran", "granola"
     ]
     if any(m in nom for m in mots_boulangerie):
         return "🍞 Boulangerie et pâtisserie"
@@ -174,20 +178,53 @@ def deviner_categorie(nom_produit):
     if any(m in nom for m in ["pizza", "frite", "surgelé", "surgèle", "pépites"]):
         return "❄️ Surgelés"
 
-    # F) Épicerie sucrée/salée & Conserves (Intercepte Biscuits, Haricots secs, Ketchup, Confiture, Soupes...)
+    # F) Épicerie sucrée/salée & Conserves (Bloque le riz à l'ail, sauces, gnocchis, chocolats, miel...)
     mots_garde_manger = [
-        "biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", 
-        "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", 
-        "pesto", "chips", "croustille", "kettle", "conserve", "canne", "thé", "the", "infusion", 
-        "tisane", "chewing-gum", "trident", "gomme", "bicarbonate", "ramen", "nouille", "pâte", "pates",
+        "biscuit", "galette", "biscotte", "biscottes", "toodle", "collation", "barre", "bars", "snack", "avoine", "trio", 
+        "vinaigre", "compote", "pot pour bébé", "baby food", "strained", "sauce", "alfredo", "coulis", "pesto",
+        "gummies", "bonbon", "bonbons", "halls", "pastille", "pastilles", "chocolate", "chocolat", "miel", "peanut butter",
+        "bouillon", "bouillin", "chips", "croustille", "kettle", "conserve", "canne", "bocal", "peches en bocal",
+        "thé", "the", "infusion", "tisane", "chewing-gum", "trident", "gomme", "bicarbonate", "ramen", "nouille", 
+        "pâte", "pates", "gnocchi", "gnocchis", "purée", "puree", "hummus", "olives", "moisson santé",
         "mélange", "melange", "mix", "trail", "poudre", "sel", "sucre", "épice", "epice", "épices", "epices",
-        "ketchup", "confiture", "crispy", "minis", "whippet", "soupe", "potage", "orge",
-        "secs", "seche", "secher", "séché", "séchée", "dattes", "denoyautees", # Évite les fruits séchés
-        "haricots rouges", "haricots noirs", "petits haricots", # Évite les légumineuses en conserve
-        "huile de", "vinta" # Évite les craquelins/huiles aromatisées
+        "ketchup", "confiture", "crispy", "minis", "whippet", "soupe", "potage", "orge", "graines", "graine",
+        "riz", "grain", "grains", "bistro express", # Évite le riz à l'ail rôti
+        "secs", "seche", "secher", "séché", "séchée", "sultana", # Évite les raisins secs
+        "haricots rouges", "haricots noirs", "petits haricots", "vinta", "huile de"
     ]
     if any(m in nom for m in mots_garde_manger):
         return "🥫 Garde-manger"
+
+    # =========================================================================
+    # ÉTAPE 2 : LA LISTE DES VRAIS FRUITS ET LÉGUMES MARAÎCHERS FRAIS
+    # =========================================================================
+    mots_fruits_legumes = [
+        # Légumes roots, bulbes et tiges
+        "pomme de terre", "pommes de terre", "carotte", "carottes", "oignon", "oignons", "ail", "betterave", "navet", "rutabaga", "panais", "radis", "échalote", "echalote", "topinambour", "céleri-rave", "celeri-rave",
+        # Feuilles, verdures et herbes
+        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "épinards", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "basilic", "thym", "thyme", "organic thyme",
+        # Crucifères, fleurs, tiges
+        "brocoli", "chou-fleur", "chou de bruxelles", "chou chinois", "chou vert", "chou rouge", "asperge", "céleri", "celeri", "poireau", "tête de violon", "tete de violon",
+        # Légumes-fruits
+        "tomate", "tomates", "concombre", "poivron", "poivrons", "piment", "piments", "jalapeños", "courgette", "zucchini", "aubergine", "aubergines", "maïs", "mais", "courge", "citrouille",
+        # Légumineuses fraîches et champignons (Si non attrapés par l'Étape 1)
+        "haricot", "haricots", "haricots verts", "petit pois", "pois mange-tout", "champignon", "cremini", "portobello", "shiitake", "pleurote", "enoki",
+        # Fruits de verger et petits fruits
+        "pomme", "pommes", "paula red", "sunrise", "ginger gold", "poire", "poires", "prune", "prunes", "pêche", "peche", "peches", "nectarine", "abricot", "abricots", "cerise", "fraise", "fraises", "bleuet", "bleuets", "framboise", "framboises", "mûre", "mure", "canneberge", "camerise",
+        # Agrumes et melons
+        "orange", "clémentine", "clementine", "mandarine", "mandarines", "citron", "citrons", "lime", "pamplemousse", "melon", "pastèque", "pasteque", "cantaloup",
+        # Tropicaux
+        "banane", "bananes", "bananas", "avocat", "ananas", "mangue", "kiwi", "raisin", "raisins", "grenade", "figue", "datte", "papaye", "fruit de la passion", "litchi", "fruit du dragon"
+    ]
+
+    if any(m in nom for m in mots_fruits_legumes):
+        return "🥦 Fruits et légumes"
+
+    # =========================================================================
+    # ÉTAPE 3 : LE RESTE PAR DÉFAUT
+    # =========================================================================
+    return "🥫 Garde-manger"
+
 
     # =========================================================================
     # ÉTAPE 2 : LA LISTE DES VRAIS FRUITS ET LÉGUMES MARAÎCHERS FRES

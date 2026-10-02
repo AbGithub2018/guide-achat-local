@@ -554,45 +554,17 @@ if resultats is not None and not resultats.empty:
         def clean_price(val):
             v_str = str(val).strip()
             return "" if v_str.lower() in ["nan", "none", ""] else v_str
-            dates_bannieres = {}
-    try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df_hist = conn.read(worksheet="Historique_Prix")
-        df_produit_hist = df_hist[df_hist['code_upc'].astype(str) == str(cup_actuel)]
-        for b_name in ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']:
-            df_banniere = df_produit_hist[df_produit_hist['distribution'] == b_name]
-            if not df_banniere.empty:
-                date_recente = df_banniere.sort_values(by='horodatage', ascending=False)['horodatage'].iloc[0]
-                dates_bannieres[b_name] = str(date_recente)[:10]
-    except Exception:
-        pass
 
-        if 'prix_iga' in dates_bannieres: col_p1.caption(f"📅 Modifié : {dates_bannieres['prix_iga']}")
         nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="edit_iga")
-    
-        if 'prix_maxi' in dates_bannieres: col_p2.caption(f"📅 Modifié : {dates_bannieres['prix_maxi']}")
         nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="edit_maxi")
-    
-        if 'prix_metro' in dates_bannieres: col_p3.caption(f"📅 Modifié : {dates_bannieres['prix_metro']}")
         nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="edit_metro")
-    
-        if 'prix_super_c' in dates_bannieres: col_p4.caption(f"📅 Modifié : {dates_bannieres['prix_super_c']}")
         nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="edit_super_c")
-
+        
         col_p5, col_p6, col_p7, col_p8 = st.columns(4)
-    
-        if 'prix_walmart' in dates_bannieres: col_p5.caption(f"📅 Modifié : {dates_bannieres['prix_walmart']}")
         nouveau_walmart = col_p5.text_input("Prix Walmart ($) :", value=clean_price(row.get('prix_walmart', '')), key="edit_walmart")
-    
-        if 'prix_tigre_geant' in dates_bannieres: col_p6.caption(f"📅 Modifié : {dates_bannieres['prix_tigre_geant']}")
         nouveau_tigre = col_p6.text_input("Prix Tigre Géant ($) :", value=clean_price(row.get('prix_tigre_geant', '')), key="edit_tigre")
-    
-        if 'prix_dollarama' in dates_bannieres: col_p7.caption(f"📅 Modifié : {dates_bannieres['prix_dollarama']}")
         nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=clean_price(row.get('prix_dollarama', '')), key="edit_dollarama")
-    
-        if 'prix_provigo' in dates_bannieres: col_p8.caption(f"📅 Modifié : {dates_bannieres['prix_provigo']}")
         nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=clean_price(row.get('prix_provigo', '')), key="edit_provigo")
-
         
                 # Injection CSS pour styliser uniquement le bouton de ce formulaire en vert
         st.html("""
@@ -613,48 +585,72 @@ if resultats is not None and not resultats.empty:
                 background-color: #1b5e20 !important; /* Vert plus foncé au survol */
                 transform: translateY(-2px) !important;
                 box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2) !important;
-                    }
-    </style>
-    """)
-    
-    bouton_enregistrer = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
-
-    if bouton_enregistrer:
-        champs_saisis = {
-            'prix_iga': nouveau_iga,
-            'prix_maxi': nouveau_maxi,
-            'prix_metro': nouveau_metro,
-            'prix_super_c': nouveau_super_c,
-            'prix_walmart': nouveau_walmart,
-            'prix_tigre_geant': nouveau_tigre,
-            'prix_dollarama': nouveau_dollarama,
-            'prix_provigo': nouveau_provigo
-        }
+            }
+        </style>
+        """)
         
-        nouvelles_lignes = []
-        horodatage_actuel = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-        upc_produit = cup_actuel
-        
-        for distribution_enseigne, valeur_prix in champs_saisis.items():
-            if valeur_prix and str(valeur_prix).strip() != "":
-                try:
-                    prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
-                    
-                    nouvelle_ligne = {
-                        'horodatage': horodatage_actuel,
-                        'code_upc': upc_produit,
-                        'distribution': distribution_enseigne,
-                        'prix': prix_propre,
-                        'source': 'collaboratif'
-                    }
-                    nouvelles_lignes.append(nouvelle_ligne)
-                except ValueError:
-                    pass
-                    
-        if nouvelles_lignes:
-            df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
-            sauvegarder_historique(df_nouvel_historique)
+        bouton_soumettre = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
 
+    if bouton_soumettre:
+
+        try:
+            # Extrait le premier index de la liste pour éviter l'erreur de scalaire
+            idx_unique = index_produit_reel[0]
+            
+            st.session_state['df_produits'].at[idx_unique, 'prix_iga'] = nouveau_iga.strip() if nouveau_iga else ""
+            st.session_state['df_produits'].at[idx_unique, 'prix_maxi'] = nouveau_maxi.strip() if nouveau_maxi else ""
+            st.session_state['df_produits'].at[idx_unique, 'prix_metro'] = nouveau_metro.strip() if nouveau_metro else ""
+            st.session_state['df_produits'].at[idx_unique, 'prix_super_c'] = nouveau_super_c.strip() if nouveau_super_c else ""
+            st.session_state['df_produits'].at[idx_unique, 'prix_walmart'] = nouveau_walmart.strip() if nouveau_walmart else ""
+            st.session_state['df_produits'].at[idx_unique, 'prix_tigre_geant'] = nouveau_tigre.strip() if nouveau_tigre else ""
+            st.session_state['df_produits'].at[idx_unique, 'prix_dollarama'] = nouveau_dollarama.strip() if nouveau_dollarama else ""
+            st.session_state['df_produits'].at[idx_unique, 'prix_provigo'] = nouveau_provigo.strip() if nouveau_provigo else ""
+         
+            # === DÉBUT DU BLOC HISTORIQUE CITOYEN ===
+            champs_saisis = {
+                'prix_iga': nouveau_iga,
+                'prix_maxi': nouveau_maxi,
+                'prix_metro': nouveau_metro,
+                'prix_super_c': nouveau_super_c,
+                'prix_walmart': nouveau_walmart,
+                'prix_tigre_geant': nouveau_tigre,
+                'prix_dollarama': nouveau_dollarama,
+                'prix_provigo': nouveau_provigo
+            }
+         
+            nouvelles_lignes = []
+            horodatage_actuel = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+            upc_produit = cup_actuel  # Utilise le CUP détecté plus haut
+          
+            for distribution_enseigne, valeur_prix in champs_saisis.items():
+                if valeur_prix and str(valeur_prix).strip() != "":
+                    try:
+                        prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
+                       
+                        # 1. DÉFINITION DES ENTÊTES ET DE LEUR UTILITÉ (POUR MÉMOIRE)
+                        # explications_colonnes = {
+                        #     'horodatage': 'Colonne A - Date et heure de l'entrée',
+                        #     'code_upc': 'Colonne B - Code-barres unique',
+                        #     'distribution': 'Colonne C - Nom de la bannière',
+                        #     'prix': 'Colonne D - Prix numérique en minuscule',
+                        #     'source': 'Colonne E - Origine de la donnée'
+                        # }
+                     
+                        nouvelle_ligne = {
+                            'horodatage': horodatage_actuel,
+                            'code_upc': upc_produit,
+                            'distribution': distribution_enseigne,
+                            'prix': prix_propre,
+                            'source': 'collaboratif'
+                        }
+                        nouvelles_lignes.append(nouvelle_ligne)
+                    except ValueError:
+                        pass
+                     
+            if nouvelles_lignes:
+                df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
+                sauvegarder_historique(df_nouvel_historique)
+            # === FIN DU BLOC HISTORIQUE CITOYEN ===
          
             if sauvegarder_donnees(st.session_state['df_produits']):
 

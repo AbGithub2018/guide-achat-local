@@ -171,6 +171,40 @@ def verifier_boisson_pure(nom, mots_produit):
         if any(m in mots_declencheurs for m in mots_produit):
             return True
     return False
+
+def verifier_maraicher_pur(nom, mots_produit):
+    """Filtre de liste blanche exclusive pour isoler uniquement le rayon maraîcher frais."""
+    mots_autorises_maraichers = {
+        "abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", 
+        "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", 
+        "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", 
+        "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", 
+        "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", 
+        "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", 
+        "prunes", "raisin", "raisins", "physalis", "sunsgold", "ginger", "gold", "paula", "red", "sunrise",
+        "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
+        "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
+        "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", 
+        "echalote", "échalote", "echalotes", "échalotes", "epinard", "épinard", "epinards", "épinards", 
+        "spinach", "gourganes", "gingembre", "verts", "laitue", "romaine", "mais", "maïs", 
+        "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", 
+        "piments", "poireau", "poireaux", "leek", "radis", "radish", "rutabaga", "salade", "thym", 
+        "thyme", "tomate", "tomates", "zucchini", "zucchinis", "frais", "fraiche", "fraîche", 
+        "organic", "biologique", "bio", "local", "locaux", "vrac", "quebec", "québec", "canada", 
+        "anjou", "bartlett", "russet", "lobo", "aurora", "mcintosh", "sac", "panier", "paquet", 
+        "bunch", "botte", "gros", "petit", "petits", "tranche", "tranché", "tranchée", "tranches", 
+        "rapee", "râpée", "rapees", "râpées", "coupé", "coupée", "coupes", "coupées", "blanche", 
+        "blanches", "jaune", "jaunes", "rouge", "rouges", "vert", "verte", "verts", "vertes", 
+        "colorés", "colores", "un", "une", "le", "la", "les", "de", "du", "d", "en", "et", "à", 
+        "a", "avec", "sans", "pour", "par", "dans", "sur", "sous", "1l", "3lb", "4lb", "10lb"
+    }
+    if all(m in mots_autorises_maraichers for m in mots_produit):
+        mots_bruts_vegetaux = {"abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", "prunes", "raisin", "raisins", "physalis", "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", "epinard", "épinard", "epinards", "épinards", "spinach", "échalote", "échalotes", "gourganes", "gingembre", "laitue", "romaine", "mais", "maïs", "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", "piments", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", "zucchini", "zucchinis", "salade", "thym", "thyme"}
+        if any(m in mots_bruts_vegetaux for m in mots_produit):
+            if "haricots" in nom and "verts" not in nom:
+                return False
+            return True
+    return False
 def verifier_maraicher_pur(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement le rayon maraîcher frais."""
     mots_autorises_maraichers = {
@@ -317,13 +351,27 @@ def deviner_categorie(nom_produit):
     if "heinz" in nom or "kraft" in nom:
         return "🥫 Garde-manger"
         
+    mots_boucherie_directs = {
+        "poulet", "chicken", "bœuf", "boeuf", "beef", "porc", "porchetta", "bacon", "jambon", "ham", 
+        "saucisse", "saucisses", "salami", "bologne", "baloney", "meatballs", "dinde", "turkey", "agneau", "veau", 
+        "merguez", "chorizo", "pepperoni", "pépites", "nuggets", "flamingo", "janes", "wings", "ailes", 
+        "thon", "tuna", "saumon", "salmon", "sole", "morue", "aiglefin", "truite", "hareng", "maquereau", 
+        "sardine", "sardines", "anchois", "crevette", "crevettes", "shrimp", "homard", "crabe", "crab", 
+        "pétoncle", "petoncle", "scallops", "palourdes", "moules", "calmar", "calamari", "escargots", "snails",
+        "viande", "meat", "cretons", "creton", "pâté", "pate", "ragoût", "ragout", "boulettes", "bavette"
+    }
+    
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
     mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
     
     if not mots_produit:
         return "🥫 Garde-manger"
 
-    # COUPLAGE DES CINQ FILTRES INDÉPENDANTS
+    if any(m in mots_produit for m in mots_boucherie_directs):
+        if "surgelé" in nom or "pizza" in nom or "frite" in nom: 
+            return "❄️ Surgelés"
+        return "🥩 Viandes et poissons"
+
     if verifier_boisson_pure(nom, mots_produit):
         return "☕ Boissons"
     if verifier_maraicher_pur(nom, mots_produit):
@@ -334,12 +382,9 @@ def deviner_categorie(nom_produit):
         return "🥛 Produits laitiers et œufs"
     if verifier_boulangerie_pure(nom, mots_produit):
         return "🍞 Boulangerie et pâtisserie"
-
-    # Redirections par défaut (Deuxième tri)
-    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette", "veau", "agneau", "maquereau", "palourdes", "viande", "boeuf"]): 
-        return "🥩 Viandes et poissons"
         
     return "🥫 Garde-manger"
+
 
         
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)

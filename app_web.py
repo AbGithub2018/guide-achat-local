@@ -133,58 +133,93 @@ def sauvegarder_historique(df_nouvel_historique):
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde de l'historique : {e}")
         return False
-def deviner_categorie(nom_produit):
-    nom = str(nom_produit).lower()
-    
-    # 1. EXCLUSIONS DE SÉCURITÉ : On bloque les produits transformés en premier
-    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", "pesto", "chips", "croustille", "conserve", "canne"]):
+@st.cache_data(ttl="24h")
+def recuperer_categorie_off(upc):
+    """Interroge Open Food Facts pour obtenir le groupe de produits (PNNS) standardisé."""
+    if not upc or str(upc).strip() in ["", "nan"]:
         return "🥫 Garde-manger"
-    elif any(m in nom for m in ["moût", "mout", "pétillant", "petillant", "cidre", "cocktail", "drink", "sirop"]):
-        return "☕ Boissons"
-    elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon", "filet", "aiglefin", "saumon", "truite", "morue", "crevette", "pétoncle", "petoncle", "crabe", "homard"]):
-        return "🥩 Viandes et poissons"
-    elif any(m in nom for m in ["pizza", "frite", "surgelé", "surgèle", "pépites", "pépites"]):
-        return "❄️ Surgelés"
-    elif any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
-        return "🥛 Produits laitiers et œufs"
-    elif any(m in nom for m in ["pain", "baguette", "croissant", "tortilla"]):
-        return "🍞 Boulangerie et pâtisserie"
-
-    # 2. VOTRE LISTE OFFICIELLE DE VRAIS FRUITS ET LÉGUMES
-    mots_fruits_legumes = [
-        # Légumes roots, bulbes et tiges
-        "pomme de terre", "pommes de terre", "carotte", "oignon", "ail", "betterave", "navet", "rutabaga", "panais", "radis", "échalote", "echalote", "topinambour", "céleri-rave", "celeri-rave",
-        # Feuilles, verdures et herbes
-        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "menthe", "basilic", "thym",
-        # Crucifères, fleurs, tiges
-        "brocoli", "chou-fleur", "chou de bruxelles", "chou chinois", "chou vert", "chou rouge", "asperge", "céleri", "celeri", "poireau", "tête de violon", "tete de violon",
-        # Légumes-fruits
-        "tomate", "concombre", "poivron", "piment", "courgette", "zucchini", "aubergine", "maïs", "mais", "courge", "citrouille",
-        # Légumineuses fraîches et champignons
-        "haricot", "petit pois", "pois mange-tout", "champignon", "cremini", "portobello", "shiitake", "pleurote", "enoki",
-        # Fruits de verger et petits fruits
-        "pomme", "poire", "prune", "pêche", "peche", "nectarine", "abricot", "cerise", "fraise", "bleuet", "framboise", "canneberge", "mûre", "mure", "camerise",
-        # Agrumes et melons
-        "orange", "clémentine", "clementine", "mandarine", "citron", "lime", "pamplemousse", "melon", "pastèque", "pasteque", "cantaloup",
-        # Tropicaux
-        "banane", "avocat", "ananas", "mangue", "kiwi", "raisin", "grenade", "figue", "datte", "papaye", "fruit de la passion", "litchi", "fruit du dragon"
-    ]
-
-    # Si le nom contient un de vos mots officiels, c'est un fruit ou légume maraîcher !
-    if any(m in nom for m in mots_fruits_legumes):
-        return "🥦 Fruits et légumes"
-
-    # 3. TOUT LE RESTE (Par défaut : riz, conserves, huiles, épices...)
+    try:
+        url_api = f"https://openfoodfacts.org/api/v0/product/{str(upc).strip()}.json"
+        headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
+        reponse = requests.get(url_api, headers=headers, timeout=2)
+        
+        if reponse.status_code == 200:
+            donnees = reponse.json()
+            if donnees.get("status") == 1 and "product" in donnees:
+                produit = donnees["product"]
+                
+                # Option A : Utilisation des catégories PNNS d'Open Food Facts (très stables pour le tri)
+                pnns = produit.get("pnns_groups_1", "").lower()
+                if "fruits" in pnns or "vegetables" in pnns or "potatoes" in pnns:
+                    return "🥦 Fruits et légumes"
+                elif "beverages" in pnns:
+                    return "☕ Boissons"
+                elif "fish" in pnns or "meat" in pnns:
+                    return "🥩 Viandes et poissons"
+                elif "milk" in pnns or "dairy" in pnns or "cheese" in pnns:
+                    return "🥛 Produits laitiers et œufs"
+                elif "cereals" in pnns or "bread" in pnns:
+                    return "🍞 Boulangerie et pâtisserie"
+                elif "frozen" in pnns:
+                    return "❄️ Surgelés"
+                    
+                # Option B (Secours) : Regarder dans les balises de catégories en français
+                cat_tags = [c.lower() for c in produit.get("categories_tags", [])]
+                if any("fruit" in c or "legum" in c for c in cat_tags):
+                    return "🥦 Fruits et légumes"
+                if any("boisson" in c or "bev" in c for c in cat_tags):
+                    return "☕ Boissons"
+                    
+    except Exception:
+        pass
+    
+    # Catégorie par défaut si non trouvé ou erreur réseau
     return "🥫 Garde-manger"
 
-
-
+@st.cache_data(ttl="24h")
+def recuperer_categorie_off(upc):
+    """Interroge Open Food Facts pour obtenir la catégorie d'un produit spécifique."""
+    if not upc or str(upc).strip() in ["", "nan"]:
+        return "🥫 Garde-manger"
+    try:
+        url_api = f"https://openfoodfacts.org{str(upc).strip()}.json"
+        headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
+        reponse = requests.get(url_api, headers=headers, timeout=1.5)
+        
+        if reponse.status_code == 200:
+            donnees = reponse.json()
+            if donnees.get("status") == 1 and "product" in donnees:
+                produit = donnees["product"]
+                pnns = produit.get("pnns_groups_1", "").lower()
+                
+                if "fruits" in pnns or "vegetables" in pnns or "potatoes" in pnns:
+                    return "🥦 Fruits et légumes"
+                elif "beverages" in pnns:
+                    return "☕ Boissons"
+                elif "fish" in pnns or "meat" in pnns:
+                    return "🥩 Viandes et poissons"
+                elif "milk" in pnns or "dairy" in pnns or "cheese" in pnns:
+                    return "🥛 Produits laitiers et œufs"
+                elif "cereals" in pnns or "bread" in pnns:
+                    return "🍞 Boulangerie et pâtisserie"
+                elif "frozen" in pnns:
+                    return "❄️ Surgelés"
+    except Exception:
+        pass
+    return "🥫 Garde-manger"
 
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:
-    st.session_state['df_produits'] = charger_donnees()
+    df_brut = charger_donnees()
+    
+    # Évite le calcul lourd : met temporairement tout le monde dans Garde-manger
+    if not df_brut.empty:
+        df_brut['categorie'] = "🥫 Garde-manger"
+        
+    st.session_state['df_produits'] = df_brut
 
 df = st.session_state['df_produits']
+
 
 if 'banniere_active' not in st.session_state:
     st.session_state['banniere_active'] = "Tous"
@@ -422,6 +457,18 @@ st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés selon v
 st.write("💡 Cliquez n'importe où sur la ligne d'un produit pour voir sa fiche complète ci-dessous.")
 
 selection_tableau = None 
+# Mise à jour automatique des catégories à la volée pour les produits affichés
+if not df_affichage.empty:
+    try:
+        # On calcule les vraies catégories via l'API pour les lignes affichées
+        df_affichage['categorie'] = df_affichage['code_upc'].apply(recuperer_categorie_off)
+        
+        # On synchronise avec la session principale pour éviter de relancer l'API
+        for idx, row in df_affichage.iterrows():
+            upc_actuel = row['code_upc']
+            st.session_state['df_produits'].loc[st.session_state['df_produits']['code_upc'] == upc_actuel, 'categorie'] = row['categorie']
+    except Exception:
+        pass
 
 if not saisie_net:
     selection_tableau = st.dataframe(

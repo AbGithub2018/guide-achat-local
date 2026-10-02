@@ -136,16 +136,19 @@ def sauvegarder_historique(df_nouvel_historique):
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
     
-    # 1. On attrape les collations et biscuits en premier pour ne pas mélanger avec les vrais fruits
-    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack"]):
+    # 1. TRIS PRIORITAIRES : On intercepte les mélanges pour éviter les faux positifs chez les fruits frais
+    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé"]):
         return "🥫 Garde-manger"
         
-    # 2. Le reste des catégories reste inchangé
+    elif any(m in nom for m in ["moût", "mout", "pétillant", "petillant", "cidre"]):
+        return "☕ Boissons"
+
+    # 2. LES RAYONS CLASSIQUES (Reste inchangé)
     elif any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
         return "🥛 Produits laitiers et œufs"
     elif any(m in nom for m in ["pain", "baguette", "croissant", "tortilla"]):
         return "🍞 Boulangerie et pâtisserie"
-    elif any(m in nom for m in ["pomme", "bleuet", "fraise", "banane", "laitue", "carotte", "patate", "légume", "fruit", "salade"]):
+    elif any(m in nom for m in ["pomme", "bleuet", "fraise", "banane", "laitue", "carotte", "patate", "légume", "fruit", "salade", "frais", "fraîche"]):
         return "🥦 Fruits et légumes"
     elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "saumon", "poisson", "jambon"]):
         return "🥩 Viandes et poissons"

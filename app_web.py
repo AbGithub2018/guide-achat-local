@@ -589,7 +589,8 @@ if resultats is not None and not resultats.empty:
         </style>
         """)
         
-        bouton_soumettre = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
+        date_du_jour = pd.Timestamp.now().strftime("%Y-%m-%d")
+        bouton_enregistrer = st.form_submit_button(f"💾 Enregistrer les modifications de prix (Aujourd'hui : {date_du_jour})", type="primary", use_container_width=True)
 
     if bouton_soumettre:
 

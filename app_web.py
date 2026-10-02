@@ -137,6 +137,10 @@ def deviner_categorie(nom_produit):
     import re
     nom = str(nom_produit).lower()
     
+    # ÉJECTION ULTRA-CIBLÉE POUR LES DERNIERS INTRUS DE MARQUE
+    if "heinz" in nom or "kraft" in nom:
+        return "🥫 Garde-manger"
+        
     # 1. NETTOYAGE DES CARACTÈRES SPÉCIAUX ET ISOLATION DES MOTS
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?]", " ", nom)
     mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
@@ -154,12 +158,12 @@ def deviner_categorie(nom_produit):
         "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", 
         "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", 
         "prunes", "raisin", "raisins", "physalis", "sunsgold", "ginger", "gold", "paula", "red", "sunrise",
-        # Les Légumes et Herbes Fraîches (Exclut les légumineuses sèches et conserves)
+        # Les Légumes et Herbes Fraîches (Le mot "haricots" seul a été retiré pour bloquer les secs)
         "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
         "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
         "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", 
         "echalote", "échalote", "echalotes", "échalotes", "epinard", "épinard", "epinards", "épinards", 
-        "spinach", "gourganes", "gingembre", "haricots", "verts", "laitue", "romaine", "mais", "maïs", 
+        "spinach", "gourganes", "gingembre", "verts", "laitue", "romaine", "mais", "maïs", 
         "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", 
         "piments", "poireau", "poireaux", "leek", "radis", "radish", "rutabaga", "salade", "thym", 
         "thyme", "tomate", "tomates", "zucchini", "zucchinis",
@@ -173,7 +177,7 @@ def deviner_categorie(nom_produit):
         "d", "en", "et", "à", "a", "avec", "sans", "pour", "par", "dans", "sur", "sous", "1l", "3lb", "4lb", "10lb"
     }
 
-    # 3. VERDICT : Si la description contient un mot inconnu de la liste blanche, la ligne est rejetée.
+    # 3. VERDICT : Si la description contient un mot inconnu, on rejette.
     est_maraicher_pur = all(m in mots_autorises for m in mots_produit)
     
     if est_maraicher_pur:
@@ -188,12 +192,15 @@ def deviner_categorie(nom_produit):
             "avocats", "basilic", "betterave", "betteraves", "brocoli", "brocolis", "carotte", "carottes", 
             "carrotes", "celeri", "céleri", "champignon", "champignons", "chou", "choux", "concombre", 
             "concombres", "coriandre", "courge", "courges", "epinard", "épinard", "epinards", "épinards", 
-            "spinach", "échalote", "échalotes", "gourganes", "gingembre", "haricots", "laitue", "romaine", 
+            "spinach", "échalote", "échalotes", "gourganes", "gingembre", "laitue", "romaine", 
             "mais", "maïs", "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", 
             "persil", "piment", "piments", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", 
             "zucchini", "zucchinis", "salade", "thym", "thyme"
         }
         if any(m in mots_bruts_vegetaux for m in mots_produit):
+            # Double vérification pour le cas spécifique "haricots verts"
+            if "haricots" in nom and "verts" not in nom:
+                return "🥫 Garde-manger"
             return "🥦 Fruits et légumes"
 
     # 4. REDIRECTIONS LOGIQUES POUR LE RESTE DE L'INVENTAIRE EXCLUS
@@ -210,7 +217,6 @@ def deviner_categorie(nom_produit):
         return "❄️ Surgelés"
         
     return "🥫 Garde-manger"
-
 
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:

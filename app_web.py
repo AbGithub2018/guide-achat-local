@@ -58,26 +58,14 @@ st.html("""
         min-width: calc(33.333% - 10px) !important;
         max-width: calc(33.333% - 10px) !important;
     }
-     /* 2. RENDRE LE BOUTON DE MISE À TRÈS CONVIVIAL ET VERT */
-    div[data-testid="stFormSubmitButton"] button {
-        background-color: #2e7d32 !important;
-        color: white !important;
-        font-size: 20px !important;
+    /* 1. SÉLECTEUR ULTRA-PRÉCIS POUR AGRANDIR LE TEXTE DES INSTRUCTIONS */
+    div[data-testid="stExpander"] [data-testid="stExpanderHeader"] p,
+    div[data-testid="stExpander"] [data-testid="stExpanderHeader"] span,
+    div[data-testid="stExpander"] [data-testid="stExpanderHeader"] {
+        font-size: 24px !important;
         font-weight: bold !important;
-        height: 55px !important;
-        border-radius: 10px !important;
-        border: none !important;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15) !important;
-        transition: all 0.3s ease !important;
-        cursor: pointer !important;
-    }
-    div[data-testid="stFormSubmitButton"] button:hover {
-        background-color: #1b5e20 !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2) !important;
-    }
-    /* FIN DU NOUVEAU CODE */
-    /* ================================================================== */
+        color: #003366 !important;
+    }    
 </style>
 """)
 

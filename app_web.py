@@ -137,13 +137,27 @@ def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
     
     # 1. EXCLUSIONS DE SÉCURITÉ : On bloque les produits transformés en premier
-    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", "pesto", "chips", "croustille", "conserve", "canne"]):
+    # AJOUT ICI : Mots-clés pour bloquer les faux positifs (thé, jus, gomme, ramen, bicarbonate, etc.)
+    mots_bloques_garde_manger = [
+        "biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", 
+        "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", "pesto", "chips", 
+        "croustille", "conserve", "canne", "thé", "the", "infusion", "tisane", "chewing-gum", "trident", "gomme",
+        "bicarbonate", "ramen", "nouille", "pâte", "pates", "tarte", "gâteau", "gateau", "boulangerie", "flocons",
+        "mélange", "melange", "mix", "trail", "poudre", "sel", "sucre", "épice", "epice", "épices", "epices"
+    ]
+    
+    mots_bloques_boissons = [
+        "moût", "mout", "pétillant", "petillant", "cidre", "cocktail", "drink", "sirop", 
+        "jus", "juice", "boisson", "soda", "liqueur", "eau"
+    ]
+
+    if any(m in nom for m in mots_bloques_garde_manger):
         return "🥫 Garde-manger"
-    elif any(m in nom for m in ["moût", "mout", "pétillant", "petillant", "cidre", "cocktail", "drink", "sirop"]):
+    elif any(m in nom for m in mots_bloques_boissons):
         return "☕ Boissons"
-    elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon", "filet", "aiglefin", "saumon", "truite", "morue", "crevette", "pétoncle", "petoncle", "crabe", "homard"]):
+    elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon", "filet", "aiglefin", "saumon", "truite", "morue", "crevette", "pétoncle", "petoncle", "crabe", "homard", "poisson"]):
         return "🥩 Viandes et poissons"
-    elif any(m in nom for m in ["pizza", "frite", "surgelé", "surgèle", "pépites", "pépites"]):
+    elif any(m in nom for m in ["pizza", "frite", "surgelé", "surgèle", "pépites"]):
         return "❄️ Surgelés"
     elif any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
         return "🥛 Produits laitiers et œufs"
@@ -155,7 +169,7 @@ def deviner_categorie(nom_produit):
         # Légumes roots, bulbes et tiges
         "pomme de terre", "pommes de terre", "carotte", "oignon", "ail", "betterave", "navet", "rutabaga", "panais", "radis", "échalote", "echalote", "topinambour", "céleri-rave", "celeri-rave",
         # Feuilles, verdures et herbes
-        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "menthe", "basilic", "thym",
+        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "basilic", "thym",
         # Crucifères, fleurs, tiges
         "brocoli", "chou-fleur", "chou de bruxelles", "chou chinois", "chou vert", "chou rouge", "asperge", "céleri", "celeri", "poireau", "tête de violon", "tete de violon",
         # Légumes-fruits
@@ -176,8 +190,6 @@ def deviner_categorie(nom_produit):
 
     # 3. TOUT LE RESTE (Par défaut : riz, conserves, huiles, épices...)
     return "🥫 Garde-manger"
-
-
 
 
 # Initialisation et chargement de la base de données en Session Streamlit

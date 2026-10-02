@@ -147,11 +147,10 @@ st.sidebar.subheader("Aperçu du produit")
 if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     try:
-        colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
-        colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
-        df_affichage_temp = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
-        
+        terme_recherche = st.session_state.get('recherche_cup', '').lower()
+        df_affichage_temp = df_filtre[df_filtre['nom'].str.lower().str.contains(terme_recherche, na=False)] if terme_recherche else df_filtre.copy()
         raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
+
         cup_actuel = str(raw_cup).strip().split('.')[0]
 
         if cup_actuel and cup_actuel != "nan":

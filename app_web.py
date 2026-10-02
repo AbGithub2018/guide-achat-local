@@ -154,6 +154,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
         cup_actuel = str(raw_cup).strip().split('.')[0]
 
+
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):

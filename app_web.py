@@ -133,24 +133,49 @@ def sauvegarder_historique(df_nouvel_historique):
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde de l'historique : {e}")
         return False
-def deviner_categorie(nom_produit):
-    import re
-    nom = str(nom_produit).lower()
-    
-    # ÉJECTION ULTRA-CIBLÉE POUR LES DERNIERS INTRUS DE MARQUE
-    if "heinz" in nom or "kraft" in nom:
-        return "🥫 Garde-manger"
         
-    # 1. NETTOYAGE DES CARACTÈRES SPÉCIAUX ET ISOLATION DES MOTS
-    nom_nettoye = re.sub(r"[()\'’\-,.!\+?]", " ", nom)
-    mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
+def verifier_boisson_pure(nom, mots_produit):
+    """Filtre de liste blanche exclusive pour isoler uniquement les boissons."""
+    mots_autorises_boissons = {
+        "coke", "diet", "diète", "café", "cafe", "moulu", "eau", "source", "naturelle", "gazeuse", 
+        "gazéifiée", "gazeifiee", "pétillante", "petillante", "thé", "the", "glacé", "glace", "glacée", 
+        "glacee", "pepsi", "mini", "7up", "soda", "boisson", "boissons", "drink", "drinks", "sport", 
+        "énergisante", "energisante", "energy", "juice", "jus", "concentré", "concentre", "pur", "pure", 
+        "bubly", "nestea", "crush", "punch", "tea", "soya", "soja", "bien", "etre", "être", 
+        "diqueur", "liqueur", "sodas", "cola", "zevia", "zero", "zéro", "sucre", "sugar", "schweppes", 
+        "tonique", "rickey", "mousse", "limonade", "lemonade", "kombucha", "smoothie", "nectar", 
+        "infusion", "tisane", "bière", "beer", "ale", "ipa", "lager", "vin", "gaillac", "vodka", 
+        "smirnoff", "breezer", "water", "vitaminwater", "redbull", "red", "bull", "moût", "mout", 
+        "cidre", "codre", "pedialyte", "boost", "ensure", "slim", "fast", "rehausseur", "colorant", 
+        "aromatisants", "aromatisee", "aromatisée", "brisk", "fruitopia", "snapple", "nestea", 
+        "ultra", "sunrise", "blue", "mccafé", "mccafe", "starbucks", "nesfruta", "dasani", "eska", 
+        "fiji", "perrier", "pierrier", "montellier", "evian", "aquafina", "oat", "yeah", "tropicana", 
+        "oasis", "rougemont", "irrésistible", "irresistible", "selection", "sélection", "natura", "v8",
+        "mélange", "melange", "maison", "van", "houtte", "framboise", "framboises", "régulier", "regulier", 
+        "tim", "hortons", "amandes", "amande", "cerise", "glacial", "strawberry", "coconut", "noix", "coco", 
+        "pomme", "pommes", "raisin", "raisins", "mangue", "orange", "oranges", "citron", "citrons", "tropical", 
+        "tropicaux", "fruits", "fruit", "baies", "soy", "noisette", "decafféiné", "decafeiné", "decaféiné", 
+        "decafeine", "instantané", "instantane", "instant", "lime", "limes", "grenade", "pamplemousse", 
+        "gimgembre", "gingembre", "goyave", "cassis", "matcha", "chrysanthemum", "honey", "tangerine", 
+        "myrtilles", "bleuet", "pêche", "peche", "pêches", "peches", "paradis", "rhubarbe", "caramel", 
+        "chocolat", "chocolate", "vanille", "vanilla", "original", "originale", "enrichi", "enrichie", 
+        "fortifiée", "fortifiee", "naturel", "naturelle", "sucré", "sucree", "sucrée", "non", "sans", 
+        "purée", "puree", "liquide", "pétillantes", "petillantes", "exotique", "fraise", "fraises", 
+        "pulpe", "pulp", "faible", "extra", "calcium", "vitamine", "probiotique", "probiotics", "fortifié",
+        "2l", "50cl", "925g", "300g", "24x500ml", "375ml", "750ml", "1.75l", "946", "ml", "cans", "of", 
+        "with", "and", "de", "du", "d", "en", "et", "à", "a", "pour", "par", "dans", "sur", "sous", "un", 
+        "une", "le", "la", "les", "ce", "au", "aux", "fait"
+    }
     
-    if not mots_produit:
-        return "🥫 Garde-manger"
+    if all(m in mots_autorises_boissons for m in mots_produit):
+        mots_declencheurs = {"coke", "café", "cafe", "eau", "thé", "the", "pepsi", "7up", "soda", "boisson", "drink", "juice", "jus", "bubly", "nestea", "crush", "tea", "soya", "soja", "liqueur", "cola", "zevia", "smoothie", "nectar", "infusion", "tisane", "bière", "beer", "vin", "gaillac", "moût", "mout", "cidre", "limonade", "kombucha"}
+        if any(m in mots_declencheurs for m in mots_produit):
+            return True
+    return False
 
-    # 2. LISTE BLANCHE UNIQUE DES MOTS AUTORISÉS AU RAYON MARAÎCHER FRAIS
-    mots_autorises = {
-        # Les Fruits Frais
+def verifier_maraicher_pur(nom, mots_produit):
+    """Filtre de liste blanche exclusive pour isoler uniquement le rayon maraîcher frais."""
+    mots_autorises_maraichers = {
         "abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", 
         "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", 
         "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", 
@@ -158,7 +183,6 @@ def deviner_categorie(nom_produit):
         "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", 
         "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", 
         "prunes", "raisin", "raisins", "physalis", "sunsgold", "ginger", "gold", "paula", "red", "sunrise",
-        # Les Légumes et Herbes Fraîches (Le mot "haricots" seul reste retiré pour bloquer les secs)
         "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
         "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
         "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", 
@@ -166,59 +190,58 @@ def deviner_categorie(nom_produit):
         "spinach", "gourganes", "gingembre", "verts", "laitue", "romaine", "mais", "maïs", 
         "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", 
         "piments", "poireau", "poireaux", "leek", "radis", "radish", "rutabaga", "salade", "thym", 
-        "thyme", "tomate", "tomates", "zucchini", "zucchinis",
-        # Vocabulaire d'état brut, format ou provenance acceptable au rayon frais
-        "frais", "fraiche", "fraîche", "organic", "biologique", "bio", "local", "locaux", "vrac",
-        "quebec", "québec", "canada", "anjou", "bartlett", "russet", "lobo", "aurora", "mcintosh", 
-        "sac", "panier", "paquet", "bunch", "botte", "gros", "gros", "petit", "petits", "tranche", 
-        "tranché", "tranchée", "tranches", "rapee", "râpée", "rapees", "râpées", "coupé", "coupée", 
-        "coupes", "coupées", "blanche", "blanches", "jaune", "jaunes", "rouge", "rouges", "vert", 
-        "verte", "verts", "vertes", "colorés", "colores", "un", "une", "le", "la", "les", "de", "du", 
-        "d", "en", "et", "à", "a", "avec", "sans", "pour", "par", "dans", "sur", "sous", "1l", "3lb", "4lb", "10lb"
+        "thyme", "tomate", "tomates", "zucchini", "zucchinis", "frais", "fraiche", "fraîche", 
+        "organic", "biologique", "bio", "local", "locaux", "vrac", "quebec", "québec", "canada", 
+        "anjou", "bartlett", "russet", "lobo", "aurora", "mcintosh", "sac", "panier", "paquet", 
+        "bunch", "botte", "gros", "petit", "petits", "tranche", "tranché", "tranchée", "tranches", 
+        "rapee", "râpée", "rapees", "râpées", "coupé", "coupée", "coupes", "coupées", "blanche", 
+        "blanches", "jaune", "jaunes", "rouge", "rouges", "vert", "verte", "verts", "vertes", 
+        "colorés", "colores", "un", "une", "le", "la", "les", "de", "du", "d", "en", "et", "à", 
+        "a", "avec", "sans", "pour", "par", "dans", "sur", "sous", "1l", "3lb", "4lb", "10lb"
     }
-
-    # 3. VERDICT : Si la description contient un mot inconnu, on rejette.
-    est_maraicher_pur = all(m in mots_autorises for m in mots_produit)
     
-    if est_maraicher_pur:
-        mots_bruts_vegetaux = {
-            "abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", 
-            "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", 
-            "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", 
-            "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", 
-            "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", 
-            "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", 
-            "prunes", "raisin", "raisins", "physalis", "ail", "arugula", "asperge", "asperges", "avocat", 
-            "avocats", "basilic", "betterave", "betteraves", "brocoli", "brocolis", "carotte", "carottes", 
-            "carrotes", "celeri", "céleri", "champignon", "champignons", "chou", "choux", "concombre", 
-            "concombres", "coriandre", "courge", "courges", "epinard", "épinard", "epinards", "épinards", 
-            "spinach", "échalote", "échalotes", "gourganes", "gingembre", "laitue", "romaine", 
-            "mais", "maïs", "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", 
-            "persil", "piment", "piments", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", 
-            "zucchini", "zucchinis", "salade", "thym", "thyme"
-        }
+    if all(m in mots_autorises_maraichers for m in mots_produit):
+        mots_bruts_vegetaux = {"abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", "prunes", "raisin", "raisins", "physalis", "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", "epinard", "épinard", "epinards", "épinards", "spinach", "échalote", "échalotes", "gourganes", "gingembre", "laitue", "romaine", "mais", "maïs", "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", "piments", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", "zucchini", "zucchinis", "salade", "thym", "thyme"}
         if any(m in mots_bruts_vegetaux for m in mots_produit):
-            # Double vérification pour le cas spécifique "haricots verts"
             if "haricots" in nom and "verts" not in nom:
-                return "🥫 Garde-manger"
-            return "🥦 Fruits et légumes"
+                return False
+            return True
+    return False
+def deviner_categorie(nom_produit):
+    import re
+    nom = str(nom_produit).lower()
+    
+    # Éjection de sécurité pour les marques transformées
+    if "heinz" in nom or "kraft" in nom:
+        return "🥫 Garde-manger"
+        
+    # Nettoyage et tokenization
+    nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
+    mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
+    
+    if not mots_produit:
+        return "🥫 Garde-manger"
 
-    # 4. REDIRECTIONS LOGIQUES POUR LE RESTE DE L'INVENTAIRE EXCLUS
-    if any(m in nom for m in ["jus", "boisson", "soda", "eau", "thé", "café", "liqueur", "coke", "pepsi", "7up", "drink"]): 
+    # APPEL DES DEUX BLOCS DISCONCTES
+    if verifier_boisson_pure(nom, mots_produit):
         return "☕ Boissons"
-    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette"]): 
+        
+    if verifier_maraicher_pur(nom, mots_produit):
+        return "🥦 Fruits et légumes"
+
+    # Redirections génériques du reste du catalogue
+    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette", "veau", "agneau", "maquereau", "palourdes"]): 
         if "surgelé" in nom or "pizza" in nom or "frite" in nom: return "❄️ Surgelés"
         return "🥩 Viandes et poissons"
-    if any(m in nom for m in ["lait", "yogourt", "fromage", "beurre", "œuf", "cream", "oikos", "activia", "danone"]): 
+    if any(m in nom for m in ["lait", "yogourt", "fromage", "beurre", "œuf", "cream", "crème", "creme", "oikos", "activia", "danone", "ultra'crème", "crémette"]): 
         return "🥛 Produits laitiers et œufs"
-    if any(m in nom for m in ["pain", "muffin", "brioche", "bagel", "céréale", "gruau", "tarte", "croissant"]): 
+    if any(m in nom for m in ["pain", "muffin", "brioche", "bagel", "céréale", "gruau", "tarte", "croissant", "gâteau", "gateau", "cookies", "biscuit", "biscuits", "épeautre"]): 
         return "🍞 Boulangerie et pâtisserie"
     if any(m in nom for m in ["pizza", "frite", "surgelé", "surgeles", "pépites"]): 
         return "❄️ Surgelés"
         
     return "🥫 Garde-manger"
-
-
+        
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()

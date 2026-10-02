@@ -205,7 +205,6 @@ def verifier_maraicher_pur(nom, mots_produit):
                 return False
             return True
     return False
-
 def verifier_surgele_pur(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement le rayon surgelé brut."""
     mots_autorises_surgeles = {
@@ -230,13 +229,81 @@ def verifier_surgele_pur(nom, mots_produit):
         if any(m in mots_declencheurs for m in mots_produit):
             return True
     return False
+def verifier_boulangerie_pure(nom, mots_produit):
+    """Filtre de liste blanche exclusive pour isoler uniquement la boulangerie et pâtisserie."""
+    mots_autorises_boulangerie = {
+        "céréales", "céréale", "cereales", "cereale", "pain", "pains", "bread", "loaf", "baguette", 
+        "baguettes", "baguettines", "croissant", "croissants", "muffin", "muffins", "brioche", 
+        "brioches", "briochettes", "buns", "bagel", "bagels", "bagelwish", "naan", "pita", "pitas", 
+        "tortilla", "tortillas", "wraps", "gruau", "avoine", "oat", "oatmeal", "oats", "flocons", 
+        "bran", "flakes", "shreddies", "krispies", "krispkies", "pops", "cheerios", "wheats", "muesli", 
+        "müslix", "muslix", "granola", "farine", "flour", "levure", "biscuit", "biscuits", "cookie", 
+        "cookies", "galette", "tarte", "tartelette", "tartelettes", "croustade", "gâteau", "gateau", 
+        "gateaux", "brownie", "brownies", "extreem", "exträaz", "oreo", "milka", "whippet", "halls", 
+        "pastille", "pastilles", "biscotte", "biscottes", "chapelure", "gaufrettes", "pepero", "pitch",
+        "chocolat", "chocolate", "chocolatey", "choco", "pépites", "pepites", "brisure", "brisures", 
+        "chips", "chunk", "chunks", "fudge", "sucre", "cassonade", "miel", "honey", "érable", "erable", 
+        "vanille", "vanilla", "caramel", "skor", "raisin", "raisins", "sec", "secs", "baies", "bleuet", 
+        "bleuets", "blueberry", "canneberges", "cranberry", "framboises", "citron", "lemon", "lime", 
+        "orange", "agrumes", "banane", "bananas", "pomme", "pommes", "apple", "pineapple", "carottes", 
+        "courge", "betterave", "épinards", "roquette", "cerise", "dattes", "noix", "grenade", "grenoble", 
+        "amandes", "almond", "pacanes", "sésame", "sesame", "seeds", "seed", "pavot", "lin", "chia", 
+        "quinoa", "quinia", "blé", "ble", "wheat", "kamut", "épeautre", "epeautre", "seigle", "rye", 
+        "khorasan", "sarrasin", "sarrazin", "margarine", "beurre", "butter", "crème", "creme", "yaourt", 
+        "cacao", "massepain", "marzipan", "cannelle", "cinnamon", "girofle", "gingembre", "ginger", "snap",
+        "blanc", "blanche", "grand", "mère", "père", "texan", "italien", "italian", "belge", "danish", 
+        "tradition", "1905", "vital", "cruschelli", "balocco", "digestifs", "digestive", "traditionnel", 
+        "nature", "original", "originale", "originales", "authentique", "mexicaine", "artesano", "artisan", 
+        "balthazar", "bistro", "clover", "kellogg", "quaker", "gerber", "post", "christie", "dare", 
+        "hershey", "milka", "oreo", "won", "wonder", "pom", "dempster", "leclerc", "celebration", 
+        "st", "méthode", "methode", "première", "moisson", "manning", "panaji", "bulka", "challa", 
+        "moelleux", "tendres", "tendre", "croquant", "fendus", "fourchette", "tranché", "tranche", 
+        "tranchée", "tranches", "épais", "epais", "minis", "mini", "bites", "bouchées", "germé", 
+        "germe", "levain", "intégral", "integral", "grains", "multigrain", "multigrains", "complet", 
+        "tout", "usage", "non", "blanchie", "frais", "fournée", "dorée", "dore", "doré", "fournee", 
+        "soft", "baked", "crisp", "crunchy", "rapide", "quick", "assortiment", "assorted", "moulus", 
+        "assaisinement", "allé", "allongé", "9", "12", "14", "45", "65", "T45", "type", "00", "5kg", "10kg", 
+        "biologique", "bio", "sans", "gluten", "végétalien", "vegetalien", "lactose", "low", "carb",
+        "de", "du", "d", "en", "et", "à", "a", "au", "aux", "la", "le", "les", "un", "une", "pour", "par", "dans", "avec"
+    }
+    if all(m in mots_autorises_boulangerie for m in mots_produit):
+        mots_declencheurs = {"céréales", "céréale", "cereales", "pain", "pains", "bread", "loaf", "baguette", "croissant", "muffin", "muffins", "brioche", "buns", "bagel", "bagels", "naan", "pita", "gruau", "avoine", "flocons", "bran", "flakes", "shreddies", "krispies", "muesli", "granola", "farine", "flour", "levure", "biscuit", "biscuits", "cookie", "cookies", "galette", "tarte", "tartelette", "gâteau", "gateau", "brownie", "whippet", "biscotte", "chapelure"}
+        if any(m in mots_declencheurs for m in mots_produit):
+            if any(m in nom for m in ["viande", "saumon", "poulet", "surgelé", "surgelée"]):
+                return False
+            return True
+    return False
 def deviner_categorie(nom_produit):
     import re
     nom = str(nom_produit).lower()
     
-    # Éjection de sécurité pour les marques et sauces transformées hors rayon frais
     if "heinz" in nom or "kraft" in nom:
         return "🥫 Garde-manger"
+        
+    nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
+    mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
+    
+    if not mots_produit:
+        return "🥫 Garde-manger"
+
+    # APPEL DES QUATRE BLOCS MODULES DISTINCTS
+    if verifier_boisson_pure(nom, mots_produit):
+        return "☕ Boissons"
+    if verifier_maraicher_pur(nom, mots_produit):
+        return "🥦 Fruits et légumes"
+    if verifier_surgele_pur(nom, mots_produit):
+        return "❄️ Surgelés"
+    if verifier_boulangerie_pure(nom, mots_produit):
+        return "🍞 Boulangerie et pâtisserie"
+
+    # Redirections génériques du reste du catalogue (Deuxième tri)
+    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette", "veau", "agneau", "maquereau", "palourdes", "viande"]): 
+        return "🥩 Viandes et poissons"
+    if any(m in nom for m in ["lait", "yogourt", "fromage", "beurre", "œuf", "oeuf", "cream", "crème", "creme", "oikos", "activia", "danone", "ultra'crème", "crémette"]): 
+        return "🥛 Produits laitiers et œufs"
+        
+    return "🥫 Garde-manger"
+
         
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
     mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]

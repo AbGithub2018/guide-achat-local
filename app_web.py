@@ -554,17 +554,45 @@ if resultats is not None and not resultats.empty:
         def clean_price(val):
             v_str = str(val).strip()
             return "" if v_str.lower() in ["nan", "none", ""] else v_str
+            dates_bannieres = {}
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df_hist = conn.read(worksheet="Historique_Prix")
+        df_produit_hist = df_hist[df_hist['code_upc'].astype(str) == str(cup_actuel)]
+        for b_name in ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']:
+            df_banniere = df_produit_hist[df_produit_hist['distribution'] == b_name]
+            if not df_banniere.empty:
+                date_recente = df_banniere.sort_values(by='horodatage', ascending=False)['horodatage'].iloc[0]
+                dates_bannieres[b_name] = str(date_recente)[:10]
+    except Exception:
+        pass
 
+        if 'prix_iga' in dates_bannieres: col_p1.caption(f"📅 Modifié : {dates_bannieres['prix_iga']}")
         nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="edit_iga")
+    
+        if 'prix_maxi' in dates_bannieres: col_p2.caption(f"📅 Modifié : {dates_bannieres['prix_maxi']}")
         nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="edit_maxi")
+    
+        if 'prix_metro' in dates_bannieres: col_p3.caption(f"📅 Modifié : {dates_bannieres['prix_metro']}")
         nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="edit_metro")
+    
+        if 'prix_super_c' in dates_bannieres: col_p4.caption(f"📅 Modifié : {dates_bannieres['prix_super_c']}")
         nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="edit_super_c")
-        
+
         col_p5, col_p6, col_p7, col_p8 = st.columns(4)
+    
+        if 'prix_walmart' in dates_bannieres: col_p5.caption(f"📅 Modifié : {dates_bannieres['prix_walmart']}")
         nouveau_walmart = col_p5.text_input("Prix Walmart ($) :", value=clean_price(row.get('prix_walmart', '')), key="edit_walmart")
+    
+        if 'prix_tigre_geant' in dates_bannieres: col_p6.caption(f"📅 Modifié : {dates_bannieres['prix_tigre_geant']}")
         nouveau_tigre = col_p6.text_input("Prix Tigre Géant ($) :", value=clean_price(row.get('prix_tigre_geant', '')), key="edit_tigre")
+    
+        if 'prix_dollarama' in dates_bannieres: col_p7.caption(f"📅 Modifié : {dates_bannieres['prix_dollarama']}")
         nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=clean_price(row.get('prix_dollarama', '')), key="edit_dollarama")
+    
+        if 'prix_provigo' in dates_bannieres: col_p8.caption(f"📅 Modifié : {dates_bannieres['prix_provigo']}")
         nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=clean_price(row.get('prix_provigo', '')), key="edit_provigo")
+
         
                 # Injection CSS pour styliser uniquement le bouton de ce formulaire en vert
         st.html("""

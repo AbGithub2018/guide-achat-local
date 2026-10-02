@@ -617,13 +617,9 @@ if resultats is not None and not resultats.empty:
                 </style>
             """)
     
-    bouton_enregistrer = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
-
-    if bouton_enregistrer:
-
-
-
-
+        # On force le bouton à s'attacher au bon bloc de formulaire
+        bouton_enregistrer = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
+        if bouton_enregistrer:
         try:
             # Extrait le premier index de la liste pour éviter l'erreur de scalaire
             idx_unique = index_produit_reel[0]

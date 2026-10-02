@@ -116,7 +116,14 @@ def sauvegarder_donnees(df_a_enregistrer):
     except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")
         return False
-
+def sauvegarder_historique(df_historique):
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        conn.update(worksheet="Historique_Prix", data=df_historique)
+        return True
+    except Exception as e:
+        st.error(f"Erreur lors de la sauvegarde de l'historique : {e}")
+        return False
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()

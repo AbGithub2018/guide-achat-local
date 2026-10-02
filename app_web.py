@@ -1,4 +1,5 @@
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIFimport streamlit as st
+import streamlit as st
 import pandas as pd
 import time
 import requests

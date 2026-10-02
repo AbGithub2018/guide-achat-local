@@ -551,9 +551,33 @@ if resultats is not None and not resultats.empty:
         nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=clean_price(row.get('prix_dollarama', '')), key="edit_dollarama")
         nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=clean_price(row.get('prix_provigo', '')), key="edit_provigo")
         
-        bouton_soumettre = st.form_submit_button("Enregistrer les modifications")
+                # Injection CSS pour styliser uniquement le bouton de ce formulaire en vert
+        st.html("""
+        <style>
+            div[data-testid="stFormSubmitButton"] button {
+                background-color: #2e7d32 !important; /* Un beau vert épicerie / succès */
+                color: white !important;
+                font-size: 20px !important;
+                font-weight: bold !important;
+                height: 55px !important;
+                border-radius: 10px !important;
+                border: none !important;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15) !important;
+                transition: all 0.3s ease !important;
+                cursor: pointer !important;
+            }
+            div[data-testid="stFormSubmitButton"] button:hover {
+                background-color: #1b5e20 !important; /* Vert plus foncé au survol */
+                transform: translateY(-2px) !important;
+                box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2) !important;
+            }
+        </style>
+        """)
+        
+        bouton_soumettre = st.form_submit_button("💾 Enregistrer les modifications", type="primary", use_container_width=True)
 
     if bouton_soumettre:
+
         try:
             # Extrait le premier index de la liste pour éviter l'erreur de scalaire
             idx_unique = index_produit_reel[0]

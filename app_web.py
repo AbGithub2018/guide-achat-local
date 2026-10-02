@@ -138,206 +138,106 @@ def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
     
     # =========================================================================
-    # 1. LES PARASITES ULTRA-PRIORITAIRES (PRODUITS TRANSFORMÉS À BLOQUER)
+    # ÉTAPE 1 : ISOLATION DES MOTS (TOKENIZATION) POUR RECHERCHE STRICTE
     # =========================================================================
-    mots_bloques = [
-        # Épicerie sèche et condiments
-        "riz", "bistro express", "sauce", "souce", "alfredo", "coulis", "pesto", "salsa", 
-        "ketchup", "reliche", "relish", "cornichon", "cornichons", "bick", "olives", "hummus", 
-        "trempette", "trempettes", "vinaigrette", "bouillon", "bovril", "soupe", "potage", "bisque",
-        "pâte", "pates", "pasta", "spaghetti", "macaroni", "fusilli", "penne", "linguine", "gnocchi", 
-        "gnocchis", "ravioli", "tortellini", "agnolettis", "totelli", "miel", "confiture", "tartinade", 
-        "marmalade", "sirop", "compote", "fruitsations", "gelée", "purée", "puree", "chips", "croustille", 
-        "croustilles", "tostitos", "pringles", "crispers", "popcorn", "crackins", "craquelins", "biscuits", 
-        "biscuit", "galette", "barre", "granola", "whippet", "halls", "pastille", "bonbon", "bonbons",
-        # Boissons
-        "jus", "juice", "boisson", "drink", "soda", "coke", "pepsi", "7up", "sprite", "limonade", 
-        "kombucha", "smoothie", "nectar", "thé", "the", "nestea", "tisane", "infusion", "café", "cafe", 
-        "bière", "beer", "vin", "gaillac", "liqueur", "water", "eau", "vitaminwater",
-        # Produits laitiers et substituts
-        "lait", "crème", "creme", "yogourt", "yaourt", "yogurt", "skyr", "lögo", "boursin", 
-        "philadelphia", "fromage", "cheese", "beurre", "butter", "margarine", "becel",
-        # Boulangerie et céréales
-        "pain", "bread", "baguette", "croissant", "muffin", "muffins", "brioche", "tortilla", 
-        "tortillas", "wraps", "bagel", "bagels", "naan", "pita", "gruau", "avoine", "céréale", 
-        "cereale", "flakes", "cheerios", "krispies", "shreddies",
-        # Viandes, poissons et surgelés
-        "poulet", "chicken", "bœuf", "boeuf", "beef", "porc", "porchetta", "bacon", "jambon", "ham", 
-        "saucisse", "salami", "bologne", "cretons", "creton", "pâté", "pate", "thon", "tuna", "saumon", 
-        "salmon", "sole", "morue", "crevette", "crevettes", "homard", "escargots", "snails", "sardines", 
-        "pizza", "frite", "frites", "surgelé", "pépites", "nuggets", "quiche", "quiches", "tofu", "tempeh",
-        # Divers secs / Industrie
-        "secs", "séché", "séchée", "dattes", "graines", "graine", "poudre", "sel", "sucre", "épice", 
-        "epice", "assaisinement", "flocons", "mélange", "melange", "mix", "trail", "bocal", "conserve", "canne"
-    ]
-    
-    # Si un mot industriel entier est trouvé, on l'éjecte immédiatement des fruits et légumes
-    # Exemple : "Riz à l'ail" contient "riz" -> part directement dans Garde-manger
-    if any(re.search(rf"\b{re.escape(m)}\b", nom) for m in mots_bloques):
-        # Redirection rapide vers la catégorie probable pour éviter un tri vide
-        if any(m in nom for m in ["jus", "boisson", "soda", "eau", "thé", "café"]): return "☕ Boissons"
-        if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon"]): return "🥩 Viandes et poissons"
-        if any(m in nom for m in ["lait", "yogourt", "fromage", "beurre", "œuf"]): return "🥛 Produits laitiers et œufs"
-        if any(m in nom for m in ["pain", "muffin", "brioche", "bagel", "céréale", "gruau"]): return "🍞 Boulangerie et pâtisserie"
-        if any(m in nom for m in ["pizza", "frite", "surgelé"]): return "❄️ Surgelés"
-        return "🥫 Garde-manger"
+    # On extrait uniquement les mots entiers pour éviter que "ail" soit trouvé dans "enail"
+    mots_produit = set(re.findall(r'\b\w+\b', nom))
 
     # =========================================================================
-    # 2. VÉRIFICATION CHIRURGICALE DES VRAIS FRUITS ET LÉGUMES MARAÎCHERS FRAIS
+    # ÉTAPE 2 : FILTRES D'EXCLUSION ABSOLUE (PRODUITS TRANSFORMÉS / ARÔMES)
     # =========================================================================
+    # Si le nom contient une seule de ces expressions de transformation, 
+    # il est banni DIRECTEMENT du rayon fruits et légumes frais.
     
-    # Votre liste exacte et épurée (mots au singulier et pluriel pour la sécurité)
-    vrais_vegetaux = [
-        # Vrais Légumes
+    # Contextes industriels et de saveurs
+    expressions_industrielles = [
+        "saveur", "arôme", "arome", "artificiel", "artificielle", "gout", "goût", 
+        "extrait", "concentré", "concentre", "sirop", "poudre", "pépites", "pepites", 
+        "brisures", "sauce", "souce", "coulis", "pesto", "salsa", "vinaigrette", "marinade",
+        "soupe", "potage", "bouillon", "bovril", "bisque", "conserve", "boîte", "boite",
+        "canne", "bocal", "séchés", "seches", "seché", "sechée", "désidraté", "compote", "gelée"
+    ]
+    if any(exp in nom for exp in expressions_industrielles):
+        if any(m in nom for m in ["jus", "boisson", "soda", "thé", "café", "liqueur"]): return "☕ Boissons"
+        return "🥫 Garde-manger"
+
+    # Mots-clés de l'Épicerie sucrée / salée / Collations
+    mots_exclus_garde_manger = {
+        "riz", "grain", "grains", "biscuit", "biscuits", "galette", "galettes", "barre", "barres", 
+        "snack", "snacks", "chips", "croustille", "croustilles", "popcorn", "tostitos", "pringles", 
+        "crispers", "craquelin", "craquelins", "bonbon", "bonbons", "gummies", "chocolat", "chocolate", 
+        "miel", "tartinade", "marmalade", "ketchup", "reliche", "relish", "cornichon", "cornichons", 
+        "bick", "olives", "hummus", "trempette", "trempettes", "halls", "pastille", "pastilles", 
+        "pâte", "pates", "pasta", "spaghetti", "macaroni", "fusilli", "penne", "linguine", "gnocchi", 
+        "gnocchis", "ravioli", "tortellini", "agnolettis", "totelli", "tofu", "tempeh", "mélange", 
+        "melange", "mix", "trail", "flocons", "graines", "graine", "sel", "sucre", "cassonade"
+    }
+    if mots_produit.intersection(mots_exclus_garde_manger):
+        return "🥫 Garde-manger"
+
+    # Mots-clés des Boissons industrielles
+    mots_exclus_boissons = {
+        "jus", "juice", "boisson", "boissons", "soda", "sodas", "coke", "pepsi", "7up", "sprite", 
+        "limonade", "kombucha", "smoothie", "smoothies", "nectar", "thé", "the", "nestea", "tisane", 
+        "infusion", "café", "cafe", "bière", "beer", "vin", "gaillac", "liqueur", "water", "eau", 
+        "vitaminwater", "redbull", "pierrier", "perrier", "codre", "cidre"
+    ]
+    if mots_produit.intersection(mots_exclus_boissons):
+        return "☕ Boissons"
+
+    # Mots-clés de la Boulangerie et des Pâtisseries
+    mots_exclus_boulangerie = {
+        "pain", "pains", "bread", "baguette", "baguettes", "croissant", "croissants", "muffin", 
+        "muffins", "brioche", "brioches", "tortilla", "tortillas", "wraps", "bagel", "bagels", 
+        "naan", "pita", "gruau", "avoine", "céréale", "cereale", "céréales", "cereales", "flakes", 
+        "cheerios", "krispies", "shreddies", "tarte", "tartelette", "tartelettes", "gâteau", "gateau", "loaf"
+    ]
+    if mots_produit.intersection(mots_exclus_boulangerie):
+        return "🍞 Boulangerie et pâtisserie"
+
+    # Mots-clés Boucherie, Poissonnerie et Surgelés
+    mots_exclus_viandes_surgeles = {
+        "poulet", "chicken", "bœuf", "boeuf", "beef", "porc", "porchetta", "bacon", "jambon", "ham", 
+        "saucisse", "saucisses", "salami", "bologne", "cretons", "creton", "pâté", "pate", "thon", 
+        "tuna", "saumon", "salmon", "sole", "morue", "crevette", "crevettes", "homard", "escargots", 
+        "snails", "sardines", "pizza", "pizzas", "frite", "frites", "surgelé", "surgelés", "pépites", 
+        "nuggets", "quiche", "quiches", "flamingo", "bouchées", "bouchée", "kung"
+    }
+    if mots_produit.intersection(mots_exclus_viandes_surgeles):
+        if "surgelé" in nom or "pizza" in nom or "frite" in nom: return "❄️ Surgelés"
+        return "🥩 Viandes et poissons"
+
+    # =========================================================================
+    # ÉTAPE 3 : LA BASE DE CONNAISSANCES DES VRAIS FRUITS & LÉGUMES BRUTS
+    # =========================================================================
+    # Si le produit a passé toutes les exclusions, on vérifie s'il correspond 
+    # à un végétal frais de votre liste maraîchère officielle.
+    vrais_vegetaux = {
+        # Légumes frais
         "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "carotte", "carottes", "carrotes", 
-        "basilic", "brocoli", "celery", "céleri", "champignon", "champignons", "chou-fleur", "cilantro", 
-        "concombre", "concombres", "coriandre", "courge", "épinard", "épinards", "epinard", "epinards", 
-        "spinach", "échalote", "échalotes", "gourganes", "gingembre", "haricot", "haricots", "laitue", 
-        "romaine", "maïs", "mais", "oignon", "oignons", "patate", "patates", "pomme de terre", 
-        "pommes de terre", "persil", "piment", "piments", "jalapeño", "jalapeños", "poireau", "poireaux", 
-        "leek", "radis", "tomate", "tomates", "zucchini", "zucchinis", "salade",
-        # Vrais Fruits
+        "basilic", "brocoli", "brocolis", "céleri", "celeri", "champignon", "champignons", "chou", "choux",
+        "concombre", "concombres", "coriandre", "courge", "courges", "épinard", "épinards", "epinard", "epinards", 
+        "spinach", "échalote", "échalotes", "gourganes", "gingembre", "haricot", "haricots", "laitue", "romaine", 
+        "maïs", "mais", "oignon", "oignons", "patate", "patates", "persil", "piment", "piments", "jalapeño", 
+        "jalapeno", "jalapeños", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", "zucchini", 
+        "zucchinis", "salade",
+        # Fruits frais
         "abricot", "abricots", "ananas", "apple", "pomme", "pommes", "banane", "bananes", "banana", 
-        "bananas", "bleuet", "bleuets", "clementine", "clémentine", "clementines", "citron", "citrons", 
+        "bananas", "bleuet", "bleuets", "clémentine", "clementine", "clementines", "citron", "citrons", 
         "fraise", "fraises", "framboise", "framboises", "mûre", "mûres", "mure", "mures", "grapefruit", 
         "pamplemousse", "pamplemousses", "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", 
         "orange", "oranges", "melon", "melons", "pastèque", "pasteque", "cantaloup", "pêche", "pêches", 
-        "peche", "peches", "poire", "poires", "raisin", "raisins", "cerise", "cerises", "physalis"
-    ]
-
-    # On cherche uniquement des correspondances de mots ENTIERS
-    # Exemple : "citrons frais (sac de 4)" contient le mot entier "citrons" -> Validé !
-    if any(re.search(rf"\b{re.escape(v)}\b", nom) for v in vrais_vegetaux):
+        "peche", "peches", "poire", "poires", "raisin", "raisins", "cerise", "cerises", "physalis", "fruits"
+    }
+    
+    if mots_produit.intersection(vrais_vegetaux):
         return "🥦 Fruits et légumes"
 
     # =========================================================================
-    # 3. RESTE DU CATALOGUE PAR DÉFAUT
+    # ÉTAPE 4 : TOUT LE RESTE PAR DÉFAUT
     # =========================================================================
     return "🥫 Garde-manger"
 
-
-    # =========================================================================
-    # ÉTAPE 2 : LA LISTE DES VRAIS FRUITS ET LÉGUMES MARAÎCHERS FRAIS
-    # =========================================================================
-    mots_fruits_legumes = [
-        # Légumes roots, bulbes et tiges
-        "pomme de terre", "pommes de terre", "carotte", "carottes", "baby carottes", "oignon", "oignons", "ail", "betterave", "navet", "rutabaga", "panais", "radis", "échalote", "echalote", "topinambour", "céleri-rave", "celeri-rave",
-        # Feuilles, verdures et herbes
-        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "épinards", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "basilic", "thym", "thyme", "feuille de thym", "organic thyme",
-        # Crucifères, fleurs, tiges
-        "brocoli", "chou-fleur", "chou de bruxelles", "chou chinois", "chou vert", "chou rouge", "asperge", "céleri", "celeri", "poireau", "tête de violon", "tete de violon",
-        # Légumes-fruits
-        "tomate", "tomates", "tomates en dés", "aurora", "concombre", "poivron", "poivrons", "piment", "piments", "jalapeños", "courgette", "zucchini", "aubergine", "aubergines", "maïs", "mais", "courge", "citrouille",
-        # Légumineuses fraîches et champignons
-        "haricot", "haricots", "haricots verts", "petit pois", "pois mange-tout", "champignon", "champignons", "cremini", "portobello", "shiitake", "pleurote", "enoki",
-        # Fruits de verger et petits fruits
-        "pomme", "pommes", "paula red", "sunrise", "ginger gold", "poire", "poires", "poires anjou", "prune", "prunes", "pêche", "peche", "peches", "sorbet pêche", "nectarine", "abricot", "abricots", "cerise", "fraise", "fraises", "bleuet", "bleuets", "framboise", "framboises", "double framboise", "mûre", "mure", "canneberge", "camerise",
-        # Agrumes et melons
-        "orange", "clémentine", "clementine", "mandarine", "mandarines", "citron", "citrons", "limes", "lime", "pamplemousse", "melon", "pastèque", "pasteque", "cantaloup",
-        # Tropicaux
-        "banane", "bananes", "bananas", "avocat", "ananas", "mangue", "kiwi", "kiwi doré", "raisin", "raisins", "grenade", "figue", "datte", "papaye", "fruit de la passion", "litchi", "fruit du dragon"
-    ]
-
-    if any(m in nom for m in mots_fruits_legumes):
-        return "🥦 Fruits et légumes"
-
-    # =========================================================================
-    # ÉTAPE 3 : LE RESTE PAR DÉFAUT
-    # =========================================================================
-    return "🥫 Garde-manger"
-
-    # =========================================================================
-    # ÉTAPE 2 : LA LISTE DES VRAIS FRUITS ET LÉGUMES MARAÎCHERS FRAIS
-    # =========================================================================
-    mots_fruits_legumes = [
-        # Légumes roots, bulbes et tiges
-        "pomme de terre", "pommes de terre", "carotte", "carottes", "baby carottes", "oignon", "oignons", "ail", "betterave", "navet", "rutabaga", "panais", "radis", "échalote", "echalote", "topinambour", "céleri-rave", "celeri-rave",
-        # Feuilles, verdures et herbes
-        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "épinards", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "basilic", "thym", "thyme", "feuille de thym", "organic thyme",
-        # Crucifères, fleurs, tiges
-        "brocoli", "chou-fleur", "chou de bruxelles", "chou chinois", "chou vert", "chou rouge", "asperge", "céleri", "celeri", "poireau", "tête de violon", "tete de violon",
-        # Légumes-fruits
-        "tomate", "tomates", "tomates en dés", "aurora", "concombre", "poivron", "poivrons", "piment", "piments", "jalapeños", "courgette", "zucchini", "aubergine", "aubergines", "maïs", "mais", "courge", "citrouille",
-        # Légumineuses fraîches et champignons
-        "haricot", "haricots", "haricots verts", "petit pois", "pois mange-tout", "champignon", "champignons", "cremini", "portobello", "shiitake", "pleurote", "enoki",
-        # Fruits de verger et petits fruits
-        "pomme", "pommes", "paula red", "sunrise", "ginger gold", "poire", "poires", "prune", "prunes", "pêche", "peche", "peches", "sorbet pêche", "nectarine", "abricot", "abricots", "cerise", "fraise", "fraises", "bleuet", "bleuets", "framboise", "framboises", "mûre", "mure", "canneberge", "camerise",
-        # Agrumes et melons
-        "orange", "clémentine", "clementine", "mandarine", "mandarines", "citron", "citrons", "limes", "lime", "pamplemousse", "melon", "pastèque", "pasteque", "cantaloup",
-        # Tropicaux
-        "banane", "bananes", "bananas", "avocat", "ananas", "mangue", "kiwi", "raisin", "raisins", "grenade", "figue", "datte", "papaye", "fruit de la passion", "litchi", "fruit du dragon"
-    ]
-
-    if any(m in nom for m in mots_fruits_legumes):
-        return "🥦 Fruits et légumes"
-
-    # =========================================================================
-    # ÉTAPE 3 : LE RESTE PAR DÉFAUT
-    # =========================================================================
-    return "🥫 Garde-manger"
-
-
-    # =========================================================================
-    # ÉTAPE 2 : LA LISTE DES VRAIS FRUITS ET LÉGUMES MARAÎCHERS FRAIS
-    # =========================================================================
-    mots_fruits_legumes = [
-        # Légumes roots, bulbes et tiges
-        "pomme de terre", "pommes de terre", "carotte", "carottes", "oignon", "oignons", "ail", "betterave", "navet", "rutabaga", "panais", "radis", "échalote", "echalote", "topinambour", "céleri-rave", "celeri-rave",
-        # Feuilles, verdures et herbes
-        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "épinards", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "basilic", "thym", "thyme", "organic thyme",
-        # Crucifères, fleurs, tiges
-        "brocoli", "chou-fleur", "chou de bruxelles", "chou chinois", "chou vert", "chou rouge", "asperge", "céleri", "celeri", "poireau", "tête de violon", "tete de violon",
-        # Légumes-fruits
-        "tomate", "tomates", "concombre", "poivron", "poivrons", "piment", "piments", "jalapeños", "courgette", "zucchini", "aubergine", "aubergines", "maïs", "mais", "courge", "citrouille",
-        # Légumineuses fraîches et champignons (Si non attrapés par l'Étape 1)
-        "haricot", "haricots", "haricots verts", "petit pois", "pois mange-tout", "champignon", "cremini", "portobello", "shiitake", "pleurote", "enoki",
-        # Fruits de verger et petits fruits
-        "pomme", "pommes", "paula red", "sunrise", "ginger gold", "poire", "poires", "prune", "prunes", "pêche", "peche", "peches", "nectarine", "abricot", "abricots", "cerise", "fraise", "fraises", "bleuet", "bleuets", "framboise", "framboises", "mûre", "mure", "canneberge", "camerise",
-        # Agrumes et melons
-        "orange", "clémentine", "clementine", "mandarine", "mandarines", "citron", "citrons", "lime", "pamplemousse", "melon", "pastèque", "pasteque", "cantaloup",
-        # Tropicaux
-        "banane", "bananes", "bananas", "avocat", "ananas", "mangue", "kiwi", "raisin", "raisins", "grenade", "figue", "datte", "papaye", "fruit de la passion", "litchi", "fruit du dragon"
-    ]
-
-    if any(m in nom for m in mots_fruits_legumes):
-        return "🥦 Fruits et légumes"
-
-    # =========================================================================
-    # ÉTAPE 3 : LE RESTE PAR DÉFAUT
-    # =========================================================================
-    return "🥫 Garde-manger"
-
-
-    # =========================================================================
-    # ÉTAPE 2 : LA LISTE DES VRAIS FRUITS ET LÉGUMES MARAÎCHERS FRES
-    # =========================================================================
-    mots_fruits_legumes = [
-        # Légumes roots, bulbes et tiges
-        "pomme de terre", "pommes de terre", "carotte", "carottes", "oignon", "ail", "betterave", "navet", "rutabaga", "panais", "radis", "échalote", "echalote", "topinambour", "céleri-rave", "celeri-rave",
-        # Feuilles, verdures et herbes
-        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "épinards", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "basilic", "thym", "thyme",
-        # Crucifères, fleurs, tiges
-        "brocoli", "chou-fleur", "chou de bruxelles", "chou chinois", "chou vert", "chou rouge", "asperge", "céleri", "celeri", "poireau", "tête de violon", "tete de violon",
-        # Légumes-fruits
-        "tomate", "tomates", "concombre", "poivron", "poivrons", "piment", "courgette", "zucchini", "aubergine", "maïs", "mais", "courge", "citrouille",
-        # Légumineuses fraîches et champignons (Seulement si non attrapés par l'Étape 1)
-        "haricot", "haricots", "haricots verts", "petit pois", "pois mange-tout", "champignon", "cremini", "portobello", "shiitake", "pleurote", "enoki",
-        # Fruits de verger et petits fruits
-        "pomme", "pommes", "poire", "poires", "prune", "prunes", "pêche", "peche", "nectarine", "abricot", "cerise", "fraise", "fraises", "bleuet", "bleuets", "framboise", "framboises", "canneberge", "mûre", "mure", "camerise",
-        # Agrumes et melons
-        "orange", "clémentine", "clementine", "mandarine", "mandarines", "citron", "lime", "pamplemousse", "melon", "pastèque", "pasteque", "cantaloup",
-        # Tropicaux
-        "banane", "bananas", "avocat", "ananas", "mangue", "kiwi", "raisin", "raisins", "grenade", "figue", "datte", "papaye", "fruit de la passion", "litchi", "fruit du dragon"
-    ]
-
-    # Si le produit contient un de vos mots officiels maraîchers, c'est un fruit ou légume !
-    if any(m in nom for m in mots_fruits_legumes):
-        return "🥦 Fruits et légumes"
-
-    # =========================================================================
-    # ÉTAPE 3 : LE RESTE PAR DÉFAUT
-    # =========================================================================
-    return "🥫 Garde-manger"
 
 
 # Initialisation et chargement de la base de données en Session Streamlit

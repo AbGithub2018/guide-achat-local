@@ -137,102 +137,79 @@ def deviner_categorie(nom_produit):
     import re
     nom = str(nom_produit).lower()
     
-    # =========================================================================
-    # ÉTAPE 1 : LES EXCLUSIONS RADICALES DE TEXTE ET CONTEXTE (ANTI-TRANSFORMÉ)
-    # =========================================================================
-    # Si le nom contient la moindre de ces expressions complexes ou de ces mots,
-    # il est banni sur-le-champ du rayon maraîcher frais.
+    # 1. NETTOYAGE DES CARACTÈRES SPÉCIAUX ET ISOLATION DES MOTS
+    nom_nettoye = re.sub(r"[()\'’\-,.!\+?]", " ", nom)
+    mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
     
-    expressions_exclues = [
-        "saveur", "arôme", "arome", "artificiel", "artificielle", "gout", "goût", 
-        "extrait", "concentré", "concentre", "sirop", "poudre", "pépites", "pepites", 
-        "brisures", "sauce", "souce", "coulis", "pesto", "salsa", "vinaigrette", "marinade",
-        "soupe", "potage", "bouillon", "bovril", "bisque", "conserve", "boîte", "boite",
-        "canne", "bocal", "séchés", "seches", "seché", "sechée", "désidraté", "compote", "gelée",
-        "en dés", "en des", "tranchées en", "jus de", "arome de", "arôme de", "à l'ail", "au citron",
-        "en boîte", "en boite", "au sirop", "farci", "farcis", "assaisonné", "assaisonnee", "assaisinement"
-    ]
-    if any(exp in nom for exp in expressions_exclues):
-        if any(m in nom for m in ["jus", "boisson", "soda", "thé", "café", "liqueur"]): return "☕ Boissons"
+    if not mots_produit:
         return "🥫 Garde-manger"
 
-    # Extraction des mots isolés pour les listes de catégories
-    mots_produit = set(re.findall(r'\b\w+\b', nom))
+    # 2. LISTE BLANCHE UNIQUE DES MOTS AUTORISÉS AU RAYON MARAÎCHER FRAIS
+    mots_autorises = {
+        # Les Fruits Frais
+        "abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", 
+        "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", 
+        "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", 
+        "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", 
+        "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", 
+        "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", 
+        "prunes", "raisin", "raisins", "physalis", "sunsgold", "ginger", "gold", "paula", "red", "sunrise",
+        # Les Légumes et Herbes Fraîches (Exclut les légumineuses sèches et conserves)
+        "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
+        "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
+        "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", 
+        "echalote", "échalote", "echalotes", "échalotes", "epinard", "épinard", "epinards", "épinards", 
+        "spinach", "gourganes", "gingembre", "haricots", "verts", "laitue", "romaine", "mais", "maïs", 
+        "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", 
+        "piments", "poireau", "poireaux", "leek", "radis", "radish", "rutabaga", "salade", "thym", 
+        "thyme", "tomate", "tomates", "zucchini", "zucchinis",
+        # Vocabulaire d'état brut, format ou provenance acceptable au rayon frais
+        "frais", "fraiche", "fraîche", "organic", "biologique", "bio", "local", "locaux", "vrac",
+        "quebec", "québec", "canada", "anjou", "bartlett", "russet", "lobo", "aurora", "mcintosh", 
+        "sac", "panier", "paquet", "bunch", "botte", "gros", "gros", "petit", "petits", "tranche", 
+        "tranché", "tranchée", "tranches", "rapee", "râpée", "rapees", "râpées", "coupé", "coupée", 
+        "coupes", "coupées", "blanche", "blanches", "jaune", "jaunes", "rouge", "rouges", "vert", 
+        "verte", "verts", "vertes", "colorés", "colores", "un", "une", "le", "la", "les", "de", "du", 
+        "d", "en", "et", "à", "a", "avec", "sans", "pour", "par", "dans", "sur", "sous", "1l", "3lb", "4lb", "10lb"
+    }
 
-    # Blocage Épicerie / Collations / Ingrédients secs
-    mots_exclus_garde_manger = [
-        "riz", "grain", "grains", "biscuit", "biscuits", "galette", "galettes", "barre", "barres", 
-        "snack", "snacks", "chips", "croustille", "croustilles", "popcorn", "tostitos", "pringles", 
-        "crispers", "craquelin", "craquelins", "bonbon", "bonbons", "gummies", "chocolat", "chocolate", 
-        "miel", "tartinade", "marmalade", "ketchup", "reliche", "relish", "cornichon", "cornichons", 
-        "bick", "olives", "hummus", "trempette", "trempettes", "halls", "pastille", "pastilles", 
-        "pâte", "pates", "pasta", "spaghetti", "macaroni", "fusilli", "penne", "linguine", "gnocchi", 
-        "gnocchis", "ravioli", "tortellini", "agnolettis", "totelli", "tofu", "tempeh", "mélange", 
-        "melange", "mix", "trail", "flocons", "graines", "graine", "sel", "sucre", "cassonade"
-    ]
-    if any(m in mots_produit for m in mots_exclus_garde_manger):
-        return "🥫 Garde-manger"
+    # 3. VERDICT : Si la description contient un mot inconnu de la liste blanche, la ligne est rejetée.
+    est_maraicher_pur = all(m in mots_autorises for m in mots_produit)
+    
+    if est_maraicher_pur:
+        mots_bruts_vegetaux = {
+            "abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", 
+            "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", 
+            "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", 
+            "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", 
+            "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", 
+            "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", 
+            "prunes", "raisin", "raisins", "physalis", "ail", "arugula", "asperge", "asperges", "avocat", 
+            "avocats", "basilic", "betterave", "betteraves", "brocoli", "brocolis", "carotte", "carottes", 
+            "carrotes", "celeri", "céleri", "champignon", "champignons", "chou", "choux", "concombre", 
+            "concombres", "coriandre", "courge", "courges", "epinard", "épinard", "epinards", "épinards", 
+            "spinach", "échalote", "échalotes", "gourganes", "gingembre", "haricots", "laitue", "romaine", 
+            "mais", "maïs", "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", 
+            "persil", "piment", "piments", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", 
+            "zucchini", "zucchinis", "salade", "thym", "thyme"
+        }
+        if any(m in mots_bruts_vegetaux for m in mots_produit):
+            return "🥦 Fruits et légumes"
 
-    # Blocage Boissons
-    mots_exclus_boissons = [
-        "jus", "juice", "boisson", "boissons", "soda", "sodas", "coke", "pepsi", "7up", "sprite", 
-        "limonade", "kombucha", "smoothie", "smoothies", "nectar", "thé", "the", "nestea", "tisane", 
-        "infusion", "café", "cafe", "bière", "beer", "vin", "gaillac", "liqueur", "water", "eau", 
-        "vitaminwater", "redbull", "pierrier", "perrier", "codre", "cidre"
-    ]
-    if any(m in mots_produit for m in mots_exclus_boissons):
+    # 4. REDIRECTIONS LOGIQUES POUR LE RESTE DE L'INVENTAIRE EXCLUS
+    if any(m in nom for m in ["jus", "boisson", "soda", "eau", "thé", "café", "liqueur", "coke", "pepsi", "7up", "drink"]): 
         return "☕ Boissons"
-
-    # Blocage Boulangerie
-    mots_exclus_boulangerie = [
-        "pain", "pains", "bread", "baguette", "baguettes", "croissant", "croissants", "muffin", 
-        "muffins", "brioche", "brioches", "tortilla", "tortillas", "wraps", "bagel", "bagels", 
-        "naan", "pita", "gruau", "avoine", "céréale", "cereale", "céréales", "cereales", "flakes", 
-        "cheerios", "krispies", "shreddies", "tarte", "tartelette", "tartelettes", "gâteau", "gateau", "loaf"
-    ]
-    if any(m in mots_produit for m in mots_exclus_boulangerie):
-        return "🍞 Boulangerie et pâtisserie"
-
-    # Blocage Boucherie / Poissonnerie / Plats Cuisinés
-    mots_exclus_viandes_surgeles = [
-        "poulet", "chicken", "bœuf", "boeuf", "beef", "porc", "porchetta", "bacon", "jambon", "ham", 
-        "saucisse", "saucisses", "salami", "bologne", "cretons", "creton", "pâté", "pate", "thon", 
-        "tuna", "saumon", "salmon", "sole", "morue", "crevette", "crevettes", "homard", "escargots", 
-        "snails", "sardines", "pizza", "pizzas", "frite", "frites", "surgelé", "surgelés", "pépites", 
-        "nuggets", "quiche", "quiches", "flamingo", "bouchées", "bouchée", "kung"
-    ]
-    if any(m in mots_produit for m in mots_exclus_viandes_surgeles):
+    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette"]): 
         if "surgelé" in nom or "pizza" in nom or "frite" in nom: return "❄️ Surgelés"
         return "🥩 Viandes et poissons"
-
-    # =========================================================================
-    # ÉTAPE 2 : LA BASE DE CONNAISSANCES VALIDÉE DES FRUITS & LÉGUMES BRUTS
-    # =========================================================================
-    vrais_vegetaux = [
-        # Légumes maraîchers frais uniquement
-        "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "carotte", "carottes", "carrotes", 
-        "basilic", "brocoli", "brocolis", "céleri", "celeri", "champignon", "champignons", "chou", "choux",
-        "concombre", "concombres", "coriandre", "courge", "courges", "épinard", "épinards", "epinard", "epinards", 
-        "spinach", "échalote", "échalotes", "gourganes", "gingembre", "haricot", "haricots", "laitue", "romaine", 
-        "maïs", "mais", "oignon", "oignons", "patate", "patates", "persil", "piment", "piments", "jalapeño", 
-        "jalapeno", "jalapeños", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", "zucchini", 
-        "zucchinis", "salade",
-        # Fruits frais uniquement
-        "abricot", "abricots", "ananas", "apple", "pomme", "pommes", "banane", "bananes", "banana", 
-        "bananas", "bleuet", "bleuets", "clémentine", "clementine", "clementines", "citron", "citrons", 
-        "fraise", "fraises", "framboise", "framboises", "mûre", "mûres", "mure", "mures", "grapefruit", 
-        "pamplemousse", "pamplemousses", "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", 
-        "orange", "oranges", "melon", "melons", "pastèque", "pasteque", "cantaloup", "pêche", "pêches", 
-        "peche", "peches", "poire", "poires", "raisin", "raisins", "cerise", "cerises", "physalis"
-    ]
-    
-    if any(m in mots_produit for m in vrais_vegetaux):
-        return "🥦 Fruits et légumes"
-
-    # Tout le reste par défaut (ex: huiles, condiments bruts)
+    if any(m in nom for m in ["lait", "yogourt", "fromage", "beurre", "œuf", "cream", "oikos", "activia", "danone"]): 
+        return "🥛 Produits laitiers et œufs"
+    if any(m in nom for m in ["pain", "muffin", "brioche", "bagel", "céréale", "gruau", "tarte", "croissant"]): 
+        return "🍞 Boulangerie et pâtisserie"
+    if any(m in nom for m in ["pizza", "frite", "surgelé", "surgeles", "pépites"]): 
+        return "❄️ Surgelés"
+        
     return "🥫 Garde-manger"
-
-
 
 
 # Initialisation et chargement de la base de données en Session Streamlit

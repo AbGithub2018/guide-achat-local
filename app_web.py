@@ -214,7 +214,7 @@ with st.sidebar.expander("🔑 Administration"):
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
 st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un code-barres pour valider l'origine et gérer vos prix d'épicerie.</p>")
 
-with st.expander("ℹ️ :blue[**Comment utiliser l'application et économiser ? (Cliquez pour ouvrir)**]"):
+with st.expander(":blue[**Comment utiliser l'application et économiser ?**] *(Cliquez pour ouvrir)*", icon="ℹ️"):
     st.markdown("""
     ### 🛒 Protégeons notre portefeuille, encourageons l'achat local !
     Bienvenue sur **AchatQuébec**, votre outil citoyen et collaboratif pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Ensemble, reprenons le contrôle de notre panier d'épicerie !

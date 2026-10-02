@@ -614,12 +614,13 @@ if resultats is not None and not resultats.empty:
                 transform: translateY(-2px) !important;
                 box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2) !important;
             }
-        </style>
+                </style>
         """)
-        
-        bouton_soumettre = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
+    
+    bouton_enregistrer = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
 
-    if bouton_soumettre:
+    if bouton_enregistrer:
+
 
         try:
             # Extrait le premier index de la liste pour éviter l'erreur de scalaire

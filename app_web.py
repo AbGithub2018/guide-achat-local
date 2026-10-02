@@ -136,29 +136,47 @@ def sauvegarder_historique(df_nouvel_historique):
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
     
-    # 1. EXCLUSIONS PRIORITAIRES & VIANDES (Pour bloquer les intrus avant tout le reste)
-    if any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon", "filet", "aiglefin", "saumon", "truite", "morue", "crevette"]):
-        return "🥩 Viandes et poissons"
-        
-    elif any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", "pesto"]):
+    # 1. EXCLUSIONS DE SÉCURITÉ : On bloque les produits transformés en premier
+    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", "pesto", "chips", "croustille", "conserve", "canne"]):
         return "🥫 Garde-manger"
-        
-    elif any(m in nom for m in ["moût", "mout", "pétillant", "petillant", "cidre", "cocktail", "drink"]):
+    elif any(m in nom for m in ["moût", "mout", "pétillant", "petillant", "cidre", "cocktail", "drink", "sirop"]):
         return "☕ Boissons"
-
-    # 2. LES RAYONS CLASSIQUES
+    elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon", "filet", "aiglefin", "saumon", "truite", "morue", "crevette", "pétoncle", "petoncle", "crabe", "homard"]):
+        return "🥩 Viandes et poissons"
+    elif any(m in nom for m in ["pizza", "frite", "surgelé", "surgèle", "pépites", "pépites"]):
+        return "❄️ Surgelés"
     elif any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
         return "🥛 Produits laitiers et œufs"
     elif any(m in nom for m in ["pain", "baguette", "croissant", "tortilla"]):
         return "🍞 Boulangerie et pâtisserie"
-    elif any(m in nom for m in ["pomme", "bleuet", "fraise", "banane", "laitue", "carotte", "patate", "légume", "fruit", "salade", "frais", "fraîche"]):
+
+    # 2. VOTRE LISTE OFFICIELLE DE VRAIS FRUITS ET LÉGUMES
+    mots_fruits_legumes = [
+        # Légumes roots, bulbes et tiges
+        "pomme de terre", "pommes de terre", "carotte", "oignon", "ail", "betterave", "navet", "rutabaga", "panais", "radis", "échalote", "echalote", "topinambour", "céleri-rave", "celeri-rave",
+        # Feuilles, verdures et herbes
+        "laitue", "romaine", "boston", "frisée", "frisee", "mesclun", "épinard", "epinard", "chou frisé", "kale", "bette à carde", "roquette", "persil", "coriandre", "menthe", "basilic", "thym",
+        # Crucifères, fleurs, tiges
+        "brocoli", "chou-fleur", "chou de bruxelles", "chou chinois", "chou vert", "chou rouge", "asperge", "céleri", "celeri", "poireau", "tête de violon", "tete de violon",
+        # Légumes-fruits
+        "tomate", "concombre", "poivron", "piment", "courgette", "zucchini", "aubergine", "maïs", "mais", "courge", "citrouille",
+        # Légumineuses fraîches et champignons
+        "haricot", "petit pois", "pois mange-tout", "champignon", "cremini", "portobello", "shiitake", "pleurote", "enoki",
+        # Fruits de verger et petits fruits
+        "pomme", "poire", "prune", "pêche", "peche", "nectarine", "abricot", "cerise", "fraise", "bleuet", "framboise", "canneberge", "mûre", "mure", "camerise",
+        # Agrumes et melons
+        "orange", "clémentine", "clementine", "mandarine", "citron", "lime", "pamplemousse", "melon", "pastèque", "pasteque", "cantaloup",
+        # Tropicaux
+        "banane", "avocat", "ananas", "mangue", "kiwi", "raisin", "grenade", "figue", "datte", "papaye", "fruit de la passion", "litchi", "fruit du dragon"
+    ]
+
+    # Si le nom contient un de vos mots officiels, c'est un fruit ou légume maraîcher !
+    if any(m in nom for m in mots_fruits_legumes):
         return "🥦 Fruits et légumes"
-    elif any(m in nom for m in ["jus", "liqueur", "coca", "pepsi", "eau", "café", "cafe", "thé", "the"]):
-        return "☕ Boissons"
-    elif any(m in nom for m in ["pizza", "frite", "surgelé", "surgèle", "pépites"]):
-        return "❄️ Surgelés"
-    else:
-        return "🥫 Garde-manger"
+
+    # 3. TOUT LE RESTE (Par défaut : riz, conserves, huiles, épices...)
+    return "🥫 Garde-manger"
+
 
 
 

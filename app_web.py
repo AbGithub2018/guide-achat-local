@@ -592,8 +592,7 @@ if resultats is not None and not resultats.empty:
         date_du_jour = pd.Timestamp.now().strftime("%Y-%m-%d")
         bouton_enregistrer = st.form_submit_button(f"💾 Enregistrer les modifications de prix (Aujourd'hui : {date_du_jour})", type="primary", use_container_width=True)
 
-    if bouton_soumettre:
-
+    if bouton_enregistrer:
         try:
             # Extrait le premier index de la liste pour éviter l'erreur de scalaire
             idx_unique = index_produit_reel[0]

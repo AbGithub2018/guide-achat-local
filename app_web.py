@@ -598,8 +598,55 @@ if resultats is not None and not resultats.empty:
             st.session_state['df_produits'].at[idx_unique, 'prix_tigre_geant'] = nouveau_tigre.strip() if nouveau_tigre else ""
             st.session_state['df_produits'].at[idx_unique, 'prix_dollarama'] = nouveau_dollarama.strip() if nouveau_dollarama else ""
             st.session_state['df_produits'].at[idx_unique, 'prix_provigo'] = nouveau_provigo.strip() if nouveau_provigo else ""
-
+         
+            # === DÉBUT DU BLOC HISTORIQUE CITOYEN ===
+            champs_saisis = {
+                'prix_iga': nouveau_iga,
+                'prix_maxi': nouveau_maxi,
+                'prix_metro': nouveau_metro,
+                'prix_super_c': nouveau_super_c,
+                'prix_walmart': nouveau_walmart,
+                'prix_tigre_geant': nouveau_tigre,
+                'prix_dollarama': nouveau_dollarama,
+                'prix_provigo': nouveau_provigo
+            }
+         
+            nouvelles_lignes = []
+            horodatage_actuel = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+            upc_produit = cup_actuel  # Utilise le CUP détecté plus haut
+          
+            for distribution_enseigne, valeur_prix in champs_saisis.items():
+                if valeur_prix and str(valeur_prix).strip() != "":
+                    try:
+                        prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
+                       
+                        # 1. DÉFINITION DES ENTÊTES ET DE LEUR UTILITÉ (POUR MÉMOIRE)
+                        # explications_colonnes = {
+                        #     'horodatage': 'Colonne A - Date et heure de l'entrée',
+                        #     'code_upc': 'Colonne B - Code-barres unique',
+                        #     'distribution': 'Colonne C - Nom de la bannière',
+                        #     'prix': 'Colonne D - Prix numérique en minuscule',
+                        #     'source': 'Colonne E - Origine de la donnée'
+                        # }
+                     
+                        nouvelle_ligne = {
+                            'horodatage': horodatage_actuel,
+                            'code_upc': upc_produit,
+                            'distribution': distribution_enseigne,
+                            'prix': prix_propre,
+                            'source': 'collaboratif'
+                        }
+                        nouvelles_lignes.append(nouvelle_ligne)
+                    except ValueError:
+                        pass
+                     
+            if nouvelles_lignes:
+                df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
+                sauvegarder_historique(df_nouvel_historique)
+            # === FIN DU BLOC HISTORIQUE CITOYEN ===
+         
             if sauvegarder_donnees(st.session_state['df_produits']):
+
                 st.success("Base de données collaborative mise à jour avec succès !")
                 time.sleep(1)
                 st.rerun()

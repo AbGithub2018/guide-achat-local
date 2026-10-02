@@ -688,3 +688,5 @@ if resultats is not None and not resultats.empty:
 
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
+st.write(st.session_state['df_produits'][['nom', 'categorie']].head(10))
+

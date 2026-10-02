@@ -136,25 +136,23 @@ def sauvegarder_historique(df_nouvel_historique):
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
     
-    # 1. LES EXCLUSIONS PRIORITAIRES (Pour chasser les intrus des fruits et légumes frais)
-    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", "pesto"]):
+    # 1. EXCLUSIONS PRIORITAIRES & VIANDES (Pour bloquer les intrus avant tout le reste)
+    if any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon", "filet", "aiglefin", "saumon", "truite", "morue", "crevette"]):
+        return "🥩 Viandes et poissons"
+        
+    elif any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", "pesto"]):
         return "🥫 Garde-manger"
         
     elif any(m in nom for m in ["moût", "mout", "pétillant", "petillant", "cidre", "cocktail", "drink"]):
         return "☕ Boissons"
-        
-    elif any(m in nom for m in ["filet", "aiglefin", "saumon", "truite", "morue", "crevette"]):
-        return "🥩 Viandes et poissons"
 
-    # 2. LES RAYONS CLASSIQUES (Reste inchangé)
+    # 2. LES RAYONS CLASSIQUES
     elif any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
         return "🥛 Produits laitiers et œufs"
     elif any(m in nom for m in ["pain", "baguette", "croissant", "tortilla"]):
         return "🍞 Boulangerie et pâtisserie"
     elif any(m in nom for m in ["pomme", "bleuet", "fraise", "banane", "laitue", "carotte", "patate", "légume", "fruit", "salade", "frais", "fraîche"]):
         return "🥦 Fruits et légumes"
-    elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon"]):
-        return "🥩 Viandes et poissons"
     elif any(m in nom for m in ["jus", "liqueur", "coca", "pepsi", "eau", "café", "cafe", "thé", "the"]):
         return "☕ Boissons"
     elif any(m in nom for m in ["pizza", "frite", "surgelé", "surgèle", "pépites"]):

@@ -58,14 +58,13 @@ st.html("""
         min-width: calc(33.333% - 10px) !important;
         max-width: calc(33.333% - 10px) !important;
     }
-    /* 1. SÉLECTEUR ULTRA-PRÉCIS POUR AGRANDIR LE TEXTE DES INSTRUCTIONS */
-    div[data-testid="stExpander"] [data-testid="stExpanderHeader"] p,
-    div[data-testid="stExpander"] [data-testid="stExpanderHeader"] span,
-    div[data-testid="stExpander"] [data-testid="stExpanderHeader"] {
-        font-size: 24px !important;
+
+    /* COPIEZ ET COLLEZ LE CODE JUSTE ICI, AVANT LE </style> */
+    .stExpander details summary p {
+        font-size: 22px !important;
         font-weight: bold !important;
         color: #003366 !important;
-    }    
+    }
 </style>
 """)
 

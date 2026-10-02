@@ -138,24 +138,28 @@ def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
     
     # =========================================================================
-    # ÉTAPE 1 : ISOLATION DES MOTS (TOKENIZATION) POUR RECHERCHE STRICTE
+    # ÉTAPE 1 : LES EXCLUSIONS RADICALES DE TEXTE ET CONTEXTE (ANTI-TRANSFORMÉ)
     # =========================================================================
-    mots_produit = set(re.findall(r'\b\w+\b', nom))
-
-    # =========================================================================
-    # ÉTAPE 2 : FILTRES D'EXCLUSION ABSOLUE (PRODUITS TRANSFORMÉS / ARÔMES)
-    # =========================================================================
-    expressions_industrielles = [
+    # Si le nom contient la moindre de ces expressions complexes ou de ces mots,
+    # il est banni sur-le-champ du rayon maraîcher frais.
+    
+    expressions_exclues = [
         "saveur", "arôme", "arome", "artificiel", "artificielle", "gout", "goût", 
         "extrait", "concentré", "concentre", "sirop", "poudre", "pépites", "pepites", 
         "brisures", "sauce", "souce", "coulis", "pesto", "salsa", "vinaigrette", "marinade",
         "soupe", "potage", "bouillon", "bovril", "bisque", "conserve", "boîte", "boite",
-        "canne", "bocal", "séchés", "seches", "seché", "sechée", "désidraté", "compote", "gelée"
+        "canne", "bocal", "séchés", "seches", "seché", "sechée", "désidraté", "compote", "gelée",
+        "en dés", "en des", "tranchées en", "jus de", "arome de", "arôme de", "à l'ail", "au citron",
+        "en boîte", "en boite", "au sirop", "farci", "farcis", "assaisonné", "assaisonnee", "assaisinement"
     ]
-    if any(exp in nom for exp in expressions_industrielles):
+    if any(exp in nom for exp in expressions_exclues):
         if any(m in nom for m in ["jus", "boisson", "soda", "thé", "café", "liqueur"]): return "☕ Boissons"
         return "🥫 Garde-manger"
 
+    # Extraction des mots isolés pour les listes de catégories
+    mots_produit = set(re.findall(r'\b\w+\b', nom))
+
+    # Blocage Épicerie / Collations / Ingrédients secs
     mots_exclus_garde_manger = [
         "riz", "grain", "grains", "biscuit", "biscuits", "galette", "galettes", "barre", "barres", 
         "snack", "snacks", "chips", "croustille", "croustilles", "popcorn", "tostitos", "pringles", 
@@ -169,6 +173,7 @@ def deviner_categorie(nom_produit):
     if any(m in mots_produit for m in mots_exclus_garde_manger):
         return "🥫 Garde-manger"
 
+    # Blocage Boissons
     mots_exclus_boissons = [
         "jus", "juice", "boisson", "boissons", "soda", "sodas", "coke", "pepsi", "7up", "sprite", 
         "limonade", "kombucha", "smoothie", "smoothies", "nectar", "thé", "the", "nestea", "tisane", 
@@ -178,6 +183,7 @@ def deviner_categorie(nom_produit):
     if any(m in mots_produit for m in mots_exclus_boissons):
         return "☕ Boissons"
 
+    # Blocage Boulangerie
     mots_exclus_boulangerie = [
         "pain", "pains", "bread", "baguette", "baguettes", "croissant", "croissants", "muffin", 
         "muffins", "brioche", "brioches", "tortilla", "tortillas", "wraps", "bagel", "bagels", 
@@ -187,6 +193,7 @@ def deviner_categorie(nom_produit):
     if any(m in mots_produit for m in mots_exclus_boulangerie):
         return "🍞 Boulangerie et pâtisserie"
 
+    # Blocage Boucherie / Poissonnerie / Plats Cuisinés
     mots_exclus_viandes_surgeles = [
         "poulet", "chicken", "bœuf", "boeuf", "beef", "porc", "porchetta", "bacon", "jambon", "ham", 
         "saucisse", "saucisses", "salami", "bologne", "cretons", "creton", "pâté", "pate", "thon", 
@@ -194,35 +201,37 @@ def deviner_categorie(nom_produit):
         "snails", "sardines", "pizza", "pizzas", "frite", "frites", "surgelé", "surgelés", "pépites", 
         "nuggets", "quiche", "quiches", "flamingo", "bouchées", "bouchée", "kung"
     ]
-    if any(m in nom for m in mots_exclus_viandes_surgeles):
+    if any(m in mots_produit for m in mots_exclus_viandes_surgeles):
         if "surgelé" in nom or "pizza" in nom or "frite" in nom: return "❄️ Surgelés"
         return "🥩 Viandes et poissons"
 
     # =========================================================================
-    # ÉTAPE 3 : LA BASE DE CONNAISSANCES DES VRAIS FRUITS & LÉGUMES BRUTS
+    # ÉTAPE 2 : LA BASE DE CONNAISSANCES VALIDÉE DES FRUITS & LÉGUMES BRUTS
     # =========================================================================
     vrais_vegetaux = [
+        # Légumes maraîchers frais uniquement
         "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "carotte", "carottes", "carrotes", 
         "basilic", "brocoli", "brocolis", "céleri", "celeri", "champignon", "champignons", "chou", "choux",
         "concombre", "concombres", "coriandre", "courge", "courges", "épinard", "épinards", "epinard", "epinards", 
         "spinach", "échalote", "échalotes", "gourganes", "gingembre", "haricot", "haricots", "laitue", "romaine", 
         "maïs", "mais", "oignon", "oignons", "patate", "patates", "persil", "piment", "piments", "jalapeño", 
         "jalapeno", "jalapeños", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", "zucchini", 
-        "zucchinis", "salade", "abricot", "abricots", "ananas", "apple", "pomme", "pommes", "banane", 
-        "bananes", "banana", "bananas", "bleuet", "bleuets", "clémentine", "clementine", "clementines", 
-        "citron", "citrons", "fraise", "fraises", "framboise", "framboises", "mûre", "mûres", "mure", "mures", 
-        "grapefruit", "pamplemousse", "pamplemousses", "kiwi", "kiwis", "lime", "limes", "mandarine", 
-        "mandarines", "orange", "oranges", "melon", "melons", "pastèque", "pasteque", "cantaloup", "pêche", 
-        "pêches", "peche", "peches", "poire", "poires", "raisin", "raisins", "cerise", "cerises", "physalis", "fruits"
+        "zucchinis", "salade",
+        # Fruits frais uniquement
+        "abricot", "abricots", "ananas", "apple", "pomme", "pommes", "banane", "bananes", "banana", 
+        "bananas", "bleuet", "bleuets", "clémentine", "clementine", "clementines", "citron", "citrons", 
+        "fraise", "fraises", "framboise", "framboises", "mûre", "mûres", "mure", "mures", "grapefruit", 
+        "pamplemousse", "pamplemousses", "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", 
+        "orange", "oranges", "melon", "melons", "pastèque", "pasteque", "cantaloup", "pêche", "pêches", 
+        "peche", "peches", "poire", "poires", "raisin", "raisins", "cerise", "cerises", "physalis"
     ]
     
     if any(m in mots_produit for m in vrais_vegetaux):
         return "🥦 Fruits et légumes"
 
-    # =========================================================================
-    # ÉTAPE 4 : TOUT LE RESTE PAR DÉFAUT
-    # =========================================================================
+    # Tout le reste par défaut (ex: huiles, condiments bruts)
     return "🥫 Garde-manger"
+
 
 
 

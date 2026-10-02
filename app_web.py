@@ -136,12 +136,15 @@ def sauvegarder_historique(df_nouvel_historique):
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
     
-    # 1. TRIS PRIORITAIRES : On intercepte les mélanges pour éviter les faux positifs chez les fruits frais
-    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé"]):
+    # 1. LES EXCLUSIONS PRIORITAIRES (Pour chasser les intrus des fruits et légumes frais)
+    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack", "avoine", "trio", "céréale", "cereale", "vinaigre", "compote", "pot pour bébé", "sauce", "gummies", "bonbon", "bouillon", "pesto"]):
         return "🥫 Garde-manger"
         
-    elif any(m in nom for m in ["moût", "mout", "pétillant", "petillant", "cidre"]):
+    elif any(m in nom for m in ["moût", "mout", "pétillant", "petillant", "cidre", "cocktail", "drink"]):
         return "☕ Boissons"
+        
+    elif any(m in nom for m in ["filet", "aiglefin", "saumon", "truite", "morue", "crevette"]):
+        return "🥩 Viandes et poissons"
 
     # 2. LES RAYONS CLASSIQUES (Reste inchangé)
     elif any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
@@ -150,7 +153,7 @@ def deviner_categorie(nom_produit):
         return "🍞 Boulangerie et pâtisserie"
     elif any(m in nom for m in ["pomme", "bleuet", "fraise", "banane", "laitue", "carotte", "patate", "légume", "fruit", "salade", "frais", "fraîche"]):
         return "🥦 Fruits et légumes"
-    elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "saumon", "poisson", "jambon"]):
+    elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "jambon"]):
         return "🥩 Viandes et poissons"
     elif any(m in nom for m in ["jus", "liqueur", "coca", "pepsi", "eau", "café", "cafe", "thé", "the"]):
         return "☕ Boissons"
@@ -158,6 +161,7 @@ def deviner_categorie(nom_produit):
         return "❄️ Surgelés"
     else:
         return "🥫 Garde-manger"
+
 
 
 # Initialisation et chargement de la base de données en Session Streamlit

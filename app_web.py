@@ -132,6 +132,22 @@ def sauvegarder_historique(df_nouvel_historique):
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde de l'historique : {e}")
         return False
+def deviner_categorie(nom_produit):
+    nom = str(nom_produit).lower()
+    if any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
+        return "🥛 Produits laitiers et œufs"
+    elif any(m in nom for m in ["pain", "baguette", "croissant", "biscuit", "galette", "tortilla"]):
+        return "🍞 Boulangerie et pâtisserie"
+    elif any(m in nom for m in ["pomme", "bleuet", "fraise", "banane", "laitue", "carotte", "patate", "légume", "fruit", "salade"]):
+        return "🥦 Fruits et légumes"
+    elif any(m in nom for m in ["boeuf", "bœuf", "poulet", "porc", "bacon", "saucisse", "saumon", "poisson", "jambon"]):
+        return "🥩 Viandes et poissons"
+    elif any(m in nom for m in ["jus", "liqueur", "coca", "pepsi", "eau", "café", "cafe", "thé", "the"]):
+        return "☕ Boissons"
+    elif any(m in nom for m in ["pizza", "frite", "surgelé", "surgèle", "pépites"]):
+        return "❄️ Surgelés"
+    else:
+        return "🥫 Garde-manger"
 
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:

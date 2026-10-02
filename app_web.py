@@ -439,7 +439,7 @@ if 'df_produits' in st.session_state and not st.session_state['df_produits'].emp
         index=0
     )
     if categorie_selectionnee != "📁 Toutes les catégories":
-        df_affichage = df_affichage[df_affichage['nom'].apply(deviner_categorie) == categorie_selectionnee]
+        df_affichage = df_affichage[df_affichage['categorie'] == categorie_selectionnee]
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),

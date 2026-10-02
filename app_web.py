@@ -140,7 +140,7 @@ def deviner_categorie(nom_produit):
     # =========================================================================
     # ÉTAPE 1 : ISOLATION DES MOTS (TOKENIZATION) POUR RECHERCHE STRICTE
     # =========================================================================
-    # On extrait uniquement les mots entiers pour éviter que "ail" soit trouvé dans "enail"
+    # On extrait uniquement les mots entiers pour éviter les faux positifs
     mots_produit = set(re.findall(r'\b\w+\b', nom))
 
     # =========================================================================
@@ -162,7 +162,7 @@ def deviner_categorie(nom_produit):
         return "🥫 Garde-manger"
 
     # Mots-clés de l'Épicerie sucrée / salée / Collations
-    mots_exclus_garde_manger = {
+    mots_exclus_garde_manger = [
         "riz", "grain", "grains", "biscuit", "biscuits", "galette", "galettes", "barre", "barres", 
         "snack", "snacks", "chips", "croustille", "croustilles", "popcorn", "tostitos", "pringles", 
         "crispers", "craquelin", "craquelins", "bonbon", "bonbons", "gummies", "chocolat", "chocolate", 
@@ -171,9 +171,71 @@ def deviner_categorie(nom_produit):
         "pâte", "pates", "pasta", "spaghetti", "macaroni", "fusilli", "penne", "linguine", "gnocchi", 
         "gnocchis", "ravioli", "tortellini", "agnolettis", "totelli", "tofu", "tempeh", "mélange", 
         "melange", "mix", "trail", "flocons", "graines", "graine", "sel", "sucre", "cassonade"
-    }
-    if mots_produit.intersection(mots_exclus_garde_manger):
+    ]
+    if any(m in mots_produit for m in mots_exclus_garde_manger):
         return "🥫 Garde-manger"
+
+    # Mots-clés des Boissons industrielles
+    mots_exclus_boissons = [
+        "jus", "juice", "boisson", "boissons", "soda", "sodas", "coke", "pepsi", "7up", "sprite", 
+        "limonade", "kombucha", "smoothie", "smoothies", "nectar", "thé", "the", "nestea", "tisane", 
+        "infusion", "café", "cafe", "bière", "beer", "vin", "gaillac", "liqueur", "water", "eau", 
+        "vitaminwater", "redbull", "pierrier", "perrier", "codre", "cidre"
+    ]
+    if any(m in mots_produit for m in mots_exclus_boissons):
+        return "☕ Boissons"
+
+    # Mots-clés de la Boulangerie et des Pâtisseries
+    mots_exclus_boulangerie = [
+        "pain", "pains", "bread", "baguette", "baguettes", "croissant", "croissants", "muffin", 
+        "muffins", "brioche", "brioches", "tortilla", "tortillas", "wraps", "bagel", "bagels", 
+        "naan", "pita", "gruau", "avoine", "céréale", "cereale", "céréales", "cereales", "flakes", 
+        "cheerios", "krispies", "shreddies", "tarte", "tartelette", "tartelettes", "gâteau", "gateau", "loaf"
+    ]
+    if any(m in mots_produit for m in mots_exclus_boulangerie):
+        return "🍞 Boulangerie et pâtisserie"
+
+    # Mots-clés Boucherie, Poissonnerie et Surgelés
+    mots_exclus_viandes_surgeles = [
+        "poulet", "chicken", "bœuf", "boeuf", "beef", "porc", "porchetta", "bacon", "jambon", "ham", 
+        "saucisse", "saucisses", "salami", "bologne", "cretons", "creton", "pâté", "pate", "thon", 
+        "tuna", "saumon", "salmon", "sole", "morue", "crevette", "crevettes", "homard", "escargots", 
+        "snails", "sardines", "pizza", "pizzas", "frite", "frites", "surgelé", "surgelés", "pépites", 
+        "nuggets", "quiche", "quiches", "flamingo", "bouchées", "bouchée", "kung"
+    ]
+    if any(m in mots_produit for m in mots_exclus_viandes_surgeles):
+        if "surgelé" in nom or "pizza" in nom or "frite" in nom: return "❄️ Surgelés"
+        return "🥩 Viandes et poissons"
+
+    # =========================================================================
+    # ÉTAPE 3 : LA BASE DE CONNAISSANCES DES VRAIS FRUITS & LÉGUMES BRUTS
+    # =========================================================================
+    vrais_vegetaux = [
+        # Légumes frais
+        "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "carotte", "carottes", "carrotes", 
+        "basilic", "brocoli", "brocolis", "céleri", "celeri", "champignon", "champignons", "chou", "choux",
+        "concombre", "concombres", "coriandre", "courge", "courges", "épinard", "épinards", "epinard", "epinards", 
+        "spinach", "échalote", "échalotes", "gourganes", "gingembre", "haricot", "haricots", "laitue", "romaine", 
+        "maïs", "mais", "oignon", "oignons", "patate", "patates", "persil", "piment", "piments", "jalapeño", 
+        "jalapeno", "jalapeños", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", "zucchini", 
+        "zucchinis", "salade",
+        # Fruits frais
+        "abricot", "abricots", "ananas", "apple", "pomme", "pommes", "banane", "bananes", "banana", 
+        "bananas", "bleuet", "bleuets", "clémentine", "clementine", "clementines", "citron", "citrons", 
+        "fraise", "fraises", "framboise", "framboises", "mûre", "mûres", "mure", "mures", "grapefruit", 
+        "pamplemousse", "pamplemousses", "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", 
+        "orange", "oranges", "melon", "melons", "pastèque", "pasteque", "cantaloup", "pêche", "pêches", 
+        "peche", "peches", "poire", "poires", "raisin", "raisins", "cerise", "cerises", "physalis", "fruits"
+    ]
+    
+    if any(m in mots_produit for m in vrais_vegetaux):
+        return "🥦 Fruits et légumes"
+
+    # =========================================================================
+    # ÉTAPE 4 : TOUT LE RESTE PAR DÉFAUT
+    # =========================================================================
+    return "🥫 Garde-manger"
+
 
     # Mots-clés des Boissons industrielles
     mots_exclus_boissons = {

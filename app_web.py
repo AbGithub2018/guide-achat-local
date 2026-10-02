@@ -59,9 +59,11 @@ st.html("""
         max-width: calc(33.333% - 10px) !important;
     }
 
-    /* COPIEZ ET COLLEZ LE CODE JUSTE ICI, AVANT LE </style> */
-    .stExpander details summary p {
-        font-size: 22px !important;
+    /* CORRECTIF GLOBAL POUR FORCER LE GROSSISSEMENT DU TITRE */
+    [data-testid="stExpanderDetails"] summary span,
+    [data-testid="stExpanderDetails"] details summary,
+    .stExpander details summary span {
+        font-size: 26px !important;
         font-weight: bold !important;
         color: #003366 !important;
     }

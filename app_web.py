@@ -135,9 +135,15 @@ def sauvegarder_historique(df_nouvel_historique):
         return False
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
-    if any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
+    
+    # 1. On attrape les collations et biscuits en premier pour ne pas mélanger avec les vrais fruits
+    if any(m in nom for m in ["biscuit", "galette", "collation", "barre", "bars", "snack"]):
+        return "🥫 Garde-manger"
+        
+    # 2. Le reste des catégories reste inchangé
+    elif any(m in nom for m in ["lait", "fromage", "beurre", "yogourt", "crème", "creme", "œuf", "oeuf"]):
         return "🥛 Produits laitiers et œufs"
-    elif any(m in nom for m in ["pain", "baguette", "croissant", "biscuit", "galette", "tortilla"]):
+    elif any(m in nom for m in ["pain", "baguette", "croissant", "tortilla"]):
         return "🍞 Boulangerie et pâtisserie"
     elif any(m in nom for m in ["pomme", "bleuet", "fraise", "banane", "laitue", "carotte", "patate", "légume", "fruit", "salade"]):
         return "🥦 Fruits et légumes"
@@ -149,6 +155,7 @@ def deviner_categorie(nom_produit):
         return "❄️ Surgelés"
     else:
         return "🥫 Garde-manger"
+
 
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:

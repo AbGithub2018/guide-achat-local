@@ -615,11 +615,12 @@ if resultats is not None and not resultats.empty:
                 box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2) !important;
             }
                 </style>
-        """)
+            """)
     
-            bouton_enregistrer = st.form_submit_button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
+    bouton_enregistrer = st.button("💾 Enregistrer les modifications de prix", type="primary", use_container_width=True)
 
-            if bouton_enregistrer:
+    if bouton_enregistrer:
+
 
 
         try:

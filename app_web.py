@@ -171,7 +171,6 @@ def verifier_boisson_pure(nom, mots_produit):
         if any(m in mots_declencheurs for m in mots_produit):
             return True
     return False
-
 def verifier_maraicher_pur(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement le rayon maraîcher frais."""
     mots_autorises_maraichers = {
@@ -229,6 +228,44 @@ def verifier_surgele_pur(nom, mots_produit):
         if any(m in mots_declencheurs for m in mots_produit):
             return True
     return False
+def verifier_laitier_pur(nom, mots_produit):
+    """Filtre de liste blanche exclusive pour isoler uniquement le rayon laitiers et oeufs frais."""
+    mots_autorises_laitiers = {
+        "yogourt", "yogourts", "yaourt", "yogurt", "skyr", "oikos", "okios", "activia", "danone", 
+        "iogo", "yoplait", "liberté", "liberte", "kēfir", "kéfir", "kefir", "yop", "danette", "lait", 
+        "laitier", "laitière", "laitiere", "fromage", "fromages", "cheese", "cheeses", "boursin", 
+        "philadelphia", "ricotta", "mascarpone", "feta", "fêta", "gouda", "havarti", "cheddar", 
+        "mozzarella", "mozzarellissima", "mozzarela", "parmesan", "camembert", "brie", "oka", 
+        "allégro", "allegro", "centurion", "amooza", "twists", "beurre", "oeufs", "œufs", "oeuf", 
+        "œuf", "blancs", "crème", "creme", "cremette", "crémette", "sour", "cream", "quebon", "québon", 
+        "natrel", "lactantia", "purfiltre", "pūrfiltre", "beatrice", "sealtest", "riviera", "burnbrae", 
+        "silk", "agropur", "amsterdam", "gustav", "armstrong", "président", "president", "quebec", 
+        "québec", "canada", "canadien", "nordique", "normandinoise", "péribonka", "peribonka",
+        "fraise", "rhubarbe", "vanille", "vanilla", "bean", "citron", "citrons", "pêche", "peche", 
+        "bleuet", "sauvage", "mûre", "blackberry", "nature", "sucré", "sucrée", "sucre", "sucree", 
+        "grec", "greek", "balkan", "ferme", "fermier", "brassé", "brasse", "crémeux", "cremeux", 
+        "à", "boire", "a", "tranche", "tranché", "tranchée", "tranches", "râpé", "râpée", "rape", 
+        "rapee", "effilochable", "string", "crottes", "grain", "bloc", "brique", "meule", "rapé", 
+        "doux", "fort", "extra", "vieilli", "2", "ans", "marbré", "marbre", "jalapenõs", "jalapenos", 
+        "tex", "mex", "nacho", "0%", "1%", "2%", "5%", "10%", "14%", "15%", "35%", "3%", "25%", 
+        "8%", "gros", "calibre", "solidaire", "solaire", "omega", "plus", "3", "douzaine", "12", 
+        "un", "un", "6x200", "1l", "2l", "454g", "907", "g", "ml", "un", "biologique", "bio", 
+        "organics", "sans", "lactose", "matières", "grasses", "gras", "écrémé", "ecreme", "partiellement", 
+        "homogénéisé", "homogeneise", "évaporé", "evapore", "filtré", "filtre", "ultra", "pur", "cuisson", 
+        "table", "fouetter", "fouetté", "fouette", "de", "culture", "barraté", "barrate", "sel", "salé", 
+        "non", "fleur", "campagne", "liquide", "poudre", "napolitain", "neapolitan", "glacée", "glacee", 
+        "glacé", "glace", "ice", "soft", "crèmerie", "cremerie", "méditerranée", "mediterranee", 
+        "de", "brebis", "vache", "chèvre", "chevre", "noix", "coco", "coconut", "amande", "amandes", 
+        "avoine", "cajous", "cajou", "soya", "soy", "végétal", "vegetal", "lyophilisé", "starters",
+        "d", "en", "et", "à", "a", "au", "aux", "la", "le", "les", "un", "une", "pour", "par", "dans", "avec"
+    }
+    if all(m in mots_autorises_laitiers for m in mots_produit):
+        mots_declencheurs = {"yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", "danone", "iogo", "yoplait", "liberté", "kēfir", "kéfir", "lait", "fromage", "cheese", "boursin", "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", "camembert", "brie", "oka", "allégro", "beurre", "oeufs", "œufs", "oeuf", "œuf", "crème", "creme", "cremette"}
+        if any(m in mots_declencheurs for m in mots_produit):
+            if any(m in nom for m in ["barres", "barre", "biscuit", "biscuits", "chocolat", "chocolate", "chips", "croustilles", "doritos", "popcorn", "maïs", "soup", "soupe", "bouillon", "bovril", "boeuf", "bœuf", "macaroni", "gnocchi", "ravioli", "risotto", "pizza", "oreos", "oreo", "tarts", "tarte", "muffins", "muffin", "donuts", "madeleines", "saucisson"]):
+                return False
+            return True
+    return False
 def verifier_boulangerie_pure(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement la boulangerie et pâtisserie."""
     mots_autorises_boulangerie = {
@@ -279,6 +316,31 @@ def deviner_categorie(nom_produit):
     
     if "heinz" in nom or "kraft" in nom:
         return "🥫 Garde-manger"
+        
+    nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
+    mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
+    
+    if not mots_produit:
+        return "🥫 Garde-manger"
+
+    # COUPLAGE DES CINQ FILTRES INDÉPENDANTS
+    if verifier_boisson_pure(nom, mots_produit):
+        return "☕ Boissons"
+    if verifier_maraicher_pur(nom, mots_produit):
+        return "🥦 Fruits et légumes"
+    if verifier_surgele_pur(nom, mots_produit):
+        return "❄️ Surgelés"
+    if verifier_laitier_pur(nom, mots_produit):
+        return "🥛 Produits laitiers et œufs"
+    if verifier_boulangerie_pure(nom, mots_produit):
+        return "🍞 Boulangerie et pâtisserie"
+
+    # Redirections par défaut (Deuxième tri)
+    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette", "veau", "agneau", "maquereau", "palourdes", "viande", "boeuf"]): 
+        return "🥩 Viandes et poissons"
+        
+    return "🥫 Garde-manger"
+
         
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
     mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]

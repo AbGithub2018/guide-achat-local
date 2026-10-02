@@ -99,7 +99,8 @@ def charger_donnees():
             df_initial['distribution'] = ""
             
         df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip() 
-        df_initial['categorie'] = df_initial['nom'].apply(deviner_categorie)       
+        df_initial['categorie'] = " Garmanger"
+       
         return df_initial
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")

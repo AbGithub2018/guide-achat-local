@@ -116,14 +116,23 @@ def sauvegarder_donnees(df_a_enregistrer):
     except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")
         return False
-def sauvegarder_historique(df_historique):
+def sauvegarder_historique(df_nouvel_historique):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        conn.update(worksheet="Historique_Prix", data=df_historique)
+        try:
+            df_existant = conn.read(worksheet="Historique_Prix")
+        except Exception:
+            df_existant = pd.DataFrame()
+        if not df_existant.empty:
+            df_total = pd.concat([df_existant, df_nouvel_historique], ignore_index=True)
+        else:
+            df_total = df_nouvel_historique
+        conn.update(worksheet="Historique_Prix", data=df_total)
         return True
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde de l'historique : {e}")
         return False
+
 # Initialisation et chargement de la base de données en Session Streamlit
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()

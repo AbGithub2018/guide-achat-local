@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 import time
 import requests
+import re
 from streamlit_gsheets import GSheetsConnection
 
-# 1. UNIQUE CONFIGURATION DE LA PAGE
+# 1. CONFIGURATION UNIQUE DE LA PAGE (DOIT ÊTRE LA PREMIÈRE LIGNE)
 st.set_page_config(
     page_title="Acheter Québécois & Canadien", 
     page_icon="📦", 
@@ -13,8 +14,7 @@ st.set_page_config(
 )
 
 code_upc = "code_upc"
-
-# Injection CSS de sécurité maximale
+# Injection CSS pour l'interface et le masquage des éléments natifs
 st.html("""
 <style>
     #MainMenu, footer { visibility: hidden !important; display: none !important; }
@@ -59,7 +59,6 @@ st.html("""
         max-width: calc(33.333% - 10px) !important;
     }
 
-    /* CORRECTIF GLOBAL POUR FORCER LE GROSSISSEMENT DU TITRE */
     [data-testid="stExpanderDetails"] summary span,
     [data-testid="stExpanderDetails"] details summary,
     .stExpander details summary span {
@@ -69,7 +68,6 @@ st.html("""
     }
 </style>
 """)
-
 def charger_donnees():
     """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
     try:
@@ -117,6 +115,7 @@ def sauvegarder_donnees(df_a_enregistrer):
     except Exception as e:
         st.error(f"❌ Erreur de sauvegarde réelle : {e}")
         return False
+
 def sauvegarder_historique(df_nouvel_historique):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
@@ -133,7 +132,6 @@ def sauvegarder_historique(df_nouvel_historique):
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde de l'historique : {e}")
         return False
-        
 def verifier_boisson_pure(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement les boissons."""
     mots_autorises_boissons = {
@@ -142,63 +140,43 @@ def verifier_boisson_pure(nom, mots_produit):
         "glacee", "pepsi", "mini", "7up", "soda", "boisson", "boissons", "drink", "drinks", "sport", 
         "énergisante", "energisante", "energy", "juice", "jus", "concentré", "concentre", "pur", "pure", 
         "bubly", "nestea", "crush", "punch", "tea", "soya", "soja", "bien", "etre", "être", 
-        "diqueur", "liqueur", "sodas", "cola", "zevia", "zero", "zéro", "sucre", "sugar", "schweppes", 
-        "tonique", "rickey", "mousse", "limonade", "lemonade", "kombucha", "smoothie", "nectar", 
-        "infusion", "tisane", "bière", "beer", "ale", "ipa", "lager", "vin", "gaillac", "vodka", 
-        "smirnoff", "breezer", "water", "vitaminwater", "redbull", "red", "bull", "moût", "mout", 
-        "cidre", "codre", "pedialyte", "boost", "ensure", "slim", "fast", "rehausseur", "colorant", 
-        "aromatisants", "aromatisee", "aromatisée", "brisk", "fruitopia", "snapple", "nestea", 
-        "ultra", "sunrise", "blue", "mccafé", "mccafe", "starbucks", "nesfruta", "dasani", "eska", 
-        "fiji", "perrier", "pierrier", "montellier", "evian", "aquafina", "oat", "yeah", "tropicana", 
-        "oasis", "rougemont", "irrésistible", "irresistible", "selection", "sélection", "natura", "v8",
-        "mélange", "melange", "maison", "van", "houtte", "framboise", "framboises", "régulier", "regulier", 
-        "tim", "hortons", "amandes", "amande", "cerise", "glacial", "strawberry", "coconut", "noix", "coco", 
-        "pomme", "pommes", "raisin", "raisins", "mangue", "orange", "oranges", "citron", "citrons", "tropical", 
-        "tropicaux", "fruits", "fruit", "baies", "soy", "noisette", "decafféiné", "decafeiné", "decaféiné", 
-        "decafeine", "instantané", "instantane", "instant", "lime", "limes", "grenade", "pamplemousse", 
-        "gimgembre", "gingembre", "goyave", "cassis", "matcha", "chrysanthemum", "honey", "tangerine", 
-        "myrtilles", "bleuet", "pêche", "peche", "pêches", "peches", "paradis", "rhubarbe", "caramel", 
-        "chocolat", "chocolate", "vanille", "vanilla", "original", "originale", "enrichi", "enrichie", 
-        "fortifiée", "fortifiee", "naturel", "naturelle", "sucré", "sucree", "sucrée", "non", "sans", 
-        "purée", "puree", "liquide", "pétillantes", "petillantes", "exotique", "fraise", "fraises", 
-        "pulpe", "pulp", "faible", "extra", "calcium", "vitamine", "probiotique", "probiotics", "fortifié",
-        "2l", "50cl", "925g", "300g", "24x500ml", "375ml", "750ml", "1.75l", "946", "ml", "cans", "of", 
-        "with", "and", "de", "du", "d", "en", "et", "à", "a", "pour", "par", "dans", "sur", "sous", "un", 
-        "une", "le", "la", "les", "ce", "au", "aux", "fait"
+        "liqueur", "sodas", "cola", "zevia", "zero", "zéro", "sucre", "sugar", "schweppes", 
+        "tonique", "limonade", "lemonade", "kombucha", "smoothie", "nectar", "infusion", "tisane", 
+        "bière", "beer", "ale", "ipa", "lager", "vin", "vodka", "water", "redbull", "red", "bull", 
+        "cidre", "boost", "ensure", "brisk", "fruitopia", "snapple", "dasani", "eska", "fiji", 
+        "perrier", "montellier", "evian", "aquafina", "oat", "tropicana", "oasis", "rougemont", 
+        "irrésistible", "selection", "sélection", "natura", "v8", "mélange", "van", "houtte", 
+        "framboise", "régulier", "tim", "hortons", "amandes", "amande", "cerise", "pomme", "raisin", 
+        "mangue", "orange", "citron", "tropical", "fruits", "fruit", "baies", "soy", "noisette", 
+        "decafféiné", "instantané", "lime", "pamplemousse", "gingembre", "goyave", "cassis", "matcha", 
+        "caramel", "chocolat", "vanille", "original", "enrichi", "naturel", "sucré", "sans", "liquide", 
+        "fraise", "calcium", "vitamine", "probiotique", "2l", "50cl", "946", "ml", "cans", "de", "du", "et", "pour"
     }
     if all(m in mots_autorises_boissons for m in mots_produit):
-        mots_declencheurs = {"coke", "café", "cafe", "eau", "thé", "the", "pepsi", "7up", "soda", "boisson", "drink", "juice", "jus", "bubly", "nestea", "crush", "tea", "soya", "soja", "liqueur", "cola", "zevia", "smoothie", "nectar", "infusion", "tisane", "bière", "beer", "vin", "gaillac", "moût", "mout", "cidre", "limonade", "kombucha"}
+        mots_declencheurs = {"coke", "café", "cafe", "eau", "thé", "the", "pepsi", "7up", "soda", "boisson", "drink", "juice", "jus", "bubly", "nestea", "crush", "tea", "soya", "soja", "liqueur", "cola", "zevia", "smoothie", "nectar", "infusion", "tisane", "bière", "beer", "vin", "moût", "mout", "cidre", "limonade", "kombucha"}
         if any(m in mots_declencheurs for m in mots_produit):
             return True
     return False
+
 def verifier_maraicher_pur(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement le rayon maraîcher frais."""
     mots_autorises_maraichers = {
-        "abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", 
-        "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", 
-        "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", 
-        "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", 
-        "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", 
-        "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", 
-        "prunes", "raisin", "raisins", "physalis", "sunsgold", "ginger", "gold", "paula", "red", "sunrise",
-        "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
-        "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
-        "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", 
-        "echalote", "échalote", "echalotes", "échalotes", "epinard", "épinard", "epinards", "épinards", 
-        "spinach", "gourganes", "gingembre", "verts", "laitue", "romaine", "mais", "maïs", 
-        "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", 
-        "piments", "poireau", "poireaux", "leek", "radis", "radish", "rutabaga", "salade", "thym", 
-        "thyme", "tomate", "tomates", "zucchini", "zucchinis", "frais", "fraiche", "fraîche", 
-        "organic", "biologique", "bio", "local", "locaux", "vrac", "quebec", "québec", "canada", 
-        "anjou", "bartlett", "russet", "lobo", "aurora", "mcintosh", "sac", "panier", "paquet", 
-        "bunch", "botte", "gros", "petit", "petits", "tranche", "tranché", "tranchée", "tranches", 
-        "rapee", "râpée", "rapees", "râpées", "coupé", "coupée", "coupes", "coupées", "blanche", 
-        "blanches", "jaune", "jaunes", "rouge", "rouges", "vert", "verte", "verts", "vertes", 
-        "colorés", "colores", "un", "une", "le", "la", "les", "de", "du", "d", "en", "et", "à", 
-        "a", "avec", "sans", "pour", "par", "dans", "sur", "sous", "1l", "3lb", "4lb", "10lb"
+        "abricot", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", 
+        "bleuet", "bleuets", "cerise", "citron", "citrons", "clementine", "clémentine", 
+        "fraise", "fraises", "framboise", "fruit", "fruits", "grapefruit", "kiwi", "lime", 
+        "mandarine", "melon", "mûre", "orange", "oranges", "pamplemousse", "cantaloup", 
+        "pasteque", "pastèque", "pêche", "peche", "poire", "pomme", "pommes", "prune", "raisin", 
+        "ail", "arugula", "asperge", "avocat", "basilic", "betterave", "brocoli", "carotte", 
+        "celeri", "céleri", "champignon", "chou", "concombre", "coriandre", "courge", "echalote", 
+        "epinard", "épinard", "spinach", "gingembre", "verts", "laitue", "romaine", "mais", "maïs", 
+        "navet", "oignon", "oignons", "panais", "patate", "persil", "piment", "poireau", "leek", 
+        "radis", "tomate", "tomates", "zucchini", "frais", "fraîche", "organic", "biologique", "bio", 
+        "local", "vrac", "quebec", "québec", "canada", "sac", "panier", "paquet", "botte", "gros", 
+        "tranche", "tranché", "rapee", "râpée", "coupé", "blanche", "jaune", "rouge", "vert", "verte", 
+        "un", "une", "le", "la", "les", "de", "du", "en", "et", "à", "avec", "sans", "1l", "3lb", "4lb"
     }
     if all(m in mots_autorises_maraichers for m in mots_produit):
-        mots_bruts_vegetaux = {"abricot", "abricots", "ananas", "apple", "apples", "banane", "bananes", "banana", "bananas", "bleuet", "bleuets", "cerise", "cerises", "citron", "citrons", "clementine", "clémentine", "clementines", "fraise", "fraises", "framboise", "framboises", "fruit", "fruits", "grapefruit", "kiwi", "kiwis", "lime", "limes", "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", "mure", "mures", "orange", "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", "pastèque", "pêche", "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", "prunes", "raisin", "raisins", "physalis", "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", "epinard", "épinard", "epinards", "épinards", "spinach", "échalote", "échalotes", "gourganes", "gingembre", "laitue", "romaine", "mais", "maïs", "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", "piments", "poireau", "poireaux", "leek", "radis", "tomate", "tomates", "zucchini", "zucchinis", "salade", "thym", "thyme"}
+        mots_bruts_vegetaux = {"abricot", "ananas", "apple", "banane", "banana", "bleuet", "cerise", "citron", "clementine", "fraise", "framboise", "fruit", "fruits", "kiwi", "lime", "mandarine", "melon", "mûre", "orange", "pamplemousse", "cantaloup", "pasteque", "pêche", "peche", "poire", "pomme", "prune", "raisin", "ail", "arugula", "asperge", "avocat", "basilic", "betterave", "brocoli", "carotte", "celeri", "champignon", "chou", "concombre", "coriandre", "courge", "epinard", "spinach", "échalote", "gingembre", "laitue", "romaine", "mais", "navet", "oignon", "panais", "patate", "persil", "piment", "poireau", "radis", "tomate", "zucchini", "salade"}
         if any(m in mots_bruts_vegetaux for m in mots_produit):
             if "haricots" in nom and "verts" not in nom:
                 return False
@@ -208,125 +186,77 @@ def verifier_surgele_pur(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement le rayon surgelé brut."""
     mots_autorises_surgeles = {
         "pizza", "pizzas", "frites", "frite", "surgelé", "surgelés", "surgelée", "surgelées", 
-        "congelé", "congelée", "congelés", "congelées", "pépites", "bouchées", "bouchée", 
-        "croquettes", "lanières", "lanieres", "boulettes", "poitrines", "ailes", "gaufres", 
-        "tourtière", "tourtiere", "queues", "cuisses", "pops", "rolls", "stuffs", "smiley", "face",
-        "poulet", "chicken", "homard", "grenouille", "saucisse", "italienne", "pepperoni", "bacon", 
-        "viande", "meat", "mozzarella", "cheese", "fromage", "funghi", "champignons", "épinards", 
-        "spinaci", "chou", "fleur", "betterave", "tomates", "tomatoes", "garlic", "ail", "pesto", 
-        "chèvre", "chevre", "vegetale", "margherita", "quattro", "formaggi", "farnie", "garnie", 
-        "deluxe", "spécial", "special", "trois", "3", "2", "x", "six", "triple", "pizzaroni",
-        "mince", "thin", "crispy", "croustillante", "croustillantes", "extra", "coupe", "9", "minutes", 
-        "quartier", "style", "nature", "farcies", "ristorante", "casa", "di", "mama", "giuseppe", 
-        "pizzeria", "delissio", "mike", "mikes", "traditionnelle", "tradizionale", "premium", "prime", 
-        "pinty", "flamingo", "mina", "kim", "phat", "maple", "leaf", "cavendish", "cain", "mc", 
-        "international", "internationale", "yok", "new", "aurora", "fermes", "les",
-        "de", "du", "d", "en", "et", "à", "a", "au", "aux", "la", "le", "les", "un", "une", "pour", "par", "dans"
+        "congelé", "congelée", "pépites", "bouchées", "croquettes", "lanières", "boulettes", "poitrines", 
+        "ailes", "gaufres", "tourtière", "poulet", "chicken", "saucisse", "pepperoni", "bacon", 
+        "viande", "mozzarella", "cheese", "fromage", "champignons", "épinards", "tomates", "ail", 
+        "garnie", "deluxe", "spécial", "trois", "3", "2", "x", "mince", "thin", "crispy", "croustillante", 
+        "style", "nature", "farcies", "ristorante", "giuseppe", "pizzeria", "delissio", "pinty", 
+        "flamingo", "cavendish", "mc", "les", "de", "du", "d", "en", "et", "à", "au", "la", "le", "un", "pour"
     }
     if all(m in mots_autorises_surgeles for m in mots_produit):
-        mots_declencheurs = {"pizza", "pizzas", "frites", "frite", "surgelé", "surgelés", "surgelée", "surgelées", "congelé", "congelée", "pépites", "bouchées", "croquettes", "lanières", "boulettes", "gaufres", "tourtière", "queues", "cuisses", "pizzaroni"}
+        mots_declencheurs = {"pizza", "pizzas", "frites", "frite", "surgelé", "surgelés", "surgelée", "congelé", "pépites", "bouchées", "croquettes", "gaufres", "tourtière"}
         if any(m in mots_declencheurs for m in mots_produit):
             return True
     return False
+
 def verifier_laitier_pur(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement le rayon laitiers et oeufs frais."""
     mots_autorises_laitiers = {
-        "yogourt", "yogourts", "yaourt", "yogurt", "skyr", "oikos", "okios", "activia", "danone", 
-        "iogo", "yoplait", "liberté", "liberte", "kēfir", "kéfir", "kefir", "yop", "danette", "lait", 
-        "laitier", "laitière", "laitiere", "fromage", "fromages", "cheese", "cheeses", "boursin", 
-        "philadelphia", "ricotta", "mascarpone", "feta", "fêta", "gouda", "havarti", "cheddar", 
-        "mozzarella", "mozzarellissima", "mozzarela", "parmesan", "camembert", "brie", "oka", 
-        "allégro", "allegro", "centurion", "amooza", "twists", "beurre", "oeufs", "œufs", "oeuf", 
-        "œuf", "blancs", "crème", "creme", "cremette", "crémette", "sour", "cream", "quebon", "québon", 
-        "natrel", "lactantia", "purfiltre", "pūrfiltre", "beatrice", "sealtest", "riviera", "burnbrae", 
-        "silk", "agropur", "amsterdam", "gustav", "armstrong", "président", "president", "quebec", 
-        "québec", "canada", "canadien", "nordique", "normandinoise", "péribonka", "peribonka", "margarine",
-        "fraise", "rhubarbe", "vanille", "vanilla", "bean", "citron", "citrons", "pêche", "peche", 
-        "bleuet", "sauvage", "mûre", "blackberry", "nature", "sucré", "sucrée", "sucre", "sucree", 
-        "grec", "greek", "balkan", "ferme", "fermier", "brassé", "brasse", "crémeux", "cremeux", 
-        "à", "boire", "a", "tranche", "tranché", "tranchée", "tranches", "râpé", "râpée", "rape", 
-        "rapee", "effilochable", "string", "crottes", "grain", "bloc", "brique", "meule", "rapé", 
-        "doux", "fort", "extra", "vieilli", "2", "ans", "marbré", "marbre", "jalapenõs", "jalapenos", 
-        "tex", "mex", "nacho", "0%", "1%", "2%", "5%", "10%", "14%", "15%", "35%", "3%", "25%", 
-        "8%", "gros", "calibre", "solidaire", "solaire", "omega", "plus", "3", "douzaine", "12", 
-        "un", "un", "6x200", "1l", "2l", "454g", "907", "g", "ml", "un", "biologique", "bio", 
-        "organics", "sans", "lactose", "matières", "grasses", "gras", "écrémé", "ecreme", "partiellement", 
-        "homogénéisé", "homogeneise", "évaporé", "evapore", "filtré", "filtre", "ultra", "pur", "cuisson", 
-        "table", "fouetter", "fouetté", "fouette", "de", "culture", "barraté", "barrate", "sel", "salé", 
-        "non", "fleur", "campagne", "liquide", "poudre", "napolitain", "neapolitan", "glacée", "glacee", 
-        "glacé", "glace", "ice", "soft", "crèmerie", "cremerie", "méditerranée", "mediterranee", 
-        "de", "brebis", "vache", "chèvre", "chevre", "noix", "coco", "coconut", "amande", "amandes", 
-        "avoine", "cajous", "cajou", "soya", "soy", "végétal", "vegetal", "lyophilisé", "starters",
-        "d", "en", "et", "à", "a", "au", "aux", "la", "le", "les", "un", "une", "pour", "par", "dans", "avec"
+        "yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", "danone", "iogo", "yoplait", 
+        "liberté", "kēfir", "kéfir", "lait", "laitier", "fromage", "fromages", "cheese", "boursin", 
+        "philadelphia", "ricotta", "feta", "fêta", "gouda", "havarti", "cheddar", "mozzarella", 
+        "parmesan", "camembert", "brie", "oka", "allégro", "beurre", "oeufs", "œufs", "oeuf", "œuf", 
+        "blancs", "crème", "creme", "sour", "cream", "quebon", "québon", "natrel", "lactantia", 
+        "purfiltre", "riviera", "burnbrae", "silk", "agropur", "armstrong", "président", "quebec", 
+        "québec", "canada", "margarine", "fraise", "vanille", "vanilla", "citron", "pêche", "peche", 
+        "bleuet", "nature", "sucré", "grec", "greek", "brassé", "crémeux", "tranche", "tranché", 
+        "râpé", "râpée", "grain", "bloc", "brique", "0%", "1%", "2%", "35%", "12", "1l", "2l", "454g", 
+        "ml", "sans", "lactose", "matières", "grasses", "écrémé", "filtré", "ultra", "pur", "vache", "chèvre", 
+        "de", "du", "en", "et", "à", "au", "aux", "la", "le", "les", "un", "une", "pour", "avec"
     }
-    # RECORRECTION ICI : On utilise bien mots_autorises_laitiers pour fermer le all()
     if all(m in mots_autorises_laitiers for m in mots_produit):
-        mots_declencheurs = {"yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", "danone", "iogo", "yoplait", "liberté", "kēfir", "kéfir", "lait", "fromage", "cheese", "boursin", "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", "camembert", "brie", "oka", "allégro", "beurre", "oeufs", "œufs", "oeuf", "œuf", "crème", "creme", "cremette", "margarine"}
+        mots_declencheurs = {"yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", "danone", "iogo", "yoplait", "liberté", "kēfir", "lait", "fromage", "cheese", "boursin", "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", "beurre", "oeufs", "œufs", "oeuf", "crème", "margarine"}
         if any(m in mots_declencheurs for m in mots_produit):
-            if any(m in nom for m in ["barres", "barre", "biscuit", "biscuits", "chocolat", "chocolate", "chips", "croustilles", "doritos", "popcorn", "maïs", "soup", "soupe", "bouillon", "bovril", "boeuf", "bœuf", "macaroni", "gnocchi", "ravioli", "risotto", "pizza", "oreos", "oreo", "tarts", "tarte", "muffins", "muffin", "donuts", "madeleines", "saucisson"]):
+            if any(m in nom for m in ["barres", "biscuit", "biscuits", "chocolat", "chips", "croustilles", "popcorn", "soup", "soupe", "pizza", "oreo"]):
                 return False
             return True
     return False
+
 def verifier_boulangerie_pure(nom, mots_produit):
     """Filtre de liste blanche exclusive pour isoler uniquement la boulangerie et pâtisserie."""
     mots_autorises_boulangerie = {
-        "céréales", "céréale", "cereales", "cereale", "pain", "pains", "bread", "loaf", "baguette", 
-        "baguettes", "baguettines", "croissant", "croissants", "muffin", "muffins", "brioche", 
-        "brioches", "briochettes", "buns", "bagel", "bagels", "bagelwish", "naan", "pita", "pitas", 
-        "tortilla", "tortillas", "wraps", "gruau", "avoine", "oat", "oatmeal", "oats", "flocons", 
-        "bran", "flakes", "shreddies", "krispies", "krispkies", "pops", "cheerios", "wheats", "muesli", 
-        "müslix", "muslix", "granola", "farine", "flour", "levure", "biscuit", "biscuits", "cookie", 
-        "cookies", "galette", "tarte", "tartelette", "tartelettes", "croustade", "gâteau", "gateau", 
-        "gateaux", "brownie", "brownies", "extreem", "exträaz", "oreo", "milka", "whippet", "halls", 
-        "pastille", "pastilles", "biscotte", "biscottes", "chapelure", "gaufrettes", "pepero", "pitch",
-        "chocolat", "chocolate", "chocolatey", "choco", "pépites", "pepites", "brisure", "brisures", 
-        "chips", "chunk", "chunks", "fudge", "sucre", "cassonade", "miel", "honey", "érable", "erable", 
-        "vanille", "vanilla", "caramel", "skor", "raisin", "raisins", "sec", "secs", "baies", "bleuet", 
-        "bleuets", "blueberry", "canneberges", "cranberry", "framboises", "citron", "lemon", "lime", 
-        "orange", "agrumes", "banane", "bananas", "pomme", "pommes", "apple", "pineapple", "carottes", 
-        "courge", "betterave", "épinards", "roquette", "cerise", "dattes", "noix", "grenade", "grenoble", 
-        "amandes", "almond", "pacanes", "sésame", "sesame", "seeds", "seed", "pavot", "lin", "chia", 
-        "quinoa", "quinia", "blé", "ble", "wheat", "kamut", "épeautre", "epeautre", "seigle", "rye", 
-        "khorasan", "sarrasin", "sarrazin", "margarine", "beurre", "butter", "crème", "creme", "yaourt", 
-        "cacao", "massepain", "marzipan", "cannelle", "cinnamon", "girofle", "gingembre", "ginger", "snap",
-        "blanc", "blanche", "grand", "mère", "père", "texan", "italien", "italian", "belge", "danish", 
-        "tradition", "1905", "vital", "cruschelli", "balocco", "digestifs", "digestive", "traditionnel", 
-        "nature", "original", "originale", "originales", "authentique", "mexicaine", "artesano", "artisan", 
-        "balthazar", "bistro", "clover", "kellogg", "quaker", "gerber", "post", "christie", "dare", 
-        "hershey", "milka", "oreo", "won", "wonder", "pom", "dempster", "leclerc", "celebration", 
-        "st", "méthode", "methode", "première", "moisson", "manning", "panaji", "bulka", "challa", 
-        "moelleux", "tendres", "tendre", "croquant", "fendus", "fourchette", "tranché", "tranche", 
-        "tranchée", "tranches", "épais", "epais", "minis", "mini", "bites", "bouchées", "germé", 
-        "germe", "levain", "intégral", "integral", "grains", "multigrain", "multigrains", "complet", 
-        "tout", "usage", "non", "blanchie", "frais", "fournée", "dorée", "dore", "doré", "fournee", 
-        "soft", "baked", "crisp", "crunchy", "rapide", "quick", "assortiment", "assorted", "moulus", 
-        "assaisinement", "allé", "allongé", "9", "12", "14", "45", "65", "T45", "type", "00", "5kg", "10kg", 
-        "biologique", "bio", "sans", "gluten", "végétalien", "vegetalien", "lactose", "low", "carb",
-        "de", "du", "d", "en", "et", "à", "a", "au", "aux", "la", "le", "les", "un", "une", "pour", "par", "dans", "avec"
+        "céréales", "cereales", "pain", "pains", "bread", "loaf", "baguette", "croissant", "croissants", 
+        "muffin", "muffins", "brioche", "brioches", "buns", "bagel", "bagels", "naan", "pita", "tortilla", 
+        "wraps", "gruau", "avoine", "oat", "flocons", "flakes", "shreddies", "krispies", "pops", "cheerios", 
+        "granola", "farine", "flour", "levure", "biscuit", "biscuits", "cookie", "cookies", "galette", 
+        "tarte", "gâteau", "gateau", "brownie", "whippet", "biscotte", "chapelure", "chocolat", "chocolate", 
+        "pépites", "chips", "sucre", "cassonade", "miel", "honey", "érable", "vanille", "caramel", "raisin", 
+        "bleuet", "pomme", "amandes", "sésame", "blé", "ble", "wheat", "épeautre", "seigle", "sarrasin", 
+        "margarine", "beurre", "crème", "cannelle", "italien", "artisan", "kellogg", "quaker", "dare", 
+        "oreo", "wonder", "pom", "dempster", "leclerc", "celebration", "première", "moisson", "moelleux", 
+        "tendres", "tranché", "tranches", "épais", "mini", "bouchées", "germé", "levain", "grains", 
+        "multigrain", "complet", "frais", "doré", "soft", "crunchy", "quick", "assortiment", "sans", "gluten",
+        "de", "du", "d", "en", "et", "à", "au", "la", "le", "les", "un", "une", "pour", "avec"
     }
     if all(m in mots_autorises_boulangerie for m in mots_produit):
-        mots_declencheurs = {"céréales", "céréale", "cereales", "pain", "pains", "bread", "loaf", "baguette", "croissant", "muffin", "muffins", "brioche", "buns", "bagel", "bagels", "naan", "pita", "gruau", "avoine", "flocons", "bran", "flakes", "shreddies", "krispies", "muesli", "granola", "farine", "flour", "levure", "biscuit", "biscuits", "cookie", "cookies", "galette", "tarte", "tartelette", "gâteau", "gateau", "brownie", "whippet", "biscotte", "chapelure"}
+        mots_declencheurs = {"céréales", "cereales", "pain", "pains", "bread", "loaf", "baguette", "croissant", "muffin", "muffins", "brioche", "buns", "bagel", "bagels", "naan", "pita", "gruau", "flocons", "farine", "flour", "levure", "biscuit", "biscuits", "cookie", "cookies", "galette", "tarte", "gâteau", "gateau", "brownie", "biscotte", "chapelure"}
         if any(m in mots_declencheurs for m in mots_produit):
-            if any(m in nom for m in ["viande", "saumon", "poulet", "surgelé", "surgelée"]):
+            if any(m in nom for m in ["viande", "saumon", "poulet", "surgelé"]):
                 return False
             return True
     return False
 def deviner_categorie(nom_produit):
-    import re
     nom = str(nom_produit).lower()
-    
     if "heinz" in nom or "kraft" in nom:
         return "🥫 Garde-manger"
         
     mots_stricte_garde_manger = {
         "riz", "basmati", "pâtes", "pasta", "spaghetti", "macaroni", "fusilli", "penne", "linguine",
-        "gruau", "flocons d'avoine", "flocons d avoine", "farine", "dés", "broyées", "broyees", 
-        "pois chiches", "haricots noirs", "thon en conserve", "thon pâle", "thon pale", "thon blanc", 
-        "bouillon", "bovril", "huile d'olive", "huile d olive", "huile de canola", "vinaigre de cidre", 
-        "balsamique", "sauce soya", "soya sauce", "soy sauce", "moutarde", "sel fin", "poivre", 
-        "moulu", "poudre d'ail", "poudre d ail", "poudre d'oignon", "poudre d oignon", "chili", 
-        "paprika", "origan", "herbes de provence", "miel", "sirop d'érable", "sirop d erable", 
-        "beurre d'arachide", "beurre d arachide", "beurre de noix"
+        "gruau", "flocons d'avoine", "farine", "dés", "broyées", "pois chiches", "haricots noirs", 
+        "thon en conserve", "thon pâle", "thon blanc", "bouillon", "bovril", "huile d'olive", 
+        "huile de canola", "vinaigre de cidre", "balsamique", "sauce soya", "moutarde", "sel fin", "poivre", 
+        "moulu", "poudre d'ail", "poudre d'oignon", "chili", "paprika", "origan", "herbes de provence", 
+        "miel", "sirop d'érable", "beurre d'arachide", "beurre de noix"
     }
     
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
@@ -341,124 +271,30 @@ def deviner_categorie(nom_produit):
         return "🥫 Garde-manger"
 
     mots_interceptes_temporaires = {
-        "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
-        "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
-        "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", 
-        "echalote", "échalote", "echalotes", "échalotes", "epinard", "épinard", "epinards", "épinards", 
-        "spinach", "gourganes", "gingembre", "verts", "laitue", "romaine", "mais", "maïs", 
-        "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", 
-        "piments", "poireau", "poireaux", "leek", "radis", "radish", "rutabaga", "salade", "thym", 
-        "thyme", "tomate", "tomates", "zucchini", "zucchinis", "abricot", "abricots", "ananas", 
-        "apple", "apples", "banane", "bananes", "banana", "bananas", "bleuet", "bleuets", "cerise", 
-        "cerises", "citron", "citrons", "clementine", "clémentine", "clementines", "fraise", "fraises", 
-        "framboise", "framboises", "fruit", "fruits", "grapefruit", "kiwi", "kiwis", "lime", "limes", 
-        "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", "mure", "mures", "orange", 
-        "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", "pastèque", "pêche", 
-        "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", "prunes", "raisin", 
-        "raisins", "physalis", "sunsgold", "yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", 
-        "danone", "iogo", "yoplait", "liberté", "kēfir", "lait", "fromage", "cheese", "boursin", 
-        "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", 
-        "beurre", "oeufs", "œufs", "oeuf", "œuf", "blancs", "crème", "creme", "cremette", "margarine"
+        "ail", "arugula", "asperge", "avocat", "basilic", "betterave", "brocoli", "carotte", "celeri", 
+        "champignon", "chou", "concombre", "coriandre", "courge", "echalote", "epinard", "spinach", 
+        "gourganes", "gingembre", "verts", "laitue", "romaine", "mais", "navet", "oignon", "panais", 
+        "patate", "persil", "piment", "poireau", "leek", "radis", "tomate", "zucchini", "abricot", 
+        "ananas", "apple", "banane", "banana", "bleuet", "cerise", "citron", "clementine", "fraise", 
+        "framboise", "fruit", "fruits", "grapefruit", "kiwi", "lime", "mandarine", "melon", "mûre", 
+        "orange", "pamplemousse", "cantaloup", "pasteque", "pêche", "poire", "pomme", "prune", "raisin", 
+        "yogourt", "yaourt", "skyr", "oikos", "activia", "danone", "lait", "fromage", "cheese", "beurre", 
+        "oeufs", "œufs", "oeuf", "crème", "margarine"
     }
 
-    # APPEL CORRIGÉ ICI : On passe uniquement (nom, mots_produit) aux fonctions modules
     if any(m in mots_produit for m in mots_interceptes_temporaires):
         if verifier_boisson_pure(nom, mots_produit):
             return "☕ Boissons"
         return "📁 À vérifier (Lait, Œufs, Végétaux)"
 
-    if verifier_boisson_pure(nom, mots_produit):
-        return "☕ Boissons"
-    if verifier_maraicher_pur(nom, mots_produit):
-        return "🥦 Fruits et légumes"
-    if verifier_surgele_pur(nom, mots_produit):
-        return "❄️ Surgelés"
-    if verifier_laitier_pur(nom, mots_produit):
-        return "🥛 Produits laitiers et œufs"
-    if verifier_boulangerie_pure(nom, mots_produit):
-        return "🍞 Boulangerie et pâtisserie"
+    if verifier_boisson_pure(nom, mots_produit): return "☕ Boissons"
+    if verifier_maraicher_pur(nom, mots_produit): return "🥦 Fruits et légumes"
+    if verifier_surgele_pur(nom, mots_produit): return "❄️ Surgelés"
+    if verifier_laitier_pur(nom, mots_produit): return "🥛 Produits laitiers et œufs"
+    if verifier_boulangerie_pure(nom, mots_produit): return "🍞 Boulangerie et pâtisserie"
         
     return "🥫 Garde-manger"
-
-
-      
-    nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
-    mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
-    
-    if not mots_produit:
-        return "🥫 Garde-manger"
-
-    # APPEL DES QUATRE BLOCS MODULES DISTINCTS
-    if verifier_boisson_pure(nom, mots_produit):
-        return "☕ Boissons"
-    if verifier_maraicher_pur(nom, mots_produit):
-        return "🥦 Fruits et légumes"
-    if verifier_surgele_pur(nom, mots_produit):
-        return "❄️ Surgelés"
-    if verifier_boulangerie_pure(nom, mots_produit):
-        return "🍞 Boulangerie et pâtisserie"
-
-    # Redirections génériques du reste du catalogue (Deuxième tri)
-    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette", "veau", "agneau", "maquereau", "palourdes", "viande"]): 
-        return "🥩 Viandes et poissons"
-    if any(m in nom for m in ["lait", "yogourt", "fromage", "beurre", "œuf", "oeuf", "cream", "crème", "creme", "oikos", "activia", "danone", "ultra'crème", "crémette"]): 
-        return "🥛 Produits laitiers et œufs"
-        
-    return "🥫 Garde-manger"
-
-        
-    nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
-    mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
-    
-    if not mots_produit:
-        return "🥫 Garde-manger"
-
-    # APPEL DES TROIS BLOCS MODULES DISTINCTS
-    if verifier_boisson_pure(nom, mots_produit):
-        return "☕ Boissons"
-    if verifier_maraicher_pur(nom, mots_produit):
-        return "🥦 Fruits et légumes"
-    if verifier_surgele_pur(nom, mots_produit):
-        return "❄️ Surgelés"
-    # Redirections génériques du reste du catalogue (Deuxième tri)
-    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette", "veau", "agneau", "maquereau", "palourdes"]): 
-        return "🥩 Viandes et poissons"
-    if any(m in nom for m in ["lait", "yogourt", "fromage", "beurre", "œuf", "cream", "crème", "creme", "oikos", "activia", "danone", "ultra'crème", "crémette"]): 
-        return "🥛 Produits laitiers et œufs"
-    if any(m in nom for m in ["pain", "muffin", "brioche", "bagel", "céréale", "gruau", "tarte", "croissant", "gâteau", "gateau", "cookies", "biscuit", "biscuits", "épeautre", "farine", "levure"]): 
-        return "🍞 Boulangerie et pâtisserie"
-        
-    return "🥫 Garde-manger"
-
-        
-    # Nettoyage et tokenization
-    nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
-    mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
-    
-    if not mots_produit:
-        return "🥫 Garde-manger"
-
-    # APPEL DES DEUX BLOCS DISCONCTES
-    if verifier_boisson_pure(nom, mots_produit):
-        return "☕ Boissons"
-        
-    if verifier_maraicher_pur(nom, mots_produit):
-        return "🥦 Fruits et légumes"
-
-    # Redirections génériques du reste du catalogue
-    if any(m in nom for m in ["poulet", "bœuf", "porc", "bacon", "jambon", "poisson", "thon", "saumon", "saucisse", "crevette", "veau", "agneau", "maquereau", "palourdes"]): 
-        if "surgelé" in nom or "pizza" in nom or "frite" in nom: return "❄️ Surgelés"
-        return "🥩 Viandes et poissons"
-    if any(m in nom for m in ["lait", "yogourt", "fromage", "beurre", "œuf", "cream", "crème", "creme", "oikos", "activia", "danone", "ultra'crème", "crémette"]): 
-        return "🥛 Produits laitiers et œufs"
-    if any(m in nom for m in ["pain", "muffin", "brioche", "bagel", "céréale", "gruau", "tarte", "croissant", "gâteau", "gateau", "cookies", "biscuit", "biscuits", "épeautre"]): 
-        return "🍞 Boulangerie et pâtisserie"
-    if any(m in nom for m in ["pizza", "frite", "surgelé", "surgeles", "pépites"]): 
-        return "❄️ Surgelés"
-        
-    return "🥫 Garde-manger"
-        
-# Initialisation et chargement de la base de données en Session Streamlit
+# Initialisation de la Session State et chargement global
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()
 
@@ -466,17 +302,8 @@ df = st.session_state['df_produits']
 
 if 'banniere_active' not in st.session_state:
     st.session_state['banniere_active'] = "Tous"
-df_filtre = df.copy()   
-    
-# 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
-colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
-colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
-df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
 
-for c in df_affichage.columns:
-    df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
-    
-# 2. BARRE LATERALE
+# DESIGN BARRE LATÉRALE
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits par pays d'origine</h2>")
 
 if 'entreprise_pays' in df.columns:
@@ -495,44 +322,42 @@ if 'entreprise_province_etat' in df_filtre.columns:
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
 
+# CORRECTIF DE SYNCHRONISATION INDEXATION : Alignement parfait de l'image de la Sidebar
+cup_actuel = "nan"
 if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
-    index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     try:
-        terme_recherche = st.session_state.get('recherche_cup', '').lower()
-        # --- CORRECTION FINALE PAR INDEX DE LIGNE ---
-        raw_cup = df_filtre.loc[index_ligne, 'code_upc']
+        index_ligne_affiche = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
+        df_affichage_temp = df_filtre.copy()
         
+        if st.session_state.get('recherche_cup'):
+            df_affichage_temp = df_affichage_temp[df_affichage_temp['nom'].str.lower().str.contains(st.session_state['recherche_cup'].lower(), na=False)]
+        
+        cat_choisie = st.session_state.get('cat_selector', "📁 Toutes les catégories")
+        if cat_choisie != "📁 Toutes les catégories":
+            df_affichage_temp = df_affichage_temp[df_affichage_temp['nom'].apply(deviner_categorie) == cat_choisie]
+            
+        df_affichage_temp = df_affichage_temp.reset_index(drop=True)
+        raw_cup = df_affichage_temp.iloc[index_ligne_affiche]['code_upc']
         cup_actuel = str(raw_cup).strip().split('.')[0]
 
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             with st.sidebar.spinner("Recherche de la photo..."):
-                try:
-                    url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
-                    headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
-                    reponse = requests.get(url_api, headers=headers, timeout=5)
-                    if reponse.status_code == 200:
-                        donnees = reponse.json()
-                        if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
-                            lien_photo = donnees["product"]["image_url"]
-                            st.sidebar.image(lien_photo, caption="Photo officielle OpenFoodFacts", use_container_width=True)
-                        else:
-                            st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
+                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
+                headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
+                reponse = requests.get(url_api, headers=headers, timeout=5)
+                if reponse.status_code == 200:
+                    donnees = reponse.json()
+                    if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
+                        st.sidebar.image(donnees["product"]["image_url"], caption="Photo officielle OpenFoodFacts", use_container_width=True)
                     else:
-                        st.sidebar.error("❌ Serveur d'images indisponible.")
-                except Exception as e:
-                    st.sidebar.error(f"⚠️ Erreur de connexion : {e}")
-        else:
-            st.sidebar.warning("code_upc invalide ou vide.")
+                        st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
+                else:
+                    st.sidebar.error("❌ Serveur d'images indisponible.")
     except Exception as e:
-        st.sidebar.error(f"Erreur de lecture du CUP : {e}")
-
-st.sidebar.markdown("---") 
-
+        st.sidebar.error(f"Erreur Sidebar CUP : {e}")
 with st.sidebar.expander("🔑 Administration"):
-    if "admin_connecte" not in st.session_state:
-        st.session_state["admin_connecte"] = False
-
+    if "admin_connecte" not in st.session_state: st.session_state["admin_connecte"] = False
     if not st.session_state["admin_connecte"]:
         mot_de_passe = st.text_input("Entrez le mot de passe de gestion", type="password", key="sidebar_mdp_secret")
         if mot_de_passe == st.secrets["admin"]["password"]:
@@ -543,300 +368,131 @@ with st.sidebar.expander("🔑 Administration"):
         if st.button("Se déconnecter", type="primary", use_container_width=True):
             st.session_state["admin_connecte"] = False
             st.rerun()
-            
         st.markdown("---")
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_actuel = conn.read(ttl=0)
         cup_a_supprimer = st.text_input("code_upc du produit à supprimer", key="cup_delete_input")
-        
-        if st.button("Supprimer définitivement le produit du Nuage", use_container_width=True):
-            if cup_a_supprimer:
-                df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
-                conn.update(data=df_nettoye)
-                if 'df_produits' in st.session_state:
-                    del st.session_state['df_produits']
-                st.success("Produit supprimé avec succès !")
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.warning("Veuillez entrer un code_upc valide.")
-# 3. ZONE PRINCIPALE : Entête
+        if st.button("Supprimer le produit du Nuage", use_container_width=True) and cup_a_supprimer:
+            df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
+            conn.update(data=df_nettoye)
+            if 'df_produits' in st.session_state: del st.session_state['df_produits']
+            st.success("Produit supprimé !"), time.sleep(1), st.rerun()
+
+# 3. ZONE PRINCIPALE : Entête et Guide
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
 st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un code-barres pour valider l'origine et gérer vos prix d'épicerie.</p>")
 
-with st.expander(":blue[**Comment utiliser l'application et économiser ?**] *(Cliquez pour ouvrir)*", icon="ℹ️"):
-    st.markdown("""
-    ### 🛒 Protégeons notre portefeuille, encourageons l'achat local !
-    Bienvenue sur **AchatQuébec**, votre outil citoyen et collaboratif pour dénicher les meilleurs prix à l'épicerie tout en gardant notre argent ici. Ensemble, reprenons le contrôle de notre panier d'épicerie !
-    
-    #### 🕵️‍♂️ Comment ça fonctionne ?
-    1. **Recherchez un produit :** Tapez un mot-clé (ex: *pomme*) ou le code_upc.
-    2. **Identifiez la provenance :** Repérez les drapeaux et badges (Québec ⚜️, Canada 🍁).
-    3. **Comparez les prix :** Voyez d'un coup d'œil quelle bannière est la moins chère.
-    
-    #### ✍️ Devenez un consommateur solidaire !
-    Vous êtes à l'épicerie ? Cochez le produit, inscrivez le prix trouvé dans le formulaire au bas de l'écran, et cliquez sur **Enregistrer**. Chaque contribution aide la communauté !
-    """)
-
 st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
-
-col_iga, col_maxi = st.columns(2)
-if col_iga.button("🔴 IGA", use_container_width=True):
-    st.session_state['banniere_active'] = "IGA"
-if col_maxi.button("🟡 Maxi", use_container_width=True):
-    st.session_state['banniere_active'] = "Maxi"
-
-col_metro, col_super_c = st.columns(2)
-if col_metro.button("🟢 Metro", use_container_width=True):
-    st.session_state['banniere_active'] = "Metro"
-if col_super_c.button("🔵 Super C", use_container_width=True):
-    st.session_state['banniere_active'] = "Super_C"
-
-col_walmart, col_tigre = st.columns(2)
-if col_walmart.button("🔵 Walmart", use_container_width=True):
-    st.session_state['banniere_active'] = "Walmart"
-if col_tigre.button("🐯 Tigre Géant", use_container_width=True):
-    st.session_state['banniere_active'] = "Tigre_Geant"
-
-col_dollarama, col_provigo, col_tous = st.columns(3)
-if col_dollarama.button("💵 Dollarama", use_container_width=True):
-    st.session_state['banniere_active'] = "Dollarama"
-if col_provigo.button("🟢 Provigo", use_container_width=True):
-    st.session_state['banniere_active'] = "Provigo"
-if col_tous.button("🔄 Toutes", use_container_width=True):
-    st.session_state['banniere_active'] = "Tous"
+c_iga, c_maxi = st.columns(2)
+if c_iga.button("🔴 IGA", use_container_width=True): st.session_state['banniere_active'] = "IGA"
+if c_maxi.button("🟡 Maxi", use_container_width=True): st.session_state['banniere_active'] = "Maxi"
+c_met, c_sup = st.columns(2)
+if c_met.button("🟢 Metro", use_container_width=True): st.session_state['banniere_active'] = "Metro"
+if c_sup.button("🔵 Super C", use_container_width=True): st.session_state['banniere_active'] = "Super_C"
+c_wal, c_tig = st.columns(2)
+if c_wal.button("🔵 Walmart", use_container_width=True): st.session_state['banniere_active'] = "Walmart"
+if c_tig.button("🐯 Tigre Géant", use_container_width=True): st.session_state['banniere_active'] = "Tigre_Geant"
+c_dol, c_pro, c_all = st.columns(3)
+if c_dol.button("💵 Dollarama", use_container_width=True): st.session_state['banniere_active'] = "Dollarama"
+if c_pro.button("🟢 Provigo", use_container_width=True): st.session_state['banniere_active'] = "Provigo"
+if c_all.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"
 
 banniere = st.session_state['banniere_active']
-
 if banniere != "Tous" and 'distribution' in df_filtre.columns:
-    nom_banniere_recherche = banniere.replace('_', ' ')
-    condition_distribution = df_filtre['distribution'].str.lower().str.contains(nom_banniere_recherche.lower(), na=False)
-    df_filtre = df_filtre[condition_distribution]
-# 4. ZONE DE RECHERCHE ET SCANNER PHOTO
-resultats = None
-message_erreur_recherche = None
+    df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 
-choix_mode = st.radio(
-    "👉 MODE DE RECHERCHE :",
-    ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"],
-    horizontal=True,
-    label_visibility="collapsed"
-)
+# 4. ZONE DE RECHERCHE ET SCANNER
+resultats, message_erreur_recherche = None, None
+choix_mode = st.radio("👉 MODE DE RECHERCHE :", ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"], horizontal=True, label_visibility="collapsed")
 saisie_net = ""
 
-if "cup" in st.query_params:
-    saisie_net = str(st.query_params["cup"]).strip()
-    st.success(f"✅ code_upc détecté : {saisie_net}")
+if "cup" in st.query_params: saisie_net = str(st.query_params["cup"]).strip()
 
 if choix_mode == "⌨️ Recherche manuelle":
-    valeur_par_defaut = saisie_net if saisie_net else ""
-    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN code_upc :", value=valeur_par_defaut, key="recherche_cup")    
-    if saisie:
-        saisie_net = saisie.strip()
-    if "cup" in st.query_params:
-        st.query_params.clear()
-        
+    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN code_upc :", value=saisie_net if saisie_net else "", key="recherche_cup")    
+    if saisie: saisie_net = saisie.strip()
+    if "cup" in st.query_params: st.query_params.clear()
 elif choix_mode == "📸 Scanner un Code-Barres":
-    st.html("<h2 style='color: #003366; font-size: 28px; font-weight: bold;'>📷 Scanneur Local Haute Performance</h2>")
-    st.html("<p style='font-size: 20px; color: #333;'>Prenez une photo nette et horizontale du code-barres avec votre téléphone</p>")
-    st.markdown("### 📷 Scanner le code-barres en direct")
-    st.write("Présentez le code-barres bien net devant la caméra arrière de votre cellulaire.")
-    
     from streamlit_qrcode_scanner import qrcode_scanner
     code_detecte = qrcode_scanner(key="scanner_officiel_live")
-    if code_detecte:
-        st.success(f"🎉 Code-barres détecté avec succès : {code_detecte}")
-        st.session_state['code_barre_input'] = str(code_detecte)
-        saisie_net = str(code_detecte)
+    if code_detecte: saisie_net = str(code_detecte)
 
 if saisie_net:
     cup_saisi = saisie_net.strip()
-    terme_recherche_minuscule = cup_saisi.lower()
-
     if 'code_upc' in df_filtre.columns:
         recherche_cup = df_filtre[df_filtre['code_upc'].astype(str).str.strip() == cup_saisi]
         if not recherche_cup.empty:
-            df_filtre = recherche_cup
-            resultats = recherche_cup
+            df_filtre, resultats = recherche_cup, recherche_cup
         else:
-            conditions = pd.Series(False, index=df_filtre.index)
-            if 'nom' in df_filtre.columns:
-                conditions |= df_filtre['nom'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-            if 'siege_social' in df_filtre.columns:
-                conditions |= df_filtre['siege_social'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-            if 'lieu_usine' in df_filtre.columns:
-                conditions |= df_filtre['lieu_usine'].str.lower().str.contains(terme_recherche_minuscule, na=False, regex=False)
-                
-            recherche_texte = df_filtre[conditions]
+            cond = df_filtre['nom'].str.lower().str.contains(cup_saisi.lower(), na=False)
+            recherche_texte = df_filtre[cond]
             if not recherche_texte.empty:
                 df_filtre = recherche_texte
-                if len(recherche_texte) == 1:
-                    resultats = recherche_texte
-            else:
-                message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
+                if len(recherche_texte) == 1: resultats = recherche_texte
+            else: message_erreur_recherche = f"⚠️ Aucun produit trouvé."
+# 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
+colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
+colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
+df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
 
-config_colonnes = {
-    "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
-    "nom": st.column_config.TextColumn("Nom du produit", width="large"),
-    "siege_social": st.column_config.TextColumn("Entreprise"),
-    "entreprise_province_etat": st.column_config.TextColumn("Province/État"),
-    "distribution": st.column_config.TextColumn("Réseau d'épicerie"),
-    "prix_iga": st.column_config.TextColumn("Prix IGA"),
-    "prix_maxi": st.column_config.TextColumn("Prix Maxi"),
-    "prix_metro": st.column_config.TextColumn("Prix Metro"),
-    "prix_super_c": st.column_config.TextColumn("Prix Super C")
-}
+for c in df_affichage.columns: df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 
-st.markdown("---")
-st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés selon vos bannières et filtres) :")
-st.write("💡 Cliquez n'importe où sur la ligne d'un produit pour voir sa fiche complète ci-dessous.")
-
-selection_tableau = None 
-if 'df' in locals() and not df.empty:
-    categories_disponibles = sorted(list(df['categorie'].dropna().unique()))
-    options_menu = ["📁 Toutes les catégories"] + categories_disponibles
-    categorie_selectionnee = st.selectbox(
-        "📂 Filtrer le catalogue par rayon :",
-        options=options_menu,
-        index=0
-    )
+if 'df_produits' in st.session_state and not st.session_state['df_produits'].empty:
+    categories_disponibles = sorted(list(st.session_state['df_produits']['categorie'].unique()))
+    categorie_selectionnee = st.selectbox("📂 Filtrer le catalogue par rayon :", options=["📁 Toutes les catégories"] + categories_disponibles, index=0, key="cat_selector")
     if categorie_selectionnee != "📁 Toutes les catégories":
         df_affichage = df_affichage[df_affichage['nom'].apply(deviner_categorie) == categorie_selectionnee]
 
+config_colonnes = {
+    "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
+    "nom": st.column_config.TextColumn("Nom du produit", width="large")
+}
 
-if not saisie_net:
+st.markdown("---")
+st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés) :")
+
+# FIX CRUCIAL ET ABSOLU DU SCRIPT : On réinitialise l'index d'affichage pour éliminer le décalage !
+df_affichage = df_affichage.reset_index(drop=True)
+selection_tableau = None 
+
+if not saisie_net or (not df_filtre.empty and len(df_filtre) < len(df)):
     selection_tableau = st.dataframe(
         df_affichage, column_config=config_colonnes, use_container_width=True,
         hide_index=True, selection_mode="single-row", on_select="rerun", key="tableau_consommateur"
     )
-elif not df_filtre.empty and len(df_filtre) < len(df):
-    selection_tableau = st.dataframe(
-        df_affichage, column_config=config_colonnes, use_container_width=True,
-        hide_index=True, selection_mode="single-row", on_select="rerun", key="tableau_consommateur"
-    )
-else:
-    if message_erreur_recherche and not saisie_net.strip().isdigit():
-        st.warning(message_erreur_recherche)
 
-    if saisie_net.strip().isdigit() and len(saisie_net.strip()) >= 10:
-        st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
-        st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
-        
-        with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
-            nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
-            cup_final = st.text_input("code_upc", value=saisie_net.strip(), disabled=True)
-            entreprise = st.text_input("Entreprise propriétaire / Marque (ex: Unico)")
-            province = st.text_input("Province / État (ex: Québec)")
-            pays = st.text_input("Pays", value="Canada")
-            distribution = st.text_input("Réseau d'épicerie (ex: IGA, Maxi, Metro, Super C)")
-            
-            st.write("---")
-            st.write("**Entrez les prix constatés en magasin (optionnel) :**")
-            col1, col2, col3, col4 = st.columns(4)
-            with col1: prix_iga = st.text_input("Prix IGA ($)", value="")
-            with col2: prix_maxi = st.text_input("Prix Maxi ($)", value="")
-            with col3: prix_metro = st.text_input("Prix Metro ($)", value="")
-            with col4: prix_superc = st.text_input("Prix Super C ($)", value="")
-        
-            col5, col6, col7, col8 = st.columns(4)
-            with col5: prix_walmart = st.text_input("Prix Walmart ($)", value="")
-            with col6: prix_tigre = st.text_input("Prix Tigre Géant ($)", value="")
-            with col7: prix_dollarama = st.text_input("Prix Dollarama ($)", value="")
-            with col8: prix_provigo = st.text_input("Prix Provigo ($)", value="")
-
-            bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
-
-            if bouton_creer:
-                if nom_nouveau:
-                    with st.spinner("Enregistrement de la nouvelle fiche produit..."):
-                        try:
-                            p_iga_val = prix_iga.strip() if prix_iga.strip() else ""
-                            p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else ""
-                            p_metro_val = prix_metro.strip() if prix_metro.strip() else ""
-                            p_super_c_val = prix_superc.strip() if prix_superc.strip() else ""
-                            p_walmart_val = prix_walmart.strip() if prix_walmart.strip() else ""
-                            p_tigre_val = prix_tigre.strip() if prix_tigre.strip() else ""
-                            p_dollarama_val = prix_dollarama.strip() if prix_dollarama.strip() else ""
-                            p_provigo_val = prix_provigo.strip() if prix_provigo.strip() else ""
-                            
-                            nouvelle_ligne = {
-                                'code_upc': cup_final,
-                                'nom': nom_nouveau.strip(),
-                                'siege_social': blueprint.strip() if 'blueprint' in locals() else entreprise.strip(),
-                                'lieu_usine': "",
-                                'distribution': distribution.strip(),
-                                'entreprise_proprietaire': "",
-                                'entreprise_province_etat': province.strip(),
-                                'entreprise_pays': pays.strip(),
-                                'priorite': "",
-                                'usine_principale': "",
-                                'reseau_distribution': "",
-                                'prix_iga': p_iga_val,
-                                'prix_maxi': p_maxi_val,
-                                'prix_metro': p_metro_val,
-                                'prix_super_c': p_super_c_val,
-                                'prix_walmart': p_walmart_val,
-                                'prix_tigre_geant': p_tigre_val,
-                                'prix_dollarama': p_dollarama_val,
-                                'prix_provigo': p_provigo_val,
-                                'distribution.1': "",
-                                'bannieres_disponibles': ""
-                            }
-                            
-                            st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
-                            
-                            if sauvegarder_donnees(st.session_state['df_produits']):
-                                st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
-                                st.balloons()
-                                time.sleep(1)
-                                st.rerun()
-                        except Exception as e:
-                            st.error(f"Erreur lors de l'enregistrement : {e}")
-                else:
-                    st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
-
+# INTERCEPTION SÉCURISÉE DU CLIC UTILISATEUR : Extraction par valeur UPC réelle unique
 if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
     index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
     if index_ligne_cliquee < len(df_affichage):
         cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
         resultats = df[df['code_upc'] == cup_selectionne]
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index
+    index_produit_reel = resultats.index[0]
     row = resultats.iloc[0]
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
-    usine_actuelle = str(row.get('lieu_usine', row.get('usine_principale', 'À déterminer'))).strip().replace('nan', '')
-    reseau = str(row.get('distribution', 'Général')).strip().replace('nan', '')
     
-    localisation_siege = f"{prov}" if prov else ""
-    if pays: localisation_siege += f" ({pays})" if localisation_siege else pays
-    if not localisation_siege: localisation_siege = "Non spécifié"
+    localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
     if "québec" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">⚜️ ACHAT QUÉBÉCOIS</span>'
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⚜️ ACHAT QUÉBÉCOIS</span>'
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
     elif "canada" in pays.lower() or "canada" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">🍁 ACHAT CANADIEN</span>'
+        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
         verdict = "Ce produit encourage l'économie canadienne."
     else:
-        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
+        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
 
     bannières_config = {
-        'prix_iga': ('🔴 IGA', '#d32f2f'),
-        'prix_maxi': ('🟡 MAXI', '#f9d71c'),
-        'prix_metro': ('🟢 METRO', '#28a745'),
-        'prix_super_c': ('🔵 SUPER C', '#0056b3'),
-        'prix_walmart': ('🔵 WALMART', '#0071dc'),
-        'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#e31837'),
-        'prix_dollarama': ('💵 DOLLARAMA', '#006a4e'),
-        'prix_provigo': ('🟢 PROVIGO', '#e31b23')
+        'prix_iga': ('🔴 IGA', '#d32f2f'), 'prix_maxi': ('🟡 MAXI', '#f9d71c'), 'prix_metro': ('🟢 METRO', '#28a745'), 'prix_super_c': ('🔵 SUPER C', '#0056b3')
     }
 
     prix_valides = {}
-    for col_key, (label, _) in bannières_config.items():
+    for col_key, _ in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '').replace('$', '').replace(',', '.').strip()
         if v_prix and v_prix.lower() != "non inscrit" and v_prix != "":
             try: prix_valides[col_key] = float(v_prix)
@@ -845,169 +501,38 @@ if resultats is not None and not resultats.empty:
     meilleure_banniere_col = min(prix_valides, key=prix_valides.get) if prix_valides else None
 
     bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
-    for col_key, (label, color) in bannières_config.items():
+    for col_key, (label, _) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
-        
-        if meilleure_banniere_col and col_key == meilleure_banniere_col:
-            style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32; box-shadow: 0px 4px 10px rgba(0,0,0,0.15);'
-            label_display = f'🔥 {label}'
-        else:
-            style_card = 'background-color: #ffffff; border: 1px solid #e0e0e0;'
-            label_display = label
-            
-        bloc_prix_html += f"""
-        <div style="padding: 10px 15px; border-radius: 8px; color: #1a1a1a; font-weight: bold; font-size: 15px; min-width: 140px; text-align: center; {style_card}">
-            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">{label_display}</div>
-            <div style="font-size: 18px; color: #1a1a1a;">{affichage}</div>
-        </div>
-        """
+        style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
+        bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
     bloc_prix_html += '</div>'
 
-    alerte_economie_html = ""
-    if meilleure_banniere_col:
-        nom_gagnant, _ = bannières_config[meilleure_banniere_col]
-        alerte_economie_html = f"""
-        <div style="background-color: #e8f5e9; color: #1b5e20; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 16px; margin-bottom: 15px; border-left: 5px solid #2e7d32;">
-            💡 ÉCONOMIE : Le meilleur prix actuel est chez <b>{nom_gagnant}</b> ({prix_valides[meilleure_banniere_col]:.2f}$) !
-        </div>
-        """
-
-    st.html(f"""
-<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; margin-bottom: 20px; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
-        <span style="font-size: 13px; color: #555; font-weight: 500;">UPC : {str(row.get('code_upc', ''))}</span>
-        {badge_html}
-    </div>
-    <h2 style="color: #1a1a1a; margin: 0 0 5px 0; font-size: 26px; font-weight: 800;">📦 {row.get('nom', 'Produit sans nom')}</h2>
-    <p style="color: {couleur_texte}; font-size: 15px; margin: 0 0 20px 0; font-weight: 500;">{verdict}</p>
-    
-    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px;">
-        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏭 Compagnie :</b> {compagnie if compagnie else 'Non spécifié'}</span>
-        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>📍 Siège :</b> {localisation_siege}</span>
-        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🏪 Usine principale :</b> {usine_actuelle}</span>
-        <span style="background-color: rgba(0,0,0,0.04); color: #444; padding: 6px 12px; border-radius: 6px; font-size: 14px;"><b>🛍️ Dispo chez :</b> {reseau}</span>
-    </div>
-    
-    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 16px; font-weight: 700; text-transform: uppercase;">💰 Comparatif des prix en magasin :</h4>
-    {alerte_economie_html}
-    {bloc_prix_html}
-</div>
-""")
+    st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
 
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+        def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
+        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="form_iga")
+        nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="form_maxi")
+        nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="form_metro")
+        nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="form_super_c")
         
-        def clean_price(val):
-            v_str = str(val).strip()
-            return "" if v_str.lower() in ["nan", "none", ""] else v_str
-
-        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="edit_iga")
-        nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="edit_maxi")
-        nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="edit_metro")
-        nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="edit_super_c")
-        
-        col_p5, col_p6, col_p7, col_p8 = st.columns(4)
-        nouveau_walmart = col_p5.text_input("Prix Walmart ($) :", value=clean_price(row.get('prix_walmart', '')), key="edit_walmart")
-        nouveau_tigre = col_p6.text_input("Prix Tigre Géant ($) :", value=clean_price(row.get('prix_tigre_geant', '')), key="edit_tigre")
-        nouveau_dollarama = col_p7.text_input("Prix Dollarama ($) :", value=clean_price(row.get('prix_dollarama', '')), key="edit_dollarama")
-        nouveau_provigo = col_p8.text_input("Prix Provigo ($) :", value=clean_price(row.get('prix_provigo', '')), key="edit_provigo")
-        
-                # Injection CSS pour styliser uniquement le bouton de ce formulaire en vert
-        st.html("""
-        <style>
-            div[data-testid="stFormSubmitButton"] button {
-                background-color: #2e7d32 !important; /* Un beau vert épicerie / succès */
-                color: white !important;
-                font-size: 20px !important;
-                font-weight: bold !important;
-                height: 55px !important;
-                border-radius: 10px !important;
-                border: none !important;
-                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15) !important;
-                transition: all 0.3s ease !important;
-                cursor: pointer !important;
-            }
-            div[data-testid="stFormSubmitButton"] button:hover {
-                background-color: #1b5e20 !important; /* Vert plus foncé au survol */
-                transform: translateY(-2px) !important;
-                box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2) !important;
-            }
-        </style>
-        """)
-        
-        date_du_jour = pd.Timestamp.now().strftime("%Y-%m-%d")
-        bouton_enregistrer = st.form_submit_button(f"💾 Enregistrer les modifications de prix (Aujourd'hui : {date_du_jour})", type="primary", use_container_width=True)
+        st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
+        bouton_enregistrer = st.form_submit_button(f"💾 Enregistrer les modifications de prix", use_container_width=True)
 
     if bouton_enregistrer:
         try:
-            # Extrait le premier index de la liste pour éviter l'erreur de scalaire
-            idx_unique = index_produit_reel[0]
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
             
-            st.session_state['df_produits'].at[idx_unique, 'prix_iga'] = nouveau_iga.strip() if nouveau_iga else ""
-            st.session_state['df_produits'].at[idx_unique, 'prix_maxi'] = nouveau_maxi.strip() if nouveau_maxi else ""
-            st.session_state['df_produits'].at[idx_unique, 'prix_metro'] = nouveau_metro.strip() if nouveau_metro else ""
-            st.session_state['df_produits'].at[idx_unique, 'prix_super_c'] = nouveau_super_c.strip() if nouveau_super_c else ""
-            st.session_state['df_produits'].at[idx_unique, 'prix_walmart'] = nouveau_walmart.strip() if nouveau_walmart else ""
-            st.session_state['df_produits'].at[idx_unique, 'prix_tigre_geant'] = nouveau_tigre.strip() if nouveau_tigre else ""
-            st.session_state['df_produits'].at[idx_unique, 'prix_dollarama'] = nouveau_dollarama.strip() if nouveau_dollarama else ""
-            st.session_state['df_produits'].at[idx_unique, 'prix_provigo'] = nouveau_provigo.strip() if nouveau_provigo else ""
-         
-            # === DÉBUT DU BLOC HISTORIQUE CITOYEN ===
-            champs_saisis = {
-                'prix_iga': nouveau_iga,
-                'prix_maxi': nouveau_maxi,
-                'prix_metro': nouveau_metro,
-                'prix_super_c': nouveau_super_c,
-                'prix_walmart': nouveau_walmart,
-                'prix_tigre_geant': nouveau_tigre,
-                'prix_dollarama': nouveau_dollarama,
-                'prix_provigo': nouveau_provigo
-            }
-         
-            nouvelles_lignes = []
-            horodatage_actuel = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-            upc_produit = cup_actuel  # Utilise le CUP détecté plus haut
-          
-            for distribution_enseigne, valeur_prix in champs_saisis.items():
-                if valeur_prix and str(valeur_prix).strip() != "":
-                    try:
-                        prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
-                       
-                        # 1. DÉFINITION DES ENTÊTES ET DE LEUR UTILITÉ (POUR MÉMOIRE)
-                        # explications_colonnes = {
-                        #     'horodatage': 'Colonne A - Date et heure de l'entrée',
-                        #     'code_upc': 'Colonne B - Code-barres unique',
-                        #     'distribution': 'Colonne C - Nom de la bannière',
-                        #     'prix': 'Colonne D - Prix numérique en minuscule',
-                        #     'source': 'Colonne E - Origine de la donnée'
-                        # }
-                     
-                        nouvelle_ligne = {
-                            'horodatage': horodatage_actuel,
-                            'code_upc': upc_produit,
-                            'distribution': distribution_enseigne,
-                            'prix': prix_propre,
-                            'source': 'collaboratif'
-                        }
-                        nouvelles_lignes.append(nouvelle_ligne)
-                    except ValueError:
-                        pass
-                     
-            if nouvelles_lignes:
-                df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
-                sauvegarder_historique(df_nouvel_historique)
-            # === FIN DU BLOC HISTORIQUE CITOYEN ===
-         
             if sauvegarder_donnees(st.session_state['df_produits']):
-
-                st.success("Base de données collaborative mise à jour avec succès !")
-                time.sleep(1)
+                st.success("Données collaboratives enregistrées !")
+                time.sleep(0.5)
                 st.rerun()
-        except Exception as e:
-            st.error(f"❌ Erreur lors de la mise à jour des prix : {e}")
-
+        except Exception as e: st.error(f"❌ Erreur : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-

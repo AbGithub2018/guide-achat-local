@@ -240,7 +240,7 @@ def verifier_laitier_pur(nom, mots_produit):
         "œuf", "blancs", "crème", "creme", "cremette", "crémette", "sour", "cream", "quebon", "québon", 
         "natrel", "lactantia", "purfiltre", "pūrfiltre", "beatrice", "sealtest", "riviera", "burnbrae", 
         "silk", "agropur", "amsterdam", "gustav", "armstrong", "président", "president", "quebec", 
-        "québec", "canada", "canadien", "nordique", "normandinoise", "péribonka", "peribonka",
+        "québec", "canada", "canadien", "nordique", "normandinoise", "péribonka", "peribonka", "margarine",
         "fraise", "rhubarbe", "vanille", "vanilla", "bean", "citron", "citrons", "pêche", "peche", 
         "bleuet", "sauvage", "mûre", "blackberry", "nature", "sucré", "sucrée", "sucre", "sucree", 
         "grec", "greek", "balkan", "ferme", "fermier", "brassé", "brasse", "crémeux", "cremeux", 
@@ -259,8 +259,8 @@ def verifier_laitier_pur(nom, mots_produit):
         "avoine", "cajous", "cajou", "soya", "soy", "végétal", "vegetal", "lyophilisé", "starters",
         "d", "en", "et", "à", "a", "au", "aux", "la", "le", "les", "un", "une", "pour", "par", "dans", "avec"
     }
-    if all(m in mots_autorises_laitiers for m in mots_produit):
-        mots_declencheurs = {"yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", "danone", "iogo", "yoplait", "liberté", "kēfir", "kéfir", "lait", "fromage", "cheese", "boursin", "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", "camembert", "brie", "oka", "allégro", "beurre", "oeufs", "œufs", "oeuf", "œuf", "crème", "creme", "cremette"}
+    if all(m in mots_laitiers for m in mots_produit):
+        mots_declencheurs = {"yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", "danone", "iogo", "yoplait", "liberté", "kēfir", "lait", "fromage", "cheese", "boursin", "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", "camembert", "brie", "oka", "allégro", "beurre", "oeufs", "œufs", "oeuf", "œuf", "crème", "creme", "cremette", "margarine"}
         if any(m in mots_declencheurs for m in mots_produit):
             if any(m in nom for m in ["barres", "barre", "biscuit", "biscuits", "chocolat", "chocolate", "chips", "croustilles", "doritos", "popcorn", "maïs", "soup", "soupe", "bouillon", "bovril", "boeuf", "bœuf", "macaroni", "gnocchi", "ravioli", "risotto", "pizza", "oreos", "oreo", "tarts", "tarte", "muffins", "muffin", "donuts", "madeleines", "saucisson"]):
                 return False
@@ -314,32 +314,71 @@ def deviner_categorie(nom_produit):
     import re
     nom = str(nom_produit).lower()
     
-    if "heinz" in nom or "kraft" in nom:
-        return "🥫 Garde-manger"
-        
-    mots_boucherie_directs = {
-        "poulet", "chicken", "bœuf", "boeuf", "beef", "porc", "porchetta", "bacon", "jambon", "ham", 
-        "saucisse", "saucisses", "salami", "bologne", "baloney", "meatballs", "dinde", "turkey", "agneau", "veau", 
-        "merguez", "chorizo", "pepperoni", "pépites", "nuggets", "flamingo", "janes", "wings", "ailes", 
-        "thon", "tuna", "saumon", "salmon", "sole", "morue", "aiglefin", "truite", "hareng", "maquereau", 
-        "sardine", "sardines", "anchois", "crevette", "crevettes", "shrimp", "homard", "crabe", "crab", 
-        "pétoncle", "petoncle", "scallops", "palourdes", "moules", "calmar", "calamari", "escargots", "snails",
-        "viande", "meat", "cretons", "creton", "pâté", "pate", "ragoût", "ragout", "boulettes", "bavette"
+    # =========================================================================
+    # LA PROTECTION DE VOTRE CHARTE GARDE-MANGER (BLINDAGE ABSOLU)
+    # Si la ligne contient un de ces mots précis, elle reste OBLIGATOIREMENT ici !
+    # =========================================================================
+    mots_stricte_garde_manger = {
+        # 1. Féculents & Grains
+        "riz", "basmati", "pâtes", "pasta", "spaghetti", "macaroni", "fusilli", "penne", "linguine",
+        "gruau", "flocons d'avoine", "flocons d avoine", "farine",
+        # 2. Les Conserves
+        "dés", "broyées", "broyees", "pois chiches", "haricots noirs", "thon en conserve", "thon pâle",
+        "thon pale", "thon blanc", "bouillon", "bovril",
+        # 3. Matières grasses & Condiments
+        "huile d'olive", "huile d olive", "huile de canola", "vinaigre de cidre", "balsamique",
+        "sauce soya", "soya sauce", "soy sauce", "moutarde",
+        # 4. Épices & Assaisonnements
+        "sel fin", "poivre", "moulu", "poudre d'ail", "poudre d ail", "poudre d'oignon", "poudre d oignon",
+        "chili", "paprika", "origan", "herbes de provence",
+        # 5. Sucres & Déjeuners
+        "miel", "sirop d'érable", "sirop d erable", "beurre d'arachide", "beurre d arachide", "beurre de noix"
     }
     
+    # Nettoyage et tokenization
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
     mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
     
     if not mots_produit:
-        return "🥫 Garde-manger"
+        return "Garde-manger"
 
-    # PRIORITÉ 1 : Boucherie et poissonnerie directs
-    if any(m in mots_produit for m in mots_boucherie_directs):
-        if "surgelé" in nom or "pizza" in nom or "frite" in nom: 
-            return "❄️ Surgelés"
-        return "🥩 Viandes et poissons"
+    # Vérification charte garde-manger (Bloque l'aspiration des faux-positifs)
+    if any(m in nom for m in mots_stricte_garde_manger):
+        # Sécurité pour ne pas attraper les boissons pures (ex: vinaigre de cidre buvable)
+        if verifier_boisson_pure(nom, mots_produit):
+            return "☕ Boissons"
+        return "Garde-manger"
 
-    # PRIORITÉ 2 : Tri par les modules d'analyses croisées (Boissons, Maraîcher, Surgelés, Laitiers, Boulangerie)
+    # =========================================================================
+    # ÉTAPE INTERMÉDIAIRE : ASPIRATION DU RESTE DES PRODUITS FRAIS SUSPECTS
+    # =========================================================================
+    mots_interceptes_temporaires = {
+        "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
+        "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
+        "champignons", "chou", "choux", "concombre", "concombres", "coriandre", "courge", "courges", 
+        "echalote", "échalote", "echalotes", "échalotes", "epinard", "épinard", "epinards", "épinards", 
+        "spinach", "gourganes", "gingembre", "verts", "laitue", "romaine", "mais", "maïs", 
+        "navet", "navets", "oignon", "oignons", "panais", "patate", "patates", "persil", "piment", 
+        "piments", "poireau", "poireaux", "leek", "radis", "radish", "rutabaga", "salade", "thym", 
+        "thyme", "tomate", "tomates", "zucchini", "zucchinis", "abricot", "abricots", "ananas", 
+        "apple", "apples", "banane", "bananes", "banana", "bananas", "bleuet", "bleuets", "cerise", 
+        "cerises", "citron", "citrons", "clementine", "clémentine", "clementines", "fraise", "fraises", 
+        "framboise", "framboises", "fruit", "fruits", "grapefruit", "kiwi", "kiwis", "lime", "limes", 
+        "mandarine", "mandarines", "melon", "melons", "mûre", "mûres", "mure", "mures", "orange", 
+        "oranges", "pamplemousse", "pamplemousses", "cantaloup", "pasteque", "pastèque", "pêche", 
+        "pêches", "peche", "peches", "poire", "poires", "pomme", "pommes", "prune", "prunes", "raisin", 
+        "raisins", "physalis", "sunsgold", "yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", 
+        "danone", "iogo", "yoplait", "liberté", "kēfir", "lait", "fromage", "cheese", "boursin", 
+        "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", 
+        "beurre", "oeufs", "œufs", "oeuf", "œuf", "blancs", "crème", "creme", "cremette", "margarine"
+    }
+
+    if any(m in mots_produit for m in mots_interceptes_temporaires):
+        if verifier_boisson_pure(nom, mots_produit):
+            return "☕ Boissons"
+        return "📁 À vérifier (Lait, Œufs, Végétaux)"
+
+    # APPEL DES CRITÈRES RESTE DU CATALOGUE
     if verifier_boisson_pure(nom, mots_produit):
         return "☕ Boissons"
     if verifier_maraicher_pur(nom, mots_produit):
@@ -351,7 +390,8 @@ def deviner_categorie(nom_produit):
     if verifier_boulangerie_pure(nom, mots_produit):
         return "🍞 Boulangerie et pâtisserie"
         
-    return "🥫 Garde-manger"
+    return "Garde-manger"
+
       
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
     mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]

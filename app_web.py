@@ -1,10 +1,10 @@
- import streamlit as st
- import pandas as pd
- import time
- import requests
- import re
- import os
- from streamlit_gsheets import GSheetsConnection
+import streamlit as st
+import pandas as pd
+import time
+import requests
+import re
+import os
+from streamlit_gsheets import GSheetsConnection
 
 
 # 1. CONFIGURATION UNIQUE DE LA PAGE (DOIT ÊTRE LA PREMIÈRE LIGNE)

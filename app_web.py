@@ -499,13 +499,9 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
     index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     try:
         terme_recherche = st.session_state.get('recherche_cup', '').lower()
-        if 'categorie_selectionnee' in locals() and categorie_selectionnee != "📁 Toutes les catégories":
-            raw_cup = df_affichage.iloc[index_ligne]['code_upc']
-        else:
-            df_affichage_temp = df_filtre[df_filtre['nom'].str.lower().str.contains(terme_recherche, na=False)] if terme_recherche else df_filtre.copy()
-            raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
-
-
+        # --- CORRECTION FINALE PAR INDEX DE LIGNE ---
+        raw_cup = df_affichage.iloc[index_ligne]['code_upc']
+        
         cup_actuel = str(raw_cup).strip().split('.')[0]
 
         if cup_actuel and cup_actuel != "nan":

@@ -7,11 +7,12 @@ from streamlit_gsheets import GSheetsConnection
 
 # 1. CONFIGURATION UNIQUE DE LA PAGE (DOIT ÊTRE LA PREMIÈRE LIGNE)
 st.set_page_config(
-    page_title="Acheter Québécois & Canadien", 
-    page_icon="📦", enregistrer les 
+    page_title="Acheter Québécois & Canadien",
+    page_icon="📦",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 
 code_upc = "code_upc"
 # Injection CSS pour l'interface et le masquage des éléments natifs

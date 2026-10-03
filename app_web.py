@@ -429,7 +429,11 @@ if saisie_net:
             if not recherche_texte.empty:
                 df_filtre = recherche_texte
                 if len(recherche_texte) == 1: resultats = recherche_texte
-            else: message_erreur_recherche = f"⚠️ Aucun produit trouvé."
+            else: 
+                message_erreur_recherche = f"⚠️ Aucun produit trouvé."
+                # 🚀 AJOUT DE CETTE LIGNE POUR FORCER L'OUVERTURE DU FORMULAIRE :
+                df_filtre = pd.DataFrame(columns=df_filtre.columns)
+
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
 colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]

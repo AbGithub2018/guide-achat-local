@@ -259,8 +259,9 @@ def verifier_laitier_pur(nom, mots_produit):
         "avoine", "cajous", "cajou", "soya", "soy", "végétal", "vegetal", "lyophilisé", "starters",
         "d", "en", "et", "à", "a", "au", "aux", "la", "le", "les", "un", "une", "pour", "par", "dans", "avec"
     }
-    if all(m in mots_laitiers for m in mots_produit):
-        mots_declencheurs = {"yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", "danone", "iogo", "yoplait", "liberté", "kēfir", "lait", "fromage", "cheese", "boursin", "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", "camembert", "brie", "oka", "allégro", "beurre", "oeufs", "œufs", "oeuf", "œuf", "crème", "creme", "cremette", "margarine"}
+    # RECORRECTION ICI : On utilise bien mots_autorises_laitiers pour fermer le all()
+    if all(m in mots_autorises_laitiers for m in mots_produit):
+        mots_declencheurs = {"yogourt", "yaourt", "yogurt", "skyr", "oikos", "activia", "danone", "iogo", "yoplait", "liberté", "kēfir", "kéfir", "lait", "fromage", "cheese", "boursin", "philadelphia", "ricotta", "feta", "gouda", "havarti", "cheddar", "mozzarella", "parmesan", "camembert", "brie", "oka", "allégro", "beurre", "oeufs", "œufs", "oeuf", "œuf", "crème", "creme", "cremette", "margarine"}
         if any(m in mots_declencheurs for m in mots_produit):
             if any(m in nom for m in ["barres", "barre", "biscuit", "biscuits", "chocolat", "chocolate", "chips", "croustilles", "doritos", "popcorn", "maïs", "soup", "soupe", "bouillon", "bovril", "boeuf", "bœuf", "macaroni", "gnocchi", "ravioli", "risotto", "pizza", "oreos", "oreo", "tarts", "tarte", "muffins", "muffin", "donuts", "madeleines", "saucisson"]):
                 return False
@@ -314,44 +315,31 @@ def deviner_categorie(nom_produit):
     import re
     nom = str(nom_produit).lower()
     
-    # =========================================================================
-    # LA PROTECTION DE VOTRE CHARTE GARDE-MANGER (BLINDAGE ABSOLU)
-    # Si la ligne contient un de ces mots précis, elle reste OBLIGATOIREMENT ici !
-    # =========================================================================
+    if "heinz" in nom or "kraft" in nom:
+        return "🥫 Garde-manger"
+        
     mots_stricte_garde_manger = {
-        # 1. Féculents & Grains
         "riz", "basmati", "pâtes", "pasta", "spaghetti", "macaroni", "fusilli", "penne", "linguine",
-        "gruau", "flocons d'avoine", "flocons d avoine", "farine",
-        # 2. Les Conserves
-        "dés", "broyées", "broyees", "pois chiches", "haricots noirs", "thon en conserve", "thon pâle",
-        "thon pale", "thon blanc", "bouillon", "bovril",
-        # 3. Matières grasses & Condiments
-        "huile d'olive", "huile d olive", "huile de canola", "vinaigre de cidre", "balsamique",
-        "sauce soya", "soya sauce", "soy sauce", "moutarde",
-        # 4. Épices & Assaisonnements
-        "sel fin", "poivre", "moulu", "poudre d'ail", "poudre d ail", "poudre d'oignon", "poudre d oignon",
-        "chili", "paprika", "origan", "herbes de provence",
-        # 5. Sucres & Déjeuners
-        "miel", "sirop d'érable", "sirop d erable", "beurre d'arachide", "beurre d arachide", "beurre de noix"
+        "gruau", "flocons d'avoine", "flocons d avoine", "farine", "dés", "broyées", "broyees", 
+        "pois chiches", "haricots noirs", "thon en conserve", "thon pâle", "thon pale", "thon blanc", 
+        "bouillon", "bovril", "huile d'olive", "huile d olive", "huile de canola", "vinaigre de cidre", 
+        "balsamique", "sauce soya", "soya sauce", "soy sauce", "moutarde", "sel fin", "poivre", 
+        "moulu", "poudre d'ail", "poudre d ail", "poudre d'oignon", "poudre d oignon", "chili", 
+        "paprika", "origan", "herbes de provence", "miel", "sirop d'érable", "sirop d erable", 
+        "beurre d'arachide", "beurre d arachide", "beurre de noix"
     }
     
-    # Nettoyage et tokenization
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)
     mots_produit = [m for m in nom_nettoye.split() if m.strip() != ""]
     
     if not mots_produit:
-        return "Garde-manger"
+        return "🥫 Garde-manger"
 
-    # Vérification charte garde-manger (Bloque l'aspiration des faux-positifs)
     if any(m in nom for m in mots_stricte_garde_manger):
-        # Sécurité pour ne pas attraper les boissons pures (ex: vinaigre de cidre buvable)
         if verifier_boisson_pure(nom, mots_produit):
             return "☕ Boissons"
-        return "Garde-manger"
+        return "🥫 Garde-manger"
 
-    # =========================================================================
-    # ÉTAPE INTERMÉDIAIRE : ASPIRATION DU RESTE DES PRODUITS FRAIS SUSPECTS
-    # =========================================================================
     mots_interceptes_temporaires = {
         "ail", "arugula", "asperge", "asperges", "avocat", "avocats", "basilic", "betterave", "betteraves", 
         "brocoli", "brocolis", "carotte", "carottes", "carrotes", "celeri", "céleri", "champignon", 
@@ -373,12 +361,12 @@ def deviner_categorie(nom_produit):
         "beurre", "oeufs", "œufs", "oeuf", "œuf", "blancs", "crème", "creme", "cremette", "margarine"
     }
 
+    # APPEL CORRIGÉ ICI : On passe uniquement (nom, mots_produit) aux fonctions modules
     if any(m in mots_produit for m in mots_interceptes_temporaires):
         if verifier_boisson_pure(nom, mots_produit):
             return "☕ Boissons"
         return "📁 À vérifier (Lait, Œufs, Végétaux)"
 
-    # APPEL DES CRITÈRES RESTE DU CATALOGUE
     if verifier_boisson_pure(nom, mots_produit):
         return "☕ Boissons"
     if verifier_maraicher_pur(nom, mots_produit):
@@ -390,7 +378,8 @@ def deviner_categorie(nom_produit):
     if verifier_boulangerie_pure(nom, mots_produit):
         return "🍞 Boulangerie et pâtisserie"
         
-    return "Garde-manger"
+    return "🥫 Garde-manger"
+
 
       
     nom_nettoye = re.sub(r"[()\'’\-,.!\+?|]", " ", nom)

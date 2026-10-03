@@ -344,18 +344,36 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
 
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
-            with st.sidebar.spinner("Recherche de la photo..."):
-                url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
-                headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
-                reponse = requests.get(url_api, headers=headers, timeout=5)
-                if reponse.status_code == 200:
-                    donnees = reponse.json()
-                    if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
-                        st.sidebar.image(donnees["product"]["image_url"], caption="Photo officielle OpenFoodFacts", use_container_width=True)
+            
+            # 1. ANALYSE DU DOSSIER LOCAL "images" D'ABORD
+            extensions_possibles = [".jpg", ".jpeg", ".png", ".webp"]
+            chemin_image_locale = None
+
+            for ext in extensions_possibles:
+                # Construit le chemin (ex: images/00048500206706.png)
+                chemin_test = os.path.join("images", f"{cup_actuel}{ext}")
+                if os.path.exists(chemin_test):
+                    chemin_image_locale = chemin_test
+                    break # Fichier trouvé localement, on arrête d'examiner les extensions
+
+            # 2. SÉLECTION ET RENDU DE L'IMAGE
+            if chemin_image_locale:
+                # Cas A : L'image existe localement, on l'affiche directement sans appeler OFF
+                st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
+            else:
+                # Cas B : L'image n'est pas locale, on exécute VOTRE code Open Food Facts d'origine
+                with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
+                    url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
+                    headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
+                    reponse = requests.get(url_api, headers=headers, timeout=5)
+                    if reponse.status_code == 200:
+                        donnees = reponse.json()
+                        if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
+                            st.sidebar.image(donnees["product"]["image_url"], caption="Photo officielle OpenFoodFacts", use_container_width=True)
+                        else:
+                            st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
                     else:
-                        st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
-                else:
-                    st.sidebar.error("❌ Serveur d'images indisponible.")
+                        st.sidebar.error("❌ Serveur d'images indisponible.")
     except Exception as e:
         st.sidebar.error(f"Erreur Sidebar CUP : {e}")
 with st.sidebar.expander("🔑 Administration"):

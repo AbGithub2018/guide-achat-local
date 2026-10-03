@@ -466,6 +466,26 @@ df = st.session_state['df_produits']
 
 if 'banniere_active' not in st.session_state:
     st.session_state['banniere_active'] = "Tous"
+    
+# 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
+colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
+colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
+df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
+
+for c in df_affichage.columns:
+    df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
+
+if 'df_produits' in st.session_state and not st.session_state['df_produits'].empty:
+    categories_disponibles = sorted(list(st.session_state['df_produits']['categorie'].unique()))
+    options_menu = ["📁 Toutes les catégories"] + categories_disponibles
+    categorie_selectionnee = st.selectbox(
+        "📂 Filtrer le catalogue par rayon :",
+        options=options_menu,
+        index=0
+    )
+    if categorie_selectionnee != "📁 Toutes les catégories":
+        df_affichage = df_affichage[df_affichage['nom'].apply(deviner_categorie) == categorie_selectionnee]
+    
 # 2. BARRE LATERALE
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits par pays d'origine</h2>")
 
@@ -489,8 +509,12 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
     index_ligne = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
     try:
         terme_recherche = st.session_state.get('recherche_cup', '').lower()
-        df_affichage_temp = df_filtre[df_filtre['nom'].str.lower().str.contains(terme_recherche, na=False)] if terme_recherche else df_filtre.copy()
-        raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
+        if 'categorie_selectionnee' in locals() and categorie_selectionnee != "📁 Toutes les catégories":
+            raw_cup = df_affichage.iloc[index_ligne]['code_upc']
+        else:
+            df_affichage_temp = df_filtre[df_filtre['nom'].str.lower().str.contains(terme_recherche, na=False)] if terme_recherche else df_filtre.copy()
+            raw_cup = df_affichage_temp.iloc[index_ligne]['code_upc']
+
 
         cup_actuel = str(raw_cup).strip().split('.')[0]
 
@@ -664,24 +688,6 @@ if saisie_net:
                     resultats = recherche_texte
             else:
                 message_erreur_recherche = f"⚠️ Aucun produit ne correspond à '{saisie_net}' dans cette sélection."
-# 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
-colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
-colonnes_dispo = [c for c in ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'distribution'] if c in df_filtre.columns]
-df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
-
-for c in df_affichage.columns:
-    df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
-
-if 'df_produits' in st.session_state and not st.session_state['df_produits'].empty:
-    categories_disponibles = sorted(list(st.session_state['df_produits']['categorie'].unique()))
-    options_menu = ["📁 Toutes les catégories"] + categories_disponibles
-    categorie_selectionnee = st.selectbox(
-        "📂 Filtrer le catalogue par rayon :",
-        options=options_menu,
-        index=0
-    )
-    if categorie_selectionnee != "📁 Toutes les catégories":
-        df_affichage = df_affichage[df_affichage['nom'].apply(deviner_categorie) == categorie_selectionnee]
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),

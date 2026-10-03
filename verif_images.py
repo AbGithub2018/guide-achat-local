@@ -24,7 +24,7 @@ def verifier_base_images():
     
     print(f"📋 {total_produits} produits trouvés. Analyse en cours...")
 
-    for index, row in df_produits.iterrows():
+    for index, row in df_produits.head(20).iterrows():
         valeur_cellule = row[colonne_code]
         
         # Nettoyage de la valeur (enlève les espaces et les éventuels '.0' des formats nombres)

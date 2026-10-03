@@ -37,8 +37,9 @@ def interroger_openfoodfacts(upc, nom_produit):
     if not upc or str(upc).strip() in ["", "nan", "0", "0.0"]:
         return verifier_par_texte_secours(nom_produit)
     
-    # Nettoyage et padding strict du code-barres
-    upc_brut = str(upc).split('.').strip()
+    # CORRECTIF LIGNE 41 : Extraction propre du texte avant le point et suppression des espaces
+    upc_brut = str(upc).split('.')[0].strip()
+    
     if upc_brut.isdigit() and len(upc_brut) > 0:
         upc_propre = upc_brut.zfill(12) if len(upc_brut) <= 12 else upc_brut.zfill(13)
     else:

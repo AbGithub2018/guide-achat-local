@@ -458,22 +458,111 @@ st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés) :")
 # FIX CRUCIAL ET ABSOLU DU SCRIPT : On réinitialise l'index d'affichage pour éliminer le décalage !
 df_affichage = df_affichage.reset_index(drop=True)
 selection_tableau = None 
-
-if not saisie_net or (not df_filtre.empty and len(df_filtre) < len(df)):
+# Cas 1 : Il y a des produits à afficher dans le tableau (Ligne 461 réécrite proprement)
+if not df_affichage.empty:
     selection_tableau = st.dataframe(
-        df_affichage, column_config=config_colonnes, use_container_width=True,
-        hide_index=True, selection_mode="single-row", on_select="rerun", key="tableau_consommateur"
+        df_affichage, 
+        column_config=config_colonnes, 
+        use_container_width=True,
+        hide_index=True, 
+        selection_mode="single-row", 
+        on_select="rerun", 
+        key="tableau_consommateur"
     )
 
-# INTERCEPTION SÉCURISÉE DU CLIC UTILISATEUR : Extraction par valeur UPC réelle unique
-if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-    index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
-    if index_ligne_cliquee < len(df_affichage):
-        cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
-        resultats = df[df['code_upc'] == cup_selectionne]
+    # INTERCEPTION SÉCURISÉE DU CLIC UTILISATEUR : Uniquement si une ligne est cochée
+    if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
+        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
+        if index_ligne_cliquee < len(df_affichage):
+            cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
+            resultats = df[df['code_upc'] == cup_selectionne]
+
+# Cas 2 : Le tableau est complètement vide -> C'est un NOUVEAU PRODUIT !
+else:
+    if message_erreur_recherche:
+        st.warning(message_erreur_recherche)
+
+    st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
+    st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
+    
+    with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
+        nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
+        cup_final = st.text_input("code_upc", value=saisie_net.strip(), disabled=True)
+        entreprise = st.text_input("Entreprise propriétaire / Marque (ex: Unico)")
+        province = st.text_input("Province / État (ex: Québec)")
+        pays = st.text_input("Pays", value="Canada")
+        distribution = st.text_input("Réseau d'épicerie (ex: IGA, Maxi, Metro, Super C)")
+        
+        st.write("---")
+        st.write("**Entrez les prix constatés en magasin (optionnel) :**")
+        col1, col2, col3, col4 = st.columns(4)
+        with col1: prix_iga = st.text_input("Prix IGA ($)", value="")
+        with col2: prix_maxi = st.text_input("Prix Maxi ($)", value="")
+        with col3: prix_metro = st.text_input("Prix Metro ($)", value="")
+        with col4: prix_superc = st.text_input("Prix Super C ($)", value="")
+    
+        col5, col6, col7, col8 = st.columns(4)
+        with col5: prix_walmart = st.text_input("Prix Walmart ($)", value="")
+        with col6: prix_tigre = st.text_input("Prix Tigre Géant ($)", value="")
+        with col7: prix_dollarama = st.text_input("Prix Dollarama ($)", value="")
+        with col8: prix_provigo = st.text_input("Prix Provigo ($)", value="")
+
+        bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
+
+        if bouton_creer:
+            if nom_nouveau:
+                with st.spinner("Enregistrement de la nouvelle fiche produit..."):
+                    try:
+                        p_iga_val = prix_iga.strip() if prix_iga.strip() else ""
+                        p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else ""
+                        p_metro_val = prix_metro.strip() if prix_metro.strip() else ""
+                        p_super_c_val = prix_superc.strip() if prix_superc.strip() else ""
+                        p_walmart_val = prix_walmart.strip() if prix_walmart.strip() else ""
+                        p_tigre_val = prix_tigre.strip() if prix_tigre.strip() else ""
+                        p_dollarama_val = prix_dollarama.strip() if prix_dollarama.strip() else ""
+                        p_provigo_val = prix_provigo.strip() if prix_provigo.strip() else ""
+                        
+                        nouvelle_ligne = {
+                            'code_upc': cup_final,
+                            'nom': nom_nouveau.strip(),
+                            'siege_social': entreprise.strip(),
+                            'lieu_usine': "",
+                            'distribution': distribution.strip(),
+                            'entreprise_proprietaire': "",
+                            'entreprise_province_etat': province.strip(),
+                            'entreprise_pays': pays.strip(),
+                            'priorite': "",
+                            'usine_principale': "",
+                            'reseau_distribution': "",
+                            'prix_iga': p_iga_val,
+                            'prix_maxi': p_maxi_val,
+                            'prix_metro': p_metro_val,
+                            'prix_super_c': p_super_c_val,
+                            'prix_walmart': p_walmart_val,
+                            'prix_tigre_geant': p_tigre_val,
+                            'prix_dollarama': p_dollarama_val,
+                            'prix_provigo': p_provigo_val,
+                            'distribution.1': "",
+                            'bannieres_disponibles': ""
+                        }
+                        
+                        st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
+                        
+                        if sauvegarder_donnees(st.session_state['df_produits']):
+                            st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
+                            st.balloons()
+                            time.sleep(1)
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Erreur lors de l'enregistrement : {e}")
+            else:
+                st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
+
+# On reprend la suite normale de votre script à partir de l'ancienne ligne 474 (Vérification si un produit existant est sélectionné)
 if resultats is not None and not resultats.empty:
     index_produit_reel = resultats.index[0]
     row = resultats.iloc[0]
+
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')

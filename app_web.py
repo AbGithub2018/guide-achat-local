@@ -466,6 +466,7 @@ df = st.session_state['df_produits']
 
 if 'banniere_active' not in st.session_state:
     st.session_state['banniere_active'] = "Tous"
+df_filtre = df.copy()   
     
 # 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
 colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']

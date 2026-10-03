@@ -500,7 +500,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
     try:
         terme_recherche = st.session_state.get('recherche_cup', '').lower()
         # --- CORRECTION FINALE PAR INDEX DE LIGNE ---
-        raw_cup = df_affichage.iloc[index_ligne]['code_upc']
+        raw_cup = df_filtre.loc[index_ligne, 'code_upc']
         
         cup_actuel = str(raw_cup).strip().split('.')[0]
 

@@ -696,6 +696,17 @@ st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés selon v
 st.write("💡 Cliquez n'importe où sur la ligne d'un produit pour voir sa fiche complète ci-dessous.")
 
 selection_tableau = None 
+if 'df' in locals() and not df.empty:
+    categories_disponibles = sorted(list(df['categorie'].dropna().unique()))
+    options_menu = ["📁 Toutes les catégories"] + categories_disponibles
+    categorie_selectionnee = st.selectbox(
+        "📂 Filtrer le catalogue par rayon :",
+        options=options_menu,
+        index=0
+    )
+    if categorie_selectionnee != "📁 Toutes les catégories":
+        df_affichage = df_affichage[df_affichage['nom'].apply(deviner_categorie) == categorie_selectionnee]
+
 
 if not saisie_net:
     selection_tableau = st.dataframe(

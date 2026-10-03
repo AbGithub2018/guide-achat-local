@@ -16,7 +16,7 @@ if st.button("🚀 Démarrer l'analyse des 20 premiers produits", type="primary"
         # 1. Connexion à votre Google Sheet (onglet 'Sheets')
         from streamlit_gsheets import GSheetsConnection
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df_produits = conn.read(worksheet="Sheets") 
+        df_produits = conn.read(worksheet="Sheet1") 
         
         colonne_code = 'code_upc' 
         

@@ -8,7 +8,7 @@ from streamlit_gsheets import GSheetsConnection
 # 1. CONFIGURATION UNIQUE DE LA PAGE (DOIT ÊTRE LA PREMIÈRE LIGNE)
 st.set_page_config(
     page_title="Acheter Québécois & Canadien", 
-    page_icon="📦", 
+    page_icon="📦", enregistrer les 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -54,6 +54,7 @@ st.html("""
         gap: 10px !important;
     }
     div[data-testid="column"] {
+    
         flex: 1 1 calc(33.333% - 10px) !important;
         min-width: calc(33.333% - 10px) !important;
         max-width: calc(33.333% - 10px) !important;
@@ -615,17 +616,55 @@ if resultats is not None and not resultats.empty:
         st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
         bouton_enregistrer = st.form_submit_button(f"💾 Enregistrer les modifications de prix", use_container_width=True)
 
-    if bouton_enregistrer:
-        try:
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
-            
-            if sauvegarder_donnees(st.session_state['df_produits']):
-                st.success("Données collaboratives enregistrées !")
-                time.sleep(0.5)
-                st.rerun()
-        except Exception as e: st.error(f"❌ Erreur : {e}")
+if bouton_enregistrer:
+    try:
+        # 1. Mise à jour du tableau principal des produits
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+        st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
+
+        # 2. Préparation de l'historique pour Google Sheets (Horodatage)
+        nouvelles_lignes = []
+        horodatage_actuel = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M") 
+        upc_produit = st.session_state['df_produits'].at[index_produit_reel, 'code_upc']
+
+        champs_saisis = {
+            'prix_iga': nouveau_iga,
+            'prix_maxi': nouveau_maxi,
+            'prix_metro': nouveau_metro,
+            'prix_super_c': nouveau_super_c
+        }
+
+        for distribution_enseigne, valeur_prix in champs_saisis.items():
+            if valeur_prix and str(valeur_prix).strip() != "":
+                try:
+                    prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
+                    
+                    nouvelle_ligne = {
+                        'horodatage': horodatage_actuel,
+                        'code_upc': upc_produit,
+                        'distribution': distribution_enseigne,
+                        'prix': prix_propre,
+                        'source': 'collaboratif'
+                    }
+                    nouvelles_lignes.append(nouvelle_ligne)
+                except ValueError:
+                    pass
+
+        # 3. Enregistrement des lignes d'historique avec horodatage
+        if nouvelles_lignes:
+            df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
+            sauvegarder_historique(df_nouvel_historique)
+
+        # 4. Sauvegarde finale et retour visuel sur la barre
+        if sauvegarder_donnees(st.session_state['df_produits']):
+            st.success(f"Données collaboratives enregistrées le {horodatage_actuel} !")
+            time.sleep(0.5)
+            st.rerun()
+
+    except Exception as e:
+        st.error(f"❌ Erreur : {e}")
+    
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")

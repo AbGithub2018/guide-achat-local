@@ -475,17 +475,6 @@ df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c
 
 for c in df_affichage.columns:
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
-
-if 'df_produits' in st.session_state and not st.session_state['df_produits'].empty:
-    categories_disponibles = sorted(list(st.session_state['df_produits']['categorie'].unique()))
-    options_menu = ["📁 Toutes les catégories"] + categories_disponibles
-    categorie_selectionnee = st.selectbox(
-        "📂 Filtrer le catalogue par rayon :",
-        options=options_menu,
-        index=0
-    )
-    if categorie_selectionnee != "📁 Toutes les catégories":
-        df_affichage = df_affichage[df_affichage['nom'].apply(deviner_categorie) == categorie_selectionnee]
     
 # 2. BARRE LATERALE
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits par pays d'origine</h2>")

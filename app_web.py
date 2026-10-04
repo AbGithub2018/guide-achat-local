@@ -357,7 +357,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             else:
                 # Recours à Open Food Facts uniquement si l'image est absente de GitHub
                 with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
-                    url_api = f"https://openfoodfacts.org{cup_actuel}.json"
+                    url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
                     if reponse.status_code == 200:

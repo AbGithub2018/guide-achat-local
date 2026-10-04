@@ -326,46 +326,38 @@ if 'entreprise_province_etat' in df_filtre.columns:
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
 
-# CORRECTIF DE SYNCHRONISATION INDEXATION : Alignement parfait de l'image de la Sidebar
+# CORRECTIF DE SYNCHRONISATION INDEXATION : Alignement parfait basé sur le tableau à l'écran
 cup_actuel = "nan"
 if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     try:
+        # Récupération de l'index de la ligne cliquée
         index_ligne_affiche = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
-        df_affichage_temp = df_filtre.copy()
         
-        if st.session_state.get('recherche_cup'):
-            df_affichage_temp = df_affichage_temp[df_affichage_temp['nom'].str.lower().str.contains(st.session_state['recherche_cup'].lower(), na=False)]
-        
-        cat_choisie = st.session_state.get('cat_selector', "📁 Toutes les catégories")
-        if cat_choisie != "📁 Toutes les catégories":
-            df_affichage_temp = df_affichage_temp[df_affichage_temp['nom'].apply(deviner_categorie) == cat_choisie]
-            
-        df_affichage_temp = df_affichage_temp.reset_index(drop=True)
-        raw_cup = df_affichage_temp.iloc[index_ligne_affiche]['code_upc']
-        cup_actuel = str(raw_cup).strip().split('.')[0]
+        # On lit le code UPC directement depuis le tableau 'df_affichage' pour éviter les décalages
+        if index_ligne_affiche < len(df_affichage):
+            raw_cup = df_affichage.iloc[index_ligne_affiche]['code_upc']
+            cup_actuel = str(raw_cup).strip().split('.')[0]
 
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             
-            # 1. ANALYSE DU DOSSIER LOCAL "images" D'ABORD
+            # 1. ANALYSE DU DOSSIER LOCAL "images" SUR GITHUB D'ABORD
             extensions_possibles = [".jpg", ".jpeg", ".png", ".webp"]
             chemin_image_locale = None
 
             for ext in extensions_possibles:
-                # Construit le chemin (ex: images/00048500206706.png)
                 chemin_test = os.path.join("images", f"{cup_actuel}{ext}")
                 if os.path.exists(chemin_test):
                     chemin_image_locale = chemin_test
                     break # Fichier trouvé localement, on arrête d'examiner les extensions
 
-            # 2. SÉLECTION ET RENDU DE L'IMAGE
+            # 2. RENDU DE L'IMAGE : Priorité absolue à votre dossier GitHub
             if chemin_image_locale:
-                # Cas A : L'image existe localement, on l'affiche directement sans appeler OFF
                 st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
             else:
-                # Cas B : L'image n'est pas locale, on exécute VOTRE code Open Food Facts d'origine
+                # Recours à Open Food Facts uniquement si l'image est absente de GitHub
                 with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
-                    url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
+                    url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                     headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 - robert.st.jules@gmail.com"}
                     reponse = requests.get(url_api, headers=headers, timeout=5)
                     if reponse.status_code == 200:
@@ -378,6 +370,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
                         st.sidebar.error("❌ Serveur d'images indisponible.")
     except Exception as e:
         st.sidebar.error(f"Erreur Sidebar CUP : {e}")
+
 with st.sidebar.expander("🔑 Administration"):
     if "admin_connecte" not in st.session_state: st.session_state["admin_connecte"] = False
     if not st.session_state["admin_connecte"]:

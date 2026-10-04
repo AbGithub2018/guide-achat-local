@@ -343,15 +343,23 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             
-            # 1. ANALYSE DU DOSSIER LOCAL "images" SUR GITHUB D'ABORD
-            extensions_possibles = [".jpg", ".jpeg", ".png", ".webp"]
-            chemin_image_locale = None
+        # 1. ANALYSE DU DOSSIER LOCAL "images" SUR GITHUB (AVEC OU SANS ZÉRO)
+        extensions_possibles = [".jpg", ".jpeg", ".png", ".webp", ".JPG", ".JPEG", ".PNG", ".WEBP"]
+        chemin_image_locale = None
 
-            for ext in extensions_possibles:
-                chemin_test = os.path.join("images", f"{cup_actuel}{ext}")
-                if os.path.exists(chemin_test):
-                    chemin_image_locale = chemin_test
-                    break # Fichier trouvé localement, on arrête d'examiner les extensions
+        # On crée une version du code sans les zéros au début (ex: transformera "087115710514" en "87115710514")
+        cup_sans_zero = cup_actuel.lstrip('0')
+
+        for ext in extensions_possibles:
+                chemin_test_exact = os.path.join("images", f"{cup_actuel}{ext}")
+                chemin_test_sans_zero = os.path.join("images", f"{cup_sans_zero}{ext}")
+
+                if os.path.exists(chemin_test_exact):
+                    chemin_image_locale = chemin_test_exact
+                    break
+                elif os.path.exists(chemin_test_sans_zero):
+                    chemin_image_locale = chemin_test_sans_zero
+                    break
 
             # 2. RENDU DE L'IMAGE : Priorité absolue à votre dossier GitHub
             if chemin_image_locale:

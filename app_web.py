@@ -334,8 +334,8 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         index_ligne_affiche = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
         
         # On lit le code UPC directement depuis le tableau 'df_affichage' pour éviter les décalages
-        if index_ligne_affiche < len(df_affichage):
-            raw_cup = df_affichage.iloc[index_ligne_affiche]['code_upc']
+        if index_ligne_affiche < len(df_filtre):
+            raw_cup = df_filtre.iloc[index_ligne_affiche]['code_upc']
             cup_actuel = str(raw_cup).strip().split('.')[0]
 
         if cup_actuel and cup_actuel != "nan":

@@ -364,7 +364,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             # 2. RENDU DE L'IMAGE : Priorité absolue à votre dossier GitHub
         if chemin_image_locale:
                 st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
-            else:
+        else:
                 # Recours à Open Food Facts uniquement si l'image est absente de GitHub
                 with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
                     url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"

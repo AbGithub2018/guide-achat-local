@@ -336,7 +336,9 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         # On lit le code UPC directement depuis le tableau 'df_affichage' pour éviter les décalages
         if index_ligne_affiche < len(df_filtre):
             raw_cup = df_filtre.iloc[index_ligne_affiche]['code_upc']
-            cup_actuel = str(raw_cup).strip().split('.')[0]
+            cup_nettoye = str(raw_cup).strip().split('.')[0]
+            cup_actuel = cup_nettoye.zfill(12) if (len(cup_nettoye) < 12 and cup_nettoye.isdigit()) else cup_nettoye
+
 
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")

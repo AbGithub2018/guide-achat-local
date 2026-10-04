@@ -635,64 +635,64 @@ if resultats is not None and not resultats.empty:
         nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="form_super_c")
         
         st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
-                # Gestion dynamique du texte de la barre verte
+        
+        # Gestion dynamique du texte de la barre verte
         texte_barre = "💾 Enregistrer les modifications de prix"
         if "dernier_horodatage" in st.session_state:
             texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
 
         bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
 
-if bouton_enregistrer:
-    try:
-        # 1. Mise à jour du tableau principal des produits
-        st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
-        st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
-        st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
-        st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
+    # ---> LE BLOC CI-DESSOUS EST MAINTENANT INDENTÉ À L'INTÉRIEUR DU 'IF RESULTATS' <---
+    if bouton_enregistrer:
+        try:
+            # 1. Mise à jour du tableau principal des produits
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
 
-        # 2. Préparation de l'historique avec l'heure exacte du Québec
-        nouvelles_lignes = []
-        # Force le fuseau horaire du Québec (America/Toronto)
-        horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
-        upc_produit = st.session_state['df_produits'].at[index_produit_reel, 'code_upc']
+            # 2. Préparation de l'historique avec l'heure exacte du Québec
+            nouvelles_lignes = []
+            horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
+            upc_produit = st.session_state['df_produits'].at[index_produit_reel, 'code_upc']
 
-        champs_saisis = {
-            'prix_iga': nouveau_iga,
-            'prix_maxi': nouveau_maxi,
-            'prix_metro': nouveau_metro,
-            'prix_super_c': nouveau_super_c
-        }
+            champs_saisis = {
+                'prix_iga': nouveau_iga,
+                'prix_maxi': nouveau_maxi,
+                'prix_metro': nouveau_metro,
+                'prix_super_c': nouveau_super_c
+            }
 
-        for distribution_enseigne, valeur_prix in champs_saisis.items():
-            if valeur_prix and str(valeur_prix).strip() != "":
-                try:
-                    prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
-                    
-                    nouvelle_ligne = {
-                        'horodatage': horodatage_actuel,
-                        'code_upc': upc_produit,
-                        'distribution': distribution_enseigne,
-                        'prix': prix_propre,
-                        'source': 'collaboratif'
-                    }
-                    nouvelles_lignes.append(nouvelle_ligne)
-                except ValueError:
-                    pass
+            for distribution_enseigne, valeur_prix in champs_saisis.items():
+                if valeur_prix and str(valeur_prix).strip() != "":
+                    try:
+                        prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
+                        
+                        nouvelle_ligne = {
+                            'horodatage': horodatage_actuel,
+                            'code_upc': upc_produit,
+                            'distribution': distribution_enseigne,
+                            'prix': prix_propre,
+                            'source': 'collaboratif'
+                        }
+                        nouvelles_lignes.append(nouvelle_ligne)
+                    except ValueError:
+                        pass
 
-        # 3. Enregistrement des lignes d'historique dans le Google Sheet
-        if nouvelles_lignes:
-            df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
-            sauvegarder_historique(df_nouvel_historique)
+            # 3. Enregistrement des lignes d'historique dans le Google Sheet
+            if nouvelles_lignes:
+                df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
+                sauvegarder_historique(df_nouvel_historique)
 
-        # 4. Sauvegarde, mémorisation de l'heure pour la barre verte et rechargement
-        if sauvegarder_donnees(st.session_state['df_produits']):
-            st.session_state['dernier_horodatage'] = horodatage_actuel
-            time.sleep(0.5)
-            st.rerun()
+            # 4. Sauvegarde, mémorisation de l'heure pour la barre verte et rechargement
+            if sauvegarder_donnees(st.session_state['df_produits']):
+                st.session_state['dernier_horodatage'] = horodatage_actuel
+                time.sleep(0.5)
+                st.rerun()
 
-    except Exception as e:
-        st.error(f"❌ Erreur : {e}")
+        except Exception as e:
+            st.error(f"❌ Erreur : {e}")
 
-    
-
+# Cette ligne finale reste alignée tout à gauche, en dehors de la condition
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")

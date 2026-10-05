@@ -17,7 +17,7 @@ def charger_et_analyser_base():
     
     # URL officielle d'API (tq) pour extraire le CSV de manière propre sans blocage Google
     url_csv = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&gid={gid_id}"
-    
+  
     try:
         # Lecture directe du flux CSV sécurisé
         df = pd.read_csv(url_csv)
@@ -107,8 +107,8 @@ if df_complet is not None:
                             url_off = f"https://openfoodfacts.org{upc}"
                             st.link_button("🍎 Valider sur Open Food Facts", url_off)
                             
-                            # CORRECTION DE SÉCURITÉ : URL simplifiée et encodée pour éviter les blocages de navigateurs
-                            url_google = f"https://google.com{upc}"
+                            # URL ultra-simplifiée et pré-nettoyée (sans f-string pour éviter les conflits)
+                            url_google = "https://google.com/search?q=" + str(upc)
                             st.link_button("🔍 Chercher chez les détaillants (CA)", url_google)
                         else:
                             st.error("Le code à barres est mal formaté pour être recherché automatiquement.")

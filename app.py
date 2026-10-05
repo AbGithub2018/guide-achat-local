@@ -12,7 +12,7 @@ st.write("Analysez notre base de données de plus de 10 000 produits pour savoir
 @st.cache_data
 def charger_et_analyser_base():
     # URL configurée au format CSV avec le gid exact de votre onglet de données
-    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/pub?output=csv&gid=1814577010"
+    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/gviz/tq?tqx=out:csv&gid=1814577010"
     try:
         # Lecture directe du flux de données CSV
         df = pd.read_csv(url_sheet)

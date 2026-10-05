@@ -8,24 +8,24 @@ st.set_page_config(page_title="Comparateur Épicerie Québec", page_icon="⚜️
 st.title("⚜️ Outil de Provenance Alimentaire & Comparateur (Québec)")
 st.write("Analysez notre base de données de plus de 10 000 produits pour savoir où va votre argent.")
 
-# Chargement intelligent de la base complète via le format Excel (.xlsx)
+# Chargement de la base complète au format Excel officiel
 @st.cache_data
 def charger_et_analyser_base():
-    # URL configurée au format Excel officiel pour l'onglet gid=1814577010
-    url_sheet = "https://google.com"
+    # URL absolue d'exportation Excel pour l'onglet spécifique (gère l'authentification gviz/pub automatiquement)
+    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/pub?output=xlsx&gid=1814577010"
     try:
-        # Lecture directe du fichier Excel à distance (Zéro problème de virgule ou de tabulation)
-        df = pd.read_excel(url_sheet)
+        # On force explicitement l'utilisation du moteur openpyxl pour décoder le binaire Excel
+        df = pd.read_excel(url_sheet, engine='openpyxl')
         
-        # Nettoyage et forçage en minuscules des en-têtes
+        # Nettoyage et forçage en minuscules des en-têtes de colonnes
         df.columns = df.columns.str.strip().str.lower()
         
         # Validation de sécurité
         if 'code_upc' not in df.columns:
-            st.error(f"Colonne 'code_upc' introuvable dans le fichier Excel. Colonnes lues : {list(df.columns[:5])}")
+            st.error(f"Colonne 'code_upc' introuvables. Colonnes lues : {list(df.columns[:5])}")
             return None
             
-        # Identification automatique de la colonne nom
+        # Identification de la colonne nom
         col_nom = 'nom' if 'nom' in df.columns else df.columns[1]
         
         # Standardisation des codes UPC

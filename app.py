@@ -35,6 +35,10 @@ def charger_et_analyser_base():
             st.error(f"Colonnes critiques introuvables. Colonnes lues : {list(df.columns[:3])}")
             return None
             
+        # Nettoyage des guillemets résiduels générés par l'export de l'API Google Gviz
+        df['nom'] = df['nom'].astype(str).str.strip('"')
+        df['code_upc'] = df['code_upc'].astype(str).str.strip('"')
+            
         # Nettoyage strict de l'UPC (complété à 12 chiffres)
         def nettoyer_upc(val):
             val_str = str(val).strip()
@@ -87,14 +91,17 @@ if df_complet is not None:
                 nom_actuel = row['nom']
                 
                 with st.expander(f"📋 {nom_actuel} — (UPC : {row['code_upc']})", expanded=True):
-                    col_info, col_verif = st.columns()
+                    # CORRECTION ICI : Ajout du chiffre 2 pour créer deux colonnes égales
+                    col_info, col_verif = st.columns(2)
                     
                     with col_info:
                         st.markdown("**Description enregistrée dans votre feuille :**")
                         st.info(f"👉 `{nom_actuel}`")
                         
                         if 'entreprise_proprietaire' in row and pd.notna(row['entreprise_proprietaire']):
-                            st.write(f"🏢 Marque déclarée : *{row['entreprise_proprietaire']}*")
+                            # Nettoyage des guillemets aussi pour la marque si présente
+                            marque_propre = str(row['entreprise_proprietaire']).strip('"')
+                            st.write(f"🏢 Marque déclarée : *{marque_propre}*")
                     
                     with col_verif:
                         st.markdown("**Outils de validation instantanée :**")

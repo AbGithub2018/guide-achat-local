@@ -91,7 +91,6 @@ if df_complet is not None:
                 nom_actuel = row['nom']
                 
                 with st.expander(f"📋 {nom_actuel} — (UPC : {row['code_upc']})", expanded=True):
-                    # CORRECTION ICI : Ajout du chiffre 2 pour créer deux colonnes égales
                     col_info, col_verif = st.columns(2)
                     
                     with col_info:
@@ -99,7 +98,6 @@ if df_complet is not None:
                         st.info(f"👉 `{nom_actuel}`")
                         
                         if 'entreprise_proprietaire' in row and pd.notna(row['entreprise_proprietaire']):
-                            # Nettoyage des guillemets aussi pour la marque si présente
                             marque_propre = str(row['entreprise_proprietaire']).strip('"')
                             st.write(f"🏢 Marque déclarée : *{marque_propre}*")
                     
@@ -109,8 +107,8 @@ if df_complet is not None:
                             url_off = f"https://openfoodfacts.org{upc}"
                             st.link_button("🍎 Valider sur Open Food Facts", url_off)
                             
-                            query_google = urllib.parse.quote(f'"{upc}" site:ca')
-                            url_google = f"https://google.com{query_google}"
+                            # CORRECTION DE SÉCURITÉ : URL simplifiée et encodée pour éviter les blocages de navigateurs
+                            url_google = f"https://google.com{upc}"
                             st.link_button("🔍 Chercher chez les détaillants (CA)", url_google)
                         else:
                             st.error("Le code à barres est mal formaté pour être recherché automatiquement.")

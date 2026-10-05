@@ -12,7 +12,7 @@ st.write("Analysez notre base de données de plus de 10 000 produits pour savoir
 @st.cache_data
 def charger_et_analyser_base():
     # URL absolue d'exportation Excel pour l'onglet spécifique (gère l'authentification gviz/pub automatiquement)
-    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/pub?output=xlsx&gid=1814577010"
+    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/gviz/tq?tqx=out:xlsx&gid=1814577010"
     try:
         # On force explicitement l'utilisation du moteur openpyxl pour décoder le binaire Excel
         df = pd.read_excel(url_sheet, engine='openpyxl')

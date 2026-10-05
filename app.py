@@ -1,130 +1,108 @@
 import streamlit as st
 import pandas as pd
 import re
+import urllib.parse
 
 # Configuration de la page
-st.set_page_config(page_title="Comparateur Épicerie Québec", page_icon="⚜️", layout="wide")
+st.set_page_config(page_title="Validateur Épicerie Québec", page_icon="⚜️", layout="wide")
 
-st.title("⚜️ Outil de Provenance Alimentaire & Comparateur (Québec)")
-st.write("Le moteur de recherche est actif. Analyse de la base de données des produits...")
+st.title("⚜️ Module de Validation des Descriptions par UPC (Québec)")
+st.write("Étape 1 : Validation de l'exactitude des noms et descriptions des produits.")
 
-# Lecture directe via l'export CSV de Google Sheets
 @st.cache_data
 def charger_et_analyser_base():
-    # ID de votre document extrait de votre lien
-    sheet_id = "1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc"
-    # URL configurée pour forcer l'export au format CSV (rapide et contourne l'erreur 401)
-    url_csv = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+    url_csv = "https://google.com"
     
     try:
-        # Lecture directe du flux CSV
         df = pd.read_csv(url_csv)
-        
-        # Nettoyage et forçage en minuscules des en-têtes de colonnes
         df.columns = df.columns.str.strip().str.lower()
         
-        # Détection automatique de la colonne UPC au cas où le nom change
-        col_upc = None
-        for col in df.columns:
-            if 'upc' in col or 'barre' in col:
-                col_upc = col
-                break
-                
-        # Détection automatique de la colonne Nom
-        col_nom = None
-        for col in df.columns:
-            if 'nom' in col or 'desc' in col or 'produit' in col:
-                col_nom = col
-                break
+        # Identification des colonnes essentielles
+        col_upc = next((c for c in df.columns if 'upc' in c or 'barre' in c), None)
+        col_nom = next((c for c in df.columns if 'nom' in c or 'desc' in c or 'produit' in c), None)
 
         if col_upc and col_nom:
             df = df.rename(columns={col_upc: 'code_upc', col_nom: 'nom'})
         else:
-            st.error(f"Colonnes de base introuvables. Colonnes lues : {list(df.columns[:5])}")
+            st.error(f"Colonnes critiques introuvables. Colonnes lues : {list(df.columns[:5])}")
             return None
             
-        # Standardisation des codes UPC
+        # Nettoyage strict de l'UPC (complété à 12 chiffres)
         def nettoyer_upc(val):
             val_str = str(val).strip()
-            if "E+" in val_str or "," in val_str:
-                return "Erreur format Excel"
-            return re.sub(r'\D', '', val_str).zfill(12) if any(c.isdigit() for c in val_str) else "Invalide"
+            if "e+" in val_str.lower() or "," in val_str or val_str == "nan":
+                return "Format Brisé"
+            clean = re.sub(r'\D', '', val_str)
+            return clean.zfill(12) if clean else "Invalide"
             
         df['upc_propre'] = df['code_upc'].apply(nettoyer_upc)
-        
-        # Règle de classification de provenance basée sur vos colonnes
-        def determiner_provenance_ligne(row):
-            # Utilisation de la colonne 'entreprise_pays' ou repli si absente
-            pays = str(row.get('entreprise_pays', '')).strip().lower()
-            nom_produit = str(row.get('nom', '')).strip().lower()
-            
-            if "québec" in pays or "qc" in pays or "québec" in nom_produit or "du québec" in nom_produit:
-                return "Fabriqué au Québec ⚜️"
-            elif "canada" in pays or "canadien" in pays:
-                return "Canada 🇨🇦"
-            elif "états-unis" in pays or "usa" in pays or "united states" in pays:
-                return "États-Unis 🇺🇸"
-            else:
-                return "Autre / À valider 🌍"
-                
-        df['provenance_estimee'] = df.apply(determiner_provenance_ligne, axis=1)
         return df
     except Exception as e:
-        st.error(f"Erreur lors de la lecture de la table : {e}")
+        st.error(f"Erreur de lecture : {e}")
         return None
 
-# Lancement de l'analyse
 df_complet = charger_et_analyser_base()
 
 if df_complet is not None:
     # ---------------------------------------------------------
-    # SECTION 1 : TABLEAU DE BORD & STATISTIQUES GLOBALES
+    # STATISTIQUES DES CODES À BARRES
     # ---------------------------------------------------------
-    st.header("📊 Statistiques de la base de données en direct")
+    total = len(df_complet)
+    upc_valides = len(df_complet[df_complet['upc_propre'].str.len() == 12])
+    upc_brises = len(df_complet[df_complet['upc_propre'] == "Format Brisé"])
     
-    total_produits = len(df_complet)
-    total_quebec = len(df_complet[df_complet['provenance_estimee'] == "Fabriqué au Québec ⚜️"])
-    erreurs_upc = len(df_complet[df_complet['upc_propre'] == "Erreur format Excel"])
-    
-    col_m1, col_m2, col_m3 = st.columns(3)
-    with col_m1:
-        st.metric(label="Total des produits référencés", value=f"{total_produits:,}")
-    with col_m2:
-        st.metric(label="Produits identifiés du Québec ⚜️", value=f"{total_quebec:,}", delta=f"{(total_quebec/total_produits)*100:.1f}% de la base" if total_produits > 0 else "0%")
-    with col_m3:
-        st.metric(label="Codes UPC brisés par Excel", value=erreurs_upc, delta="- Action requise" if erreurs_upc > 0 else "Parfait", delta_color="inverse")
-        
-    st.subheader("🌍 Répartition géographique des entreprises propriétaires")
-    st.bar_chart(df_complet['provenance_estimee'].value_counts())
+    st.header("📊 État de santé des codes UPC")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Total des lignes", f"{total:,}")
+    c2.metric("Codes UPC scannables", f"{upc_valides:,}", f"{(upc_valides/total)*100:.1f}% exploitables")
+    c3.metric("Fichiers Excel altérés (Scientific Notation)", upc_brises, delta="- Action requise" if upc_brises > 0 else "Aucun", delta_color="inverse")
     
     st.divider()
 
     # ---------------------------------------------------------
-    # SECTION 2 : RECHERCHE INTERACTIVE POUR LES CONSOMMATEURS
+    # ZONE D'INSPECTION COMMERCIALE
     # ---------------------------------------------------------
-    st.header("🔍 Rechercher un produit alimentaire")
-    recherche = st.text_input("Entrez un nom de produit ou un code UPC (ex: Clark, Avoine...) :", "")
+    st.header("🔍 Inspecteur de conformité de la description")
+    st.write("Saisissez un produit pour vérifier si sa description actuelle correspond aux registres officiels.")
+    
+    recherche = st.text_input("Entrez un mot-clé ou un UPC exact :", "")
     
     if recherche:
-        recherche_clean = recherche.strip().lower()
+        r_clean = recherche.strip().lower()
+        res = df_complet[df_complet['nom'].astype(str).str.lower().str.contains(r_clean) | df_complet['code_upc'].astype(str).str.contains(r_clean)]
         
-        resultats = df_complet[
-            df_complet['nom'].astype(str).str.lower().str.contains(recherche_clean) |
-            df_complet['code_upc'].astype(str).str.contains(recherche_clean)
-        ]
-        
-        if not resultats.empty:
-            st.success(f"💡 {len(resultats)} produit(s) trouvé(s) ! Affichage des 10 premiers :")
-            for idx, row in resultats.head(10).iterrows():
-                with st.container():
-                    c1, c2 = st.columns()
-                    with c1:
-                        st.subheader(row['nom'])
-                        st.caption(f"Code UPC : {row['code_upc']}")
-                    with c2:
-                        st.info(f"**Classification :** \n\n{row['provenance_estimee']}")
-                    st.divider()
+        if not res.empty:
+            st.success(f"🎯 {len(res)} entrée(s) trouvée(s).")
+            
+            for idx, row in res.head(5).iterrows():
+                upc = row['upc_propre']
+                nom_actuel = row['nom']
+                
+                with st.expander(f"📋 {nom_actuel} — (UPC : {row['code_upc']})", expanded=True):
+                    col_info, col_verif = st.columns([2, 1])
+                    
+                    with col_info:
+                        st.markdown("**Description enregistrée dans votre feuille :**")
+                        st.info(f"👉 `{nom_actuel}`")
+                        
+                        # Affichage optionnel des données complémentaires de la ligne
+                        if 'entreprise_proprietaire' in row and pd.notna(row['entreprise_proprietaire']):
+                            st.write(f"🏢 Marque déclarée : *{row['entreprise_proprietaire']}*")
+                    
+                    with col_verif:
+                        st.markdown("**Outils de validation instantanée :**")
+                        if upc not in ["Invalide", "Format Brisé"]:
+                            # Lien direct vers Open Food Facts Canada pour valider le texte descriptif exact
+                            url_off = f"https://ca-fr.openfoodfacts.org/produit/{upc}"
+                            st.link_button("🍎 Valider sur Open Food Facts", url_off)
+                            
+                            # Recherche Google pré-configurée pour croiser l'UPC avec les circulaires d'épicerie du Québec
+                            query_google = urllib.parse.quote(f'"{upc}" site:ca')
+                            url_google = f"https://google.com{query_google}"
+                            st.link_button("🔍 Chercher chez les détaillants (CA)", url_google)
+                        else:
+                            st.error("Le code à barres est mal formaté pour être recherché automatiquement.")
+                            
+                    st.write("---")
         else:
-            st.warning("Aucun produit ne correspond à votre recherche.")
-else:
-    st.warning("En attente de la synchronisation des données...")
+            st.warning("Aucun produit ne correspond à ce critère.")

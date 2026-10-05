@@ -2,30 +2,45 @@ import streamlit as st
 import pandas as pd
 import re
 
-# Configuration visuelle de la page Streamlit
+# Configuration de la page
 st.set_page_config(page_title="Comparateur Épicerie Québec", page_icon="⚜️", layout="wide")
 
 st.title("⚜️ Outil de Provenance Alimentaire & Comparateur (Québec)")
 st.write("Analysez notre base de données de plus de 10 000 produits pour savoir où va votre argent.")
 
-# Chargement intelligent de la base complète avec l'identifiant gid vérifié
+# Chargement intelligent de la base complète
 @st.cache_data
 def charger_et_analyser_base():
-    # URL configurée au format CSV avec le gid exact de votre onglet de données
     url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/gviz/tq?tqx=out:csv&gid=1814577010"
     try:
-        # Lecture directe du flux de données CSV
+        # Essai 1 : Lecture standard (Séparateur Virgule)
         df = pd.read_csv(url_sheet)
-        
-        # Nettoyage des espaces invisibles dans les en-têtes
         df.columns = df.columns.str.strip()
         
-        # Validation stricte de la présence des colonnes cibles
-        if 'code_upc' not in df.columns or 'nom' not in df.columns:
-            st.error(f"Colonnes introuvables. Colonnes lues par le script : {list(df.columns)}")
+        # Si la colonne unique contient des espaces, c'est que Google a mal séparé (format TSV/Tabulation)
+        if len(df.columns) == 1 and (' ' in df.columns[0] or '\t' in df.columns[0]):
+            # Essai 2 : On force la séparation par espace/tabulation si tout est collé
+            df = pd.read_csv(url_sheet, sep=r'\s+', engine='python')
+            df.columns = df.columns.str.strip()
+
+        # Si 'code_upc' n'est toujours pas isolé, on force le découpage propre
+        if 'code_upc' not in df.columns:
+            # On récupère le flux brut et on essaie de forcer le séparateur tabulation explicite
+            df = pd.read_csv(url_sheet, sep='\t')
+            df.columns = df.columns.str.strip()
+
+        # Nettoyage final des en-têtes en minuscules pour éviter les erreurs de casse
+        df.columns = df.columns.str.lower()
+        
+        # Validation finale
+        if 'code_upc' not in df.columns:
+            st.error(f"Colonnes introuvables. Colonnes lues par le script : {list(df.columns[:3])}...")
             return None
         
-        # Standardisation des codes UPC (gestion de la notation scientifique Excel)
+        # Identification de la colonne nom (gère 'nom' ou 'nom du produit')
+        col_nom = 'nom' if 'nom' in df.columns else df.columns[1]
+        
+        # Standardisation des codes UPC
         def nettoyer_upc(val):
             val_str = str(val).strip()
             if "E+" in val_str or "," in val_str:
@@ -34,24 +49,23 @@ def charger_et_analyser_base():
             
         df['upc_propre'] = df['code_upc'].apply(nettoyer_upc)
         
-        # Règle de classification de provenance basée sur votre colonne 'entreprise_pays'
+        # Règle de classification
         def determiner_provenance_ligne(row):
-            pays = str(row['entreprise_pays']).strip().lower() if pd.notna(row['entreprise_pays']) else ""
-            nom_produit = str(row['nom']).strip().lower() if pd.notna(row['nom']) else ""
+            pays = str(row.get('entreprise_pays', '')).strip().lower()
+            nom_produit = str(row.get(col_nom, '')).strip().lower()
             
-            # Validation locale prioritaire (Québec)
             if "québec" in pays or "qc" in pays or "québec" in nom_produit or "du québec" in nom_produit:
                 return "Fabriqué au Québec ⚜️"
             elif "canada" in pays or "canadien" in pays:
                 return "Canada 🇨🇦"
             elif "états-unis" in pays or "usa" in pays or "united states" in pays:
                 return "États-Unis 🇺🇸"
-            elif pays != "":
-                return f"Importé ({row['entreprise_pays']}) 🌍"
             else:
-                return "Provenance à déterminer 🔎"
+                return "Autre / À valider 🌍"
                 
         df['provenance_estimee'] = df.apply(determiner_provenance_ligne, axis=1)
+        # On renomme la colonne nom dynamiquement pour la suite du script
+        df = df.rename(columns={col_nom: 'nom'})
         return df
     except Exception as e:
         st.error(f"Impossible de se connecter au Google Sheet : {e}")
@@ -87,12 +101,11 @@ if df_complet is not None:
     # SECTION 2 : RECHERCHE INTERACTIVE POUR LES CONSOMMATEURS
     # ---------------------------------------------------------
     st.header("🔍 Rechercher un produit alimentaire")
-    recherche = st.text_input("Entrez un nom de produit ou un code UPC (ex: Clark, Flocons d'avoine, 663780...) :", "")
+    recherche = st.text_input("Entrez un nom de produit ou un code UPC :", "")
     
     if recherche:
         recherche_clean = recherche.strip().lower()
         
-        # Filtre de recherche insensible à la casse sur le nom ou le code brut
         resultats = df_complet[
             df_complet['nom'].astype(str).str.lower().str.contains(recherche_clean) |
             df_complet['code_upc'].astype(str).str.contains(recherche_clean)
@@ -100,15 +113,12 @@ if df_complet is not None:
         
         if not resultats.empty:
             st.success(f"💡 {len(resultats)} produit(s) trouvé(s) ! Affichage des 10 premiers :")
-            
             for idx, row in resultats.head(10).iterrows():
                 with st.container():
                     c1, c2 = st.columns()
                     with c1:
                         st.subheader(row['nom'])
-                        st.caption(f"Code UPC : {row['code_upc']} | Compagnie : {row.get('entreprise_proprietaire', 'Inconnue')}")
-                        if pd.notna(row.get('lieu_usine')):
-                            st.write(f"🏢 **Lieu de fabrication :** {row['lieu_usine']}")
+                        st.caption(f"Code UPC : {row['code_upc']}")
                     with c2:
                         st.info(f"**Classification :** \n\n{row['provenance_estimee']}")
                     st.divider()

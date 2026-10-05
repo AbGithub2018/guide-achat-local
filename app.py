@@ -6,28 +6,41 @@ import re
 st.set_page_config(page_title="Comparateur Épicerie Québec", page_icon="⚜️", layout="wide")
 
 st.title("⚜️ Outil de Provenance Alimentaire & Comparateur (Québec)")
-st.write("Analysez notre base de données de plus de 10 000 produits pour savoir où va votre argent.")
+st.write("Le moteur de recherche est actif. Analyse de la base de données des produits...")
 
-# Chargement de la base complète au format Excel officiel
+# Lecture directe via le moteur Web standard
 @st.cache_data
 def charger_et_analyser_base():
-    # URL absolue d'exportation Excel pour l'onglet spécifique (gère l'authentification gviz/pub automatiquement)
-    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/gviz/tq?tqx=out:xlsx&gid=1814577010"
+    # URL de partage web pure (sans gviz ni pub)
+    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/pubhtml?gid=1814577010"
     try:
-        # On force explicitement l'utilisation du moteur openpyxl pour décoder le binaire Excel
-        df = pd.read_excel(url_sheet, engine='openpyxl')
+        # Streamlit utilise sa fonction native pour lire le premier tableau HTML qu'il trouve sur la page
+        liste_tables = pd.read_html(url_sheet, header=0)
+        df = liste_tables[0] # On récupère la première feuille
         
         # Nettoyage et forçage en minuscules des en-têtes de colonnes
         df.columns = df.columns.str.strip().str.lower()
         
-        # Validation de sécurité
-        if 'code_upc' not in df.columns:
-            st.error(f"Colonne 'code_upc' introuvables. Colonnes lues : {list(df.columns[:5])}")
+        # Détection automatique de la colonne UPC au cas où le nom change
+        col_upc = None
+        for col in df.columns:
+            if 'upc' in col or 'barre' in col:
+                col_upc = col
+                break
+                
+        # Détection automatique de la colonne Nom
+        col_nom = None
+        for col in df.columns:
+            if 'nom' in col or 'desc' in col or 'produit' in col:
+                col_nom = col
+                break
+
+        if col_upc and col_nom:
+            df = df.rename(columns={col_upc: 'code_upc', col_nom: 'nom'})
+        else:
+            st.error(f"Colonnes de base introuvables. Colonnes lues : {list(df.columns[:5])}")
             return None
             
-        # Identification de la colonne nom
-        col_nom = 'nom' if 'nom' in df.columns else df.columns[1]
-        
         # Standardisation des codes UPC
         def nettoyer_upc(val):
             val_str = str(val).strip()
@@ -40,7 +53,7 @@ def charger_et_analyser_base():
         # Règle de classification de provenance basée sur vos colonnes
         def determiner_provenance_ligne(row):
             pays = str(row.get('entreprise_pays', '')).strip().lower()
-            nom_produit = str(row.get(col_nom, '')).strip().lower()
+            nom_produit = str(row.get('nom', '')).strip().lower()
             
             if "québec" in pays or "qc" in pays or "québec" in nom_produit or "du québec" in nom_produit:
                 return "Fabriqué au Québec ⚜️"
@@ -52,10 +65,9 @@ def charger_et_analyser_base():
                 return "Autre / À valider 🌍"
                 
         df['provenance_estimee'] = df.apply(determiner_provenance_ligne, axis=1)
-        df = df.rename(columns={col_nom: 'nom'})
         return df
     except Exception as e:
-        st.error(f"Impossible de lire le fichier Excel Google Sheet : {e}")
+        st.error(f"Erreur lors de la lecture de la table : {e}")
         return None
 
 # Lancement de l'analyse
@@ -88,7 +100,7 @@ if df_complet is not None:
     # SECTION 2 : RECHERCHE INTERACTIVE POUR LES CONSOMMATEURS
     # ---------------------------------------------------------
     st.header("🔍 Rechercher un produit alimentaire")
-    recherche = st.text_input("Entrez un nom de produit ou un code UPC :", "")
+    recherche = st.text_input("Entrez un nom de produit ou un code UPC (ex: Clark, Avoine...) :", "")
     
     if recherche:
         recherche_clean = recherche.strip().lower()

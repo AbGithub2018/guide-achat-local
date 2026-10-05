@@ -11,10 +11,18 @@ st.write("Étape 1 : Validation de l'exactitude des noms et descriptions des pro
 
 @st.cache_data
 def charger_et_analyser_base():
-    url_csv = "https://google.com"
+    # ID de votre document et identifiant unique de votre onglet
+    sheet_id = "1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc"
+    gid_id = "1814577010"
+    
+    # URL officielle d'API (tq) pour extraire le CSV de manière propre sans blocage Google
+    url_csv = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&gid={gid_id}"
     
     try:
+        # Lecture directe du flux CSV sécurisé
         df = pd.read_csv(url_csv)
+        
+        # Nettoyage et forçage en minuscules des en-têtes de colonnes
         df.columns = df.columns.str.strip().str.lower()
         
         # Identification des colonnes essentielles
@@ -24,7 +32,7 @@ def charger_et_analyser_base():
         if col_upc and col_nom:
             df = df.rename(columns={col_upc: 'code_upc', col_nom: 'nom'})
         else:
-            st.error(f"Colonnes critiques introuvables. Colonnes lues : {list(df.columns[:5])}")
+            st.error(f"Colonnes critiques introuvables. Colonnes lues : {list(df.columns[:3])}")
             return None
             
         # Nettoyage strict de l'UPC (complété à 12 chiffres)
@@ -79,24 +87,21 @@ if df_complet is not None:
                 nom_actuel = row['nom']
                 
                 with st.expander(f"📋 {nom_actuel} — (UPC : {row['code_upc']})", expanded=True):
-                    col_info, col_verif = st.columns([2, 1])
+                    col_info, col_verif = st.columns()
                     
                     with col_info:
                         st.markdown("**Description enregistrée dans votre feuille :**")
                         st.info(f"👉 `{nom_actuel}`")
                         
-                        # Affichage optionnel des données complémentaires de la ligne
                         if 'entreprise_proprietaire' in row and pd.notna(row['entreprise_proprietaire']):
                             st.write(f"🏢 Marque déclarée : *{row['entreprise_proprietaire']}*")
                     
                     with col_verif:
                         st.markdown("**Outils de validation instantanée :**")
                         if upc not in ["Invalide", "Format Brisé"]:
-                            # Lien direct vers Open Food Facts Canada pour valider le texte descriptif exact
-                            url_off = f"https://ca-fr.openfoodfacts.org/produit/{upc}"
+                            url_off = f"https://openfoodfacts.org{upc}"
                             st.link_button("🍎 Valider sur Open Food Facts", url_off)
                             
-                            # Recherche Google pré-configurée pour croiser l'UPC avec les circulaires d'épicerie du Québec
                             query_google = urllib.parse.quote(f'"{upc}" site:ca')
                             url_google = f"https://google.com{query_google}"
                             st.link_button("🔍 Chercher chez les détaillants (CA)", url_google)

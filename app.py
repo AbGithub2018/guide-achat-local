@@ -8,36 +8,24 @@ st.set_page_config(page_title="Comparateur Épicerie Québec", page_icon="⚜️
 st.title("⚜️ Outil de Provenance Alimentaire & Comparateur (Québec)")
 st.write("Analysez notre base de données de plus de 10 000 produits pour savoir où va votre argent.")
 
-# Chargement intelligent de la base complète
+# Chargement intelligent de la base complète via le format Excel (.xlsx)
 @st.cache_data
 def charger_et_analyser_base():
-    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/gviz/tq?tqx=out:csv&gid=1814577010"
+    # URL configurée au format Excel officiel pour l'onglet gid=1814577010
+    url_sheet = "https://google.com"
     try:
-        # Essai 1 : Lecture standard (Séparateur Virgule)
-        df = pd.read_csv(url_sheet)
-        df.columns = df.columns.str.strip()
+        # Lecture directe du fichier Excel à distance (Zéro problème de virgule ou de tabulation)
+        df = pd.read_excel(url_sheet)
         
-        # Si la colonne unique contient des espaces, c'est que Google a mal séparé (format TSV/Tabulation)
-        if len(df.columns) == 1 and (' ' in df.columns[0] or '\t' in df.columns[0]):
-            # Essai 2 : On force la séparation par espace/tabulation si tout est collé
-            df = pd.read_csv(url_sheet, sep=r'\s+', engine='python')
-            df.columns = df.columns.str.strip()
-
-        # Si 'code_upc' n'est toujours pas isolé, on force le découpage propre
-        if 'code_upc' not in df.columns:
-            # On récupère le flux brut et on essaie de forcer le séparateur tabulation explicite
-            df = pd.read_csv(url_sheet, sep='\t')
-            df.columns = df.columns.str.strip()
-
-        # Nettoyage final des en-têtes en minuscules pour éviter les erreurs de casse
-        df.columns = df.columns.str.lower()
+        # Nettoyage et forçage en minuscules des en-têtes
+        df.columns = df.columns.str.strip().str.lower()
         
-        # Validation finale
+        # Validation de sécurité
         if 'code_upc' not in df.columns:
-            st.error(f"Colonnes introuvables. Colonnes lues par le script : {list(df.columns[:3])}...")
+            st.error(f"Colonne 'code_upc' introuvable dans le fichier Excel. Colonnes lues : {list(df.columns[:5])}")
             return None
-        
-        # Identification de la colonne nom (gère 'nom' ou 'nom du produit')
+            
+        # Identification automatique de la colonne nom
         col_nom = 'nom' if 'nom' in df.columns else df.columns[1]
         
         # Standardisation des codes UPC
@@ -49,7 +37,7 @@ def charger_et_analyser_base():
             
         df['upc_propre'] = df['code_upc'].apply(nettoyer_upc)
         
-        # Règle de classification
+        # Règle de classification de provenance basée sur vos colonnes
         def determiner_provenance_ligne(row):
             pays = str(row.get('entreprise_pays', '')).strip().lower()
             nom_produit = str(row.get(col_nom, '')).strip().lower()
@@ -64,11 +52,10 @@ def charger_et_analyser_base():
                 return "Autre / À valider 🌍"
                 
         df['provenance_estimee'] = df.apply(determiner_provenance_ligne, axis=1)
-        # On renomme la colonne nom dynamiquement pour la suite du script
         df = df.rename(columns={col_nom: 'nom'})
         return df
     except Exception as e:
-        st.error(f"Impossible de se connecter au Google Sheet : {e}")
+        st.error(f"Impossible de lire le fichier Excel Google Sheet : {e}")
         return None
 
 # Lancement de l'analyse

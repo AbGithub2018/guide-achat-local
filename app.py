@@ -8,15 +8,17 @@ st.set_page_config(page_title="Comparateur Épicerie Québec", page_icon="⚜️
 st.title("⚜️ Outil de Provenance Alimentaire & Comparateur (Québec)")
 st.write("Le moteur de recherche est actif. Analyse de la base de données des produits...")
 
-# Lecture directe via le moteur Web standard
+# Lecture directe via l'export CSV de Google Sheets
 @st.cache_data
 def charger_et_analyser_base():
-    # URL de partage web pure (sans gviz ni pub)
-    url_sheet = "https://docs.google.com/spreadsheets/d/1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc/pubhtml?gid=1814577010"
+    # ID de votre document extrait de votre lien
+    sheet_id = "1-Xv0jRlYyIGZN5TdeS_fhNAWAnP7kQmbJmADUxpZJGc"
+    # URL configurée pour forcer l'export au format CSV (rapide et contourne l'erreur 401)
+    url_csv = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+    
     try:
-        # Streamlit utilise sa fonction native pour lire le premier tableau HTML qu'il trouve sur la page
-        liste_tables = pd.read_html(url_sheet, header=0)
-        df = liste_tables[0] # On récupère la première feuille
+        # Lecture directe du flux CSV
+        df = pd.read_csv(url_csv)
         
         # Nettoyage et forçage en minuscules des en-têtes de colonnes
         df.columns = df.columns.str.strip().str.lower()
@@ -52,6 +54,7 @@ def charger_et_analyser_base():
         
         # Règle de classification de provenance basée sur vos colonnes
         def determiner_provenance_ligne(row):
+            # Utilisation de la colonne 'entreprise_pays' ou repli si absente
             pays = str(row.get('entreprise_pays', '')).strip().lower()
             nom_produit = str(row.get('nom', '')).strip().lower()
             
@@ -87,7 +90,7 @@ if df_complet is not None:
     with col_m1:
         st.metric(label="Total des produits référencés", value=f"{total_produits:,}")
     with col_m2:
-        st.metric(label="Produits identifiés du Québec ⚜️", value=f"{total_quebec:,}", delta=f"{(total_quebec/total_produits)*100:.1f}% de la base")
+        st.metric(label="Produits identifiés du Québec ⚜️", value=f"{total_quebec:,}", delta=f"{(total_quebec/total_produits)*100:.1f}% de la base" if total_produits > 0 else "0%")
     with col_m3:
         st.metric(label="Codes UPC brisés par Excel", value=erreurs_upc, delta="- Action requise" if erreurs_upc > 0 else "Parfait", delta_color="inverse")
         

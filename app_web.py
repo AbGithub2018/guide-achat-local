@@ -666,7 +666,7 @@ if resultats is not None and not resultats.empty:
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
         bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
-bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
+        bloc_prix_html = '<div style="margin: 15px  0; display: flex; gap: 12px; flex-wrap: wrap;">'
     for col_key, (label, _) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"

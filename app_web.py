@@ -666,49 +666,35 @@ if resultats is not None and not resultats.empty:
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
         bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
+bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
+    for col_key, (label, _) in bannières_config.items():
+        v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
+        affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
+        style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
+        bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
     bloc_prix_html += '</div>'
 
-# Initialisation de secours pour éviter l'erreur de variable manquante
-row = resultats.iloc[0] if (resultats is not None and not resultats.empty) else None
+    st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
 
-# Extraction sécurisée des informations corporatives de votre feuille
-entreprise_affichage = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '') if row is not None else ""
-usine_affichage = str(row.get('usine_principale', '')).strip().replace('nan', '') if row is not None else ""
-
-# Construction dynamique des lignes de texte additionnelles
-info_entreprise_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_texte};">🏢 <b>Entreprise :</b> {entreprise_affichage}</p>' if entreprise_affichage else ''
-info_usine_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_texte};">🏭 <b>Lieu de l\'usine principale :</b> {usine_affichage}</p>' if usine_affichage else ''
-
-# Ligne 682 : Rendu mis à jour de la fiche produit (uniquement si un produit est chargé)
-if row is not None:
-    st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;">...</div>')
-    
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
-    
-    # Formulaire à plat (tout ce bloc est maintenant indenté sous le "if row is not None")
-    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-    
-    def clean_price(val): 
-        return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
+    with st.form("formulaire_prix_epicerie"):
+        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+        def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
+        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="form_iga")
+        nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="form_maxi")
+        nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="form_metro")
+        nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="form_super_c")
         
-    nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="form_iga")
-    nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="form_maxi")
-    nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="form_metro")
-    nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="form_super_c")
-    
-    st.html("<style>div[data-testid='stBaseButton-element'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold; }</style>")
-    
-    texte_barre = "💾 Enregistrer les modifications de prix"
-    if "dernier_horodatage" in st.session_state:
-        texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
+        st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
         
-    bouton_enregistrer = st.button(texte_barre, use_container_width=True, key="btn_save_prices")
+        # Gestion dynamique du texte de la barre verte
+        texte_barre = "💾 Enregistrer les modifications de prix"
+        if "dernier_horodatage" in st.session_state:
+            texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
 
-    # Ligne 710 : Elle doit elle aussi être indentée ici pour suivre la logique
-    if bouton_enregistrer:
-        # Votre code de sauvegarde ici (indanté encore plus loin)
-        pass
+        bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
 
+    
         # ---> LE BLOC CI-DESSOUS EST MAINTENANT INDENTÉ À L'INTÉRIEUR DU 'IF RESULTATS' <---
     if bouton_enregistrer:
         try:

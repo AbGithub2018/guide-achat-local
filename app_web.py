@@ -706,7 +706,7 @@ bouton_enregistrer = st.button(texte_barre, use_container_width=True, key="btn_s
 
 
 
-    # ---> LE BLOC CI-DESSOUS EST MAINTENANT INDENTÉ À L'INTÉRIEUR DU 'IF RESULTATS' <---
+        # ---> LE BLOC CI-DESSOUS EST MAINTENANT INDENTÉ À L'INTÉRIEUR DU 'IF RESULTATS' <---
     if bouton_enregistrer:
         try:
             # 1. Mise à jour du tableau principal des produits

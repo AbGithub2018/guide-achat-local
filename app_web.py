@@ -307,24 +307,29 @@ df = st.session_state['df_produits']
 if 'banniere_active' not in st.session_state:
     st.session_state['banniere_active'] = "Tous"
 
-# DESIGN BARRE LATÉRALE
+# ==============================================================================
+# DESIGN BARRE LATÉRALE (CORRIGÉ AVEC LES VRAIS EN-TÊTES DE LA BASE DE DONNÉES)
+# ==============================================================================
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits par pays d'origine</h2>")
 
+# 1. Alignement strict sur l'en-tête exact validé par la photo : 'entreprise_pays'
 if 'entreprise_pays' in df.columns:
-    liste_pays = ["Tous"] + sorted([str(p) for p in df['entreprise_pays'].unique() if pd.notna(p) and p != ""])
+    liste_pays = ["Tous"] + sorted([str(p).strip() for p in df['entreprise_pays'].unique() if pd.notna(p) and str(p).strip() != "" and str(p).lower() != "nan"])
     choix_pays = st.sidebar.selectbox("Filtrer par Pays propriétaire :", liste_pays)
     df_filtre = df[df['entreprise_pays'] == choix_pays] if choix_pays != "Tous" else df.copy()
 else:
     df_filtre = df.copy()
 
+# 2. Filtrage par Province / État
 if 'entreprise_province_etat' in df_filtre.columns:
-    liste_prov = ["Toutes"] + sorted([str(p) for p in df_filtre['entreprise_province_etat'].unique() if pd.notna(p) and p != ""])
+    liste_prov = ["Toutes"] + sorted([str(p).strip() for p in df_filtre['entreprise_province_etat'].unique() if pd.notna(p) and str(p).strip() != "" and str(p).lower() != "nan"])
     choix_prov = st.sidebar.selectbox("Filtrer par Province / État :", liste_prov)
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
 
 st.sidebar.markdown("---") 
 st.sidebar.subheader("Aperçu du produit")
+
 
 # CORRECTIF DE SYNCHRONISATION INDEXATION : Alignement parfait basé sur le tableau à l'écran
 cup_actuel = "nan"

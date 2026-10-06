@@ -73,7 +73,7 @@ st.html("""
 </style>
 """)
 def charger_donnees():
-    """Se connecte automatiquement au Google Sheet et harmonise la nationalité québécoise en mémoire."""
+    """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et nettoie les provinces/états."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_initial = conn.read(worksheet="Sheet1", ttl="2m")
@@ -104,11 +104,14 @@ def charger_donnees():
         df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip() 
 
         # ==============================================================================
-        # 🚀 HARMONISATION AUTOMATIQUE : LE QUÉBEC EST RECONNU COMME UN PAYS
+        # 🚀 HARMONISATION ET NETTOYAGE STRICT DES RÉGIONS (CORRECTIF ANOMALIES)
         # ==============================================================================
         if 'entreprise_province_etat' in df_initial.columns and 'entreprise_pays' in df_initial.columns:
-            # Si la colonne province contient le mot "Québec" ou "Quebec", on force informatiquement le pays à "Québec"
+            # 1. Si la cellule contient "québec" ou "quebec", on nettoie et on écrit uniquement "Québec"
             mask_quebec = df_initial['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False)
+            df_initial.loc[mask_quebec, 'entreprise_province_etat'] = 'Québec'
+            
+            # 2. Harmonisation automatique de la nationalité économique québécoise
             df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Québec'
 
         df_initial['categorie'] = df_initial['nom'].apply(deviner_categorie)       
@@ -116,6 +119,7 @@ def charger_donnees():
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")
         return pd.DataFrame()
+
 
 
 def sauvegarder_donnees(df_a_enregistrer):

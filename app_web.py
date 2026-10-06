@@ -668,19 +668,19 @@ if resultats is not None and not resultats.empty:
         bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
     bloc_prix_html += '</div>'
 
-# Extraction sécurisée des informations corporatives de votre feuille
-entreprise_affichage = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
-usine_affichage = str(row.get('usine_principale', '')).strip().replace('nan', '')
-
-# Construction dynamique des lignes de texte additionnelles
-info_entreprise_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_texte};">🏢 <b>Entreprise :</b> {entreprise_affichage}</p>' if entreprise_affichage else ''
-info_usine_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_texte};">🏭 <b>Lieu de l\'usine principale :</b> {usine_affichage}</p>' if usine_affichage else ''
-
-# Rendu mis à jour de la fiche produit
-st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{info_entreprise_html}{info_usine_html}{bloc_prix_html}</div>')
+        # Extraction sécurisée des informations corporatives de votre feuille
+        entreprise_affichage = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
+        usine_affichage = str(row.get('usine_principale', '')).strip().replace('nan', '')
+        
+        # Construction dynamique des lignes de texte additionnelles
+        info_entreprise_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_texte};">🏢 <b>Entreprise :</b> {entreprise_affichage}</p>' if entreprise_affichage else ''
+        info_usine_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_texte};">🏭 <b>Lieu de l\'usine principale :</b> {usine_affichage}</p>' if usine_affichage else ''
+        
+        # Rendu mis à jour de la fiche produit
+        st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{info_entreprise_html}{info_usine_html}{bloc_prix_html}</div>')
                 
-st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
-    with st.form("formulaire_prix_epicerie"):
+        st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
+        with st.form("formulaire_prix_epicerie"):
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)
         def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
         nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="form_iga")

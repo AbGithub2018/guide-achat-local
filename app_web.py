@@ -73,7 +73,7 @@ st.html("""
 </style>
 """)
 def charger_donnees():
-    """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et nettoie les provinces/états."""
+    """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et nettoie les régions et entreprises."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_initial = conn.read(worksheet="Sheet1", ttl="2m")
@@ -104,21 +104,43 @@ def charger_donnees():
         df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip() 
 
         # ==============================================================================
-        # 🚀 HARMONISATION ET NETTOYAGE STRICT DES RÉGIONS (CORRECTIF ANOMALIES)
+        # 🚀 HARMONISATION ET NETTOYAGE STRICT DES RÉGIONS
         # ==============================================================================
         if 'entreprise_province_etat' in df_initial.columns and 'entreprise_pays' in df_initial.columns:
-            # 1. Si la cellule contient "québec" ou "quebec", on nettoie et on écrit uniquement "Québec"
+            # Nettoyage des variantes de "Québec"
             mask_quebec = df_initial['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False)
             df_initial.loc[mask_quebec, 'entreprise_province_etat'] = 'Québec'
             
-            # 2. Harmonisation automatique de la nationalité économique québécoise
+            # Harmonisation de la nationalité économique québécoise
             df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Québec'
+
+        # ==============================================================================
+        # 🚀 NETTOYAGE CHIRURGICAL DES NOMS D'ENTREPRISES (COLONNE F)
+        # ==============================================================================
+        if 'entreprise_proprietaire' in df_initial.columns:
+            def epurer_nom_entreprise(nom):
+                if pd.isna(nom) or str(nom).lower() in ['nan', 'none', '']:
+                    return ""
+                
+                # 1. On coupe dès qu'il y a une virgule pour rejeter les adresses/villes
+                nom_propre = str(nom).split(',')[0]
+                
+                # 2. Suppression des suffixes légaux (Insensible à la casse, gère avec ou sans point)
+                # Supprime: inc, inc., limitée, limitee, ltd, ltd., company, cie
+                motifs_suffixes = r'\b(inc\b\.?|limitée\b|limitee\b|ltd\b\.?|company\b|cie\b\.?)'
+                nom_propre = re.sub(motifs_suffixes, '', nom_propre, flags=re.IGNORECASE)
+                
+                # 3. Nettoyage des espaces doubles ou en fin de chaîne
+                return nom_propre.strip()
+
+            df_initial['entreprise_proprietaire'] = df_initial['entreprise_proprietaire'].apply(epurer_nom_entreprise)
 
         df_initial['categorie'] = df_initial['nom'].apply(deviner_categorie)       
         return df_initial
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")
         return pd.DataFrame()
+
 
 
 

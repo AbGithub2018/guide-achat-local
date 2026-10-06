@@ -679,32 +679,35 @@ usine_affichage = str(row.get('usine_principale', '')).strip().replace('nan', ''
 info_entreprise_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_texte};">🏢 <b>Entreprise :</b> {entreprise_affichage}</p>' if entreprise_affichage else ''
 info_usine_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_texte};">🏭 <b>Lieu de l\'usine principale :</b> {usine_affichage}</p>' if usine_affichage else ''
 
-# Rendu mis à jour de la fiche produit (uniquement si un produit est chargé)
+# Ligne 682 : Rendu mis à jour de la fiche produit (uniquement si un produit est chargé)
 if row is not None:
-        st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{info_entreprise_html}{info_usine_html}{bloc_prix_html}</div>')
+    st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;">...</div>')
+    
+    st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
+    
+    # Formulaire à plat (tout ce bloc est maintenant indenté sous le "if row is not None")
+    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+    
+    def clean_price(val): 
+        return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
+        
+    nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="form_iga")
+    nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="form_maxi")
+    nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="form_metro")
+    nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="form_super_c")
+    
+    st.html("<style>div[data-testid='stBaseButton-element'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold; }</style>")
+    
+    texte_barre = "💾 Enregistrer les modifications de prix"
+    if "dernier_horodatage" in st.session_state:
+        texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
+        
+    bouton_enregistrer = st.button(texte_barre, use_container_width=True, key="btn_save_prices")
 
-st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
-
-# Formulaire à plat (sans le bloc 'with' qui forçait l'indentation)
-col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
-
-nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')) if row is not None else "", key="form_iga")
-nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')) if row is not None else "", key="form_maxi")
-nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')) if row is not None else "", key="form_metro")
-nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')) if row is not None else "", key="form_super_c")
-
-st.html("<style>div[data-testid='stBaseButton-element'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
-
-texte_barre = "💾 Enregistrer les modifications de prix"
-if "dernier_horodatage" in st.session_state:
-    texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
-
-bouton_enregistrer = st.button(texte_barre, use_container_width=True, key="btn_save_prices")
-
-   
-
-
+    # Ligne 710 : Elle doit elle aussi être indentée ici pour suivre la logique
+    if bouton_enregistrer:
+        # Votre code de sauvegarde ici (indanté encore plus loin)
+        pass
 
         # ---> LE BLOC CI-DESSOUS EST MAINTENANT INDENTÉ À L'INTÉRIEUR DU 'IF RESULTATS' <---
     if bouton_enregistrer:

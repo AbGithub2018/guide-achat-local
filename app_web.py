@@ -679,7 +679,7 @@ info_usine_html = f'<p style="margin-top: 5px; font-size: 16px; color: {couleur_
 # Rendu mis à jour de la fiche produit
 st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{info_entreprise_html}{info_usine_html}{bloc_prix_html}</div>')
                 
-    st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
+st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)
         def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()

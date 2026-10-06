@@ -73,7 +73,7 @@ st.html("""
 </style>
 """)
 def charger_donnees():
-    """Se connecte automatiquement au Google Sheet grâce aux secrets de Streamlit Cloud."""
+    """Se connecte automatiquement au Google Sheet et harmonise la nationalité québécoise en mémoire."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_initial = conn.read(worksheet="Sheet1", ttl="2m")
@@ -89,11 +89,12 @@ def charger_donnees():
         else:
             df_initial['code_upc'] = ""
         
-        colonnes_prix = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']
+        # Gestion stricte des colonnes de prix pour éliminer les faux prix à 0$
+        colonnes_prix = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tiger_giant', 'prix_dollarama', 'prix_provigo']
         for col_prix in colonnes_prix:
             if col_prix not in df_initial.columns:
                 df_initial[col_prix] = ""
-            df_initial[col_prix] = df_initial[col_prix].fillna("").astype(str).str.strip().replace("nan", "")
+            df_initial[col_prix] = df_initial[col_prix].fillna("").astype(str).str.strip().replace(["nan", "0", "0.0", "0,00"], "")
             
         if 'distribution' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:
             df_initial['distribution'] = df_initial['reseau_distribution']
@@ -101,11 +102,21 @@ def charger_donnees():
             df_initial['distribution'] = ""
             
         df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip() 
+
+        # ==============================================================================
+        # 🚀 HARMONISATION AUTOMATIQUE : LE QUÉBEC EST RECONNU COMME UN PAYS
+        # ==============================================================================
+        if 'entreprise_province_etat' in df_initial.columns and 'entreprise_pays' in df_initial.columns:
+            # Si la colonne province contient le mot "Québec" ou "Quebec", on force informatiquement le pays à "Québec"
+            mask_quebec = df_initial['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False)
+            df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Québec'
+
         df_initial['categorie'] = df_initial['nom'].apply(deviner_categorie)       
         return df_initial
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")
         return pd.DataFrame()
+
 
 def sauvegarder_donnees(df_a_enregistrer):
     """Enregistre les prix automatiquement grâce aux secrets de Streamlit Cloud."""

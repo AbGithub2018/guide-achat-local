@@ -174,7 +174,7 @@ CORRESPONDANCE_SOUS_CATEGORIES = {
 }
 
     
-    .stRadio label p { font-size: 26px !important; font-weight: bold !important; color: #111111 !important; }
+    
     div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
     
     div[data-testid="stColumns"] {

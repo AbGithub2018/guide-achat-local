@@ -48,7 +48,7 @@ st.html("""
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
 """)
 def classifier_produit_exact(nom_produit):
-    Analyse le nom du produit et retourne (Categorie, Sous_Categorie).
+    """Analyse le nom du produit et retourne (Categorie, Sous_Categorie)."""
     nom = str(nom_produit).lower().strip()
     
     # =========================================================================

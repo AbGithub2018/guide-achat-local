@@ -219,6 +219,9 @@ CATEGORIES_PROJET = {
 # =====================================================================
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
+    # Règle prioritaire pour le Ginger Ale (Boisson non alcoolisée)
+    if "ginger" in nom:
+        return "Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)"
     
     # 1. Fruits et Légumes
     if any(m in nom for m in ["fraise", "pomme", "bleuet", "clementine", "ananas", "framboise", "peche", "fruit", "baies"]):
@@ -297,15 +300,17 @@ def deviner_categorie(nom_produit):
     if "boisson" in nom and any(x in nom for x in ["amande", "soya", "soy", "avoine", "végétale"]):
         return "Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)"
 
-    # 8. Alcools (Correction finale : Textes harmonisés au pixel près avec la Partie 1)
+    # 8. Alcools
     mots_bieres = ["bière", "biere", "cidre", "st-ambroise", "molson", "labatt", "boréale", "sleeman", "alexander keith"]
     
     nom_isole = f" {nom} "
     
     if any(m in nom for m in mots_bieres) or " ale " in nom_isole or " ipa " in nom_isole:
-        intrus = ["vitamine", "barre", "galette", "dumpling", "chèvre", "pancetta", "red bull", "énergisante"]
+        # AJOUT DE "ginger" À LA FIN DE CETTE LISTE :
+        intrus = ["vitamine", "barre", "galette", "dumpling", "chèvre", "pancetta", "red bull", "énergisante", "ginger"]
         if not any(x in nom for x in intrus):
             return "Bières et Vins (Alcools)", "Bières (microbrasseries québécoises, commerciales, cidres)"
+
             
     if "vin" in nom or "wine" in nom or "bordeaux" in nom:
         if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling"]):

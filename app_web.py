@@ -311,13 +311,23 @@ def deviner_categorie(nom_produit):
     a_mots_boissons = any(m in nom for m in mots_boissons) or " eau " in nom_espace or " l eau " in nom_espace
     
     if a_mots_boissons:
-        # Exclusion chirurgicale absolue de toute viande, poisson, craquelin ou ingrédient solide
-        intrus_boissons = ["veau", "agneau", "poulet", "cretonnade", "merguez", "saucisse", "boulettes", "tuna", "thon", "maquereau", "sardines", "shrimp", "crackers", "craquelin", "biscuits", "snaps", "tea", "thé", "roll", "rouleau", "pruneaux", "châtaignes", "crepes", "gaufres", "salsa", "cheveux"]
+        # Exclusion chirurgicale absolue incluant poireaux, morceaux, choco, lait, vins et bières
+        intrus_boissons = [
+            "veau", "agneau", "poulet", "cretonnade", "merguez", "saucisse", "boulettes", 
+            "tuna", "thon", "maquereau", "sardines", "shrimp", "crackers", "craquelin", 
+            "biscuits", "snaps", "tea", "thé", "roll", "rouleau", "pruneaux", "châtaignes", 
+            "crepes", "gaufres", "salsa", "cheveux", "poireau", "leek", "asperge", "avocat", 
+            "pamplemousse", "ruby red", "morceaux", "choco", "milk", "lactantia", "vin ", 
+            "bordeaux", "beer", "st-ambroise", "ipeautre", "epeautre", "crisps", "réglisse", "reglisse", "cacao"
+        ]
+        
         if not any(x in nom for x in intrus_boissons):
-            if any(j in nom for j in ["jus", "juice", "nectar", "fruitopia", "oasis", "sunrype", "watermelon"]):
+            # Gestion fine des jus et kombuchas fruités (comme le melon d'eau)
+            if any(j in nom for j in ["jus", "juice", "nectar", "fruitopia", "oasis", "sunrype", "kombucha", "vivaloe"]):
                 return ("Boissons (non alcoolisées)", "Jus et nectars (jus d'orange, jus de pomme, boissons aux fruits)")
             else:
                 return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
+
 
 
     # 8. Alcools

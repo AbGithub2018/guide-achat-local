@@ -321,24 +321,38 @@ def deviner_categorie(nom_produit):
             "bordeaux", "beer", "st-ambroise", "ipeautre", "epeautre", "crisps", "réglisse", "reglisse", "cacao"
         ]
         
-                # # 1. Détection des Cafés, Thés et Tisanes
+        # # 1. Détection des Cafés, Thés et Tisanes (Version finale épurée)
         if any(c in nom for c in ["café", "coffee", "thé", "tea", "tisane", "infusion"]):
-            if "steak" in nom:
+            # Barrière 1 : Exclusion absolue des viandes et burritos piégés
+            if any(x in nom for x in ["steak", "burrito", "steamers", "marinara"]):
                 pass
-            elif any(x in nom for x in ["crisps", "crisp", "biscuit", "buiscuit", "cookie", "cakes", "social tea", "glacée", "glacé au café", "almond"]):
+                
+            # Barrière 2 : Exclusion des chocolats, biscuits et crèmes glacées (inclut thé social)
+            elif any(x in nom for x in ["crisps", "crisp", "biscuit", "buiscuit", "cookie", "cakes", "social tea", "thé social", "glacée", "glacé au café", "almond"]):
                 if "boisson" in nom or "instant iced" in nom:
                     return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
+                else:
+                    pass
+                    
+            # Barrière 3 : Exclusion des crèmes, colorants et rehausseurs de café (inclut crémette)
             elif any(x in nom for x in ["crème à café", "creme a cafe", "cremette", "crème 15%", "coffee-mate", "coffee mate", "colorant à café", "rehausseur", "whitener"]):
                 pass
+                
+            # Barrière 4 : Exclusion des sodas/colas qui mentionnent juste "sans caféine"
             elif any(x in nom for x in ["coke diet", "racinette"]):
                 return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
-            elif any(g in nom for g in ["glacé", "glace", "iced", "nestea", "arizona", "brisk", "peace tea", "sanpellegrino", "frappé", "twisted"]):
+                
+            # Barrière 5 : Redirection des thés glacés et cafés glacés LIQUIDES prêts-à-boire (Snapple, Good Drink...)
+            elif any(g in nom for g in ["glacé", "glace", "iced", "nestea", "arizona", "brisk", "peace tea", "sanpellegrino", "frappé", "twisted", "snapple", "good drink"]):
                 if "twisted tea" in nom:
                     return ("Bières et Vins (Alcools)", "Bières (microbrasseries québécoises, commerciales, cidres)")
                 else:
                     return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
+                    
+            # Si le produit passe toutes les barrières, c'est du VRAI café/thé en grains, moulu ou en sachets !
             else:
                 return ("Boissons (non alcoolisées)", "Café, thé et tisanes (en grains ou moulu, capsules, sachets)")
+
           
             # 2. Détection stricte des Jus et nectars
             nom_espace_jus = f" {nom} "

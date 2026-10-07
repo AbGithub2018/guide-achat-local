@@ -339,9 +339,9 @@ def deviner_categorie(nom_produit):
     # 9. Viandes et Poissons frais par défaut
     if "poulet" in nom or "chicken" in nom or "dindon" in nom or "volaille" in nom:
         return "Viandes et Volailles", "Volaille (poulet, dindon, poitrines, cuisses)"
-    if any(m in nom for m in ["bœuf", "beef", "porc", "veau", "agneau", "steak", "rôti", "biftek"]):
+    if any(m in nom for m in ["bœuf", "beef", "porc", "veau", "agneau", "steak", "rôti", "biftek", "merguez", "boulettes"]):
         return "Viandes et Volailles", "Bœuf, porc, veau et agneau (haché, rôtis, steaks)"
-    if any(m in nom for m in ["jambon", "ham", "bacon", "saucisse", "salami", "pepperoni", "charcuterie"]):
+    if any(m in nom for m in ["jambon", "ham", "bacon", "saucisse", "salami", "pepperoni", "charcuterie", "cretonnade"]):
         return "Viandes et Volailles", "Charcuterie et saucisses (jambon, bacon, viandes froides)"
     if any(m in nom for m in ["saumon", "salmon", "truite", "morue", "aiglefin", "filet"]):
         return "Poissons et Fruits de mer", "Poissons frais et congelés (saumon, truite, morue)"

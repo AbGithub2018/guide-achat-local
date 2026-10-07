@@ -321,9 +321,13 @@ def deviner_categorie(nom_produit):
             "bordeaux", "beer", "st-ambroise", "ipeautre", "epeautre", "crisps", "réglisse", "reglisse", "cacao"
         ]
         
-        if not any(x in nom for x in intrus_boissons):
-            # Gestion fine des jus et kombuchas fruités (comme le melon d'eau)
-            if any(j in nom for j in ["jus", "juice", "nectar", "fruitopia", "oasis", "sunrype", "kombucha", "vivaloe"]):
+            if not any(x in nom for x in intrus_boissons):
+            # Détection ultra-stricte des jus avec des espaces pour exclure "justice"
+            nom_espace_jus = f" {nom} "
+            est_un_jus = any(j in nom for j in ["juice", "nectar", "fruitopia", "oasis", "sunrype", "watermelon"]) or " jus " in nom_espace_jus
+            
+            # Gestion fine : les jus vont dans Jus et nectars, les kombuchas et vivaloe vont dans Eaux et colas
+            if est_un_jus and not any(k in nom for k in ["kombucha", "vivaloe"]):
                 return ("Boissons (non alcoolisées)", "Jus et nectars (jus d'orange, jus de pomme, boissons aux fruits)")
             else:
                 return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")

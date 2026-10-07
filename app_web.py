@@ -448,20 +448,22 @@ if 'banniere_active' not in st.session_state:
 # DESIGN BARRE LATÉRALE (CORRIGÉ AVEC LES VRAIS EN-TÊTES DE LA BASE DE DONNÉES)
 # ==============================================================================
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits par pays d'origine</h2>")
-
+# 1. Alignement strict sur l'en-tête exact validé par la photo : 'entreprise_pays'
 # 1. Alignement strict sur l'en-tête exact validé par la photo : 'entreprise_pays'
 if 'entreprise_pays' in df.columns:
-    liste_pays = ["Tous"] + sorted([str(p).strip() for p in df['entreprise_pays'].unique() if pd.notna(p) and str(p).strip() != "" and str(p).lower() != "nan"])
+    liste_pays = ["Tous"] + sorted([str(p).strip() for p in df['entreprise_pays'].unique() if pd.notna(p) and str(p).strip() != ""])
     choix_pays = st.sidebar.selectbox("Filtrer par Pays propriétaire :", liste_pays)
+
     # --- APARTÉ : CLASSIFICATION DES PRODUITS EN DIRECT ---
-        cats_temp = []
-        scats_temp = []
-        for nom_prod in df['nom']:
-            c, sc = classifier_produit_exact(nom_prod)
-            cats_temp.append(c)
-            scats_temp.append(sc)
-        df['categorie'] = cats_temp
-        df['sous_categorie'] = scats_temp
+    cats_temp = []
+    scats_temp = []
+    for nom_prod in df['nom']:
+        c, sc = classifier_produit_exact(nom_prod)
+        cats_temp.append(c)
+        scats_temp.append(sc)
+    df['categorie'] = cats_temp
+    df['sous_categorie'] = scats_temp
+
 
         # --- NOUVEAU : FILTRE 3 - CATÉGORIE PRINCIPALE ---
         liste_categories = ["Tous"] + sorted(list(df['categorie'].unique()))

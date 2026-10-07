@@ -312,7 +312,7 @@ def deviner_categorie(nom_produit):
             return "Bières et Vins (Alcools)", "Bières (microbrasseries québécoises, commerciales, cidres)"
 
             
-        if " vin " in nom_isole or " wine" in nom or "bordeaux" in nom:
+    if " vin " in nom_isole or " wine" in nom or "bordeaux" in nom:
         if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling", "vinaigre", "cracker", "vinta", "krunch", "vindaloo"]):
             return "Bières et Vins (Alcools)", "Vins (vins rouges, blancs et rosés d'épicerie)"
 

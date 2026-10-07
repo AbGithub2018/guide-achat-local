@@ -297,18 +297,19 @@ def deviner_categorie(nom_produit):
     if "boisson" in nom and any(x in nom for x in ["amande", "soya", "soy", "avoine", "végétale"]):
         return "Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)"
 
-    # 8. Alcools (Mots-clés resserrés et blindés avec espaces pour exclure les intrus)
+    # 8. Alcools (Correction finale : tout en minuscules pour correspondre à 100 %)
     mots_bieres = ["bière", "biere", "cidre", "st-ambroise", "molson", "labatt", "boréale", "sleeman", "alexander keith"]
-    
-    # On ajoute des espaces autour du nom pour pouvoir chercher des mots isolés au début ou à la fin
     nom_isole = f" {nom} "
     
-    # Recherche stricte : mots-clés de bières OU styles de bière isolés (" ale " ou " ipa ")
     if any(m in nom for m in mots_bieres) or " ale " in nom_isole or " ipa " in nom_isole:
-        # Barrière de sécurité finale pour rejeter immédiatement les faux positifs connus
         intrus = ["vitamine", "barre", "galette", "dumpling", "chèvre", "pancetta", "red bull", "énergisante"]
         if not any(x in nom for x in intrus):
-            return "Bières et Vins (Alcools)", "Bières (bières de microbrasseries québécoises, bières commerciale, cidres)"
+            return "Bières et Vins (Alcools)", "Bières (bières de microbrasseries québécoises, bières commerciales, cidres)"
+            
+    if "vin" in nom or "wine" in nom or "bordeaux" in nom:
+        if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling"]):
+            return "Bières et Vins (Alcools)", "Vins (vins rouges, blancs et rosés sélectionnés pour la vente en épicerie)"
+
             
     if "vin" in nom or "wine" in nom or "bordeaux" in nom:
         if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling"]):

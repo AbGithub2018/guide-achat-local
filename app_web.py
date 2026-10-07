@@ -524,11 +524,26 @@ df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c
 
 for c in df_affichage.columns: df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 
-if 'df_produits' in st.session_state and not st.session_state['df_produits'].empty:
-    categories_disponibles = sorted(list(st.session_state['df_produits']['categorie'].unique()))
-    categorie_selectionnee = st.selectbox("📂 Filtrer le catalogue par rayon :", options=["📁 Toutes les catégories"] + categories_disponibles, index=0, key="cat_selector")
-    if categorie_selectionnee != "📁 Toutes les catégories":
-        df_affichage = df_affichage[df_affichage['nom'].apply(deviner_categorie) == categorie_selectionnee]
+# --- FILTRAGE CHIRURGICAL ET DYNAMIQUE PAR RAYONS D'ALIMENTS ---
+if categorie_choisie != "Toutes les catégories":
+    if not df_affichage.empty and "nom" in df_affichage.columns:
+        # Calcule la catégorie et sous-catégorie à la volée pour chaque produit à l'écran
+        triage_interne = df_affichage["nom"].apply(deviner_categorie)
+        
+        # On extrait séparément la catégorie principale et la sous-catégorie
+        df_affichage["_MainCat"] = [c[0] for c in triage_interne]
+        df_affichage["_SubCat"] = [c[1] for c in triage_interne]
+        
+        # 1. Application stricte du filtre de la catégorie principale de gauche
+        df_affichage = df_affichage[df_affichage["_MainCat"] == categorie_choisie]
+        
+        # 2. Application stricte du filtre de la sous-catégorie de gauche
+        if sous_categorie_choisie != "Toutes les sous-catégories":
+            df_affichage = df_affichage[df_affichage["_SubCat"] == sous_categorie_choisie]
+            
+        # Nettoyage immédiat des colonnes de calcul pour ne pas polluer l'affichage
+        df_affichage = df_affichage.drop(columns=["_MainCat", "_SubCat"])
+
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),

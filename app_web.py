@@ -263,17 +263,24 @@ def deviner_categorie(nom_produit):
             return "Boulangerie et Pâtisserie", "Pâtisseries et desserts (gâteaux, tartes, biscuits frais)"
 
     # 4. Épicerie salée et Garde-manger
+    if any(m in nom for m in ["tuna", "thon", "sardines", "maquereau"]):
+        return ("Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)")
+    if "crackers" in nom or "craquelin" in nom or "biscuits" in nom:
+        if "soda" in nom or "water" in nom:
+            return ("Déjeuner et Collations", "Collations salées (croustilles, bretzels, craquelins, maïs soufflé)")
     if any(m in nom for m in ["riz", "rice", "pate", "pâtes", "spaghetti", "macaroni", "quinoa", "couscous", "fusilli", "penne"]):
         if not any(x in nom for x in ["surgelé", "congelé"]):
-            return "Épicerie salée et Garde-manger", "Pâtes, riz et grains (pâtes, riz blanc/brun, quinoa, couscous)"
+            return ("Épicerie salée et Garde-manger", "Pâtes, riz et grains (pâtes, riz blanc/brun, quinoa, couscous)")
     if any(m in nom for m in ["huile", "oil", "vinaigre", "vinegar", "mayonnaise", "mayo", "ketchup", "moutarde", "mustard"]):
-        return "Épicerie salée et Garde-manger", "Huiles, vinaigres et condiments (huile, vinaigre, mayo, ketchup)"
+        return ("Épicerie salée et Garde-manger", "Huiles, vinaigres et condiments (huile, vinaigre, mayo, ketchup)")
     if "sauce" in nom or "vinaigrette" in nom or "pesto" in nom:
-        return "Épicerie salée et Garde-manger", "Sauces et vinaigrettes (sauces à pâtes, sauces BBQ, vinaigrettes)"
-    if any(m in nom for m in ["soupe", "soup", "bouillon", "broth", "conserve", "boite", "boîte", "thon"]):
-        return "Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)"
+        return ("Épicerie salée et Garde-manger", "Sauces et vinaigrettes (sauces à pâtes, sauces BBQ, vinaigrettes)")
+    if any(m in nom for m in ["soupe", "soup", "bouillon", "broth", "conserve", "boite", "boîte"]):
+        return ("Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)")
     if any(m in nom for m in ["farine", "flour", "sucre", "sugar", "poudre à pâte", "baking"]):
-        return "Épicerie salée et Garde-manger", "Ingrédients de cuisson (farine, sucre, poudres à lever, pépites)"
+        return ("Épicerie salée et Garde-manger", "Ingrédients de cuisson (farine, sucre, poudres à lever, pépites)")
+
+
 
     # 5. Déjeuner et Collations
     if "céréale" in nom or "cereal" in nom or "gruau" in nom or "oat" in nom or "avoine" in nom or "flakes" in nom:

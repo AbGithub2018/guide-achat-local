@@ -367,22 +367,10 @@ sous_categorie_choisie = st.sidebar.selectbox(
 )
 
 # 3. Filtrage en mémoire basé sur le nom du produit
-if categorie_choisie != "Toutes les catégories":
-    # Calcule le classement en direct sur les produits déjà filtrés par pays/prov
-    triage = df_filtre["nom"].apply(deviner_categorie)
-    df_filtre["_MainCat"] = [c[0] for c in triage]
-    df_filtre["_SubCat"] = [c[1] for c in triage]
-    
-    # Applique les filtres sélectionnés à gauche
-    df_filtre = df_filtre[df_filtre["_MainCat"] == categorie_choisie]
-    if sous_categorie_choisie != "Toutes les sous-catégories":
-        df_filtre = df_filtre[df_filtre["_SubCat"] == sous_categorie_choisie]
-        
-    # Supprime proprement les colonnes de calcul temporaires
-    df_filtre = df_filtre.drop(columns=["_MainCat", "_SubCat"])
- 
-st.sidebar.subheader("Aperçu du produit")
+# 3. Filtrage en mémoire basé sur le nom du produit
+# Les choix des catégories sont mémorisés ici pour être appliqués directement au tableau central plus bas.
 
+st.sidebar.subheader("Aperçu du produit")
 
 # CORRECTIF DE SYNCHRONISATION INDEXATION : Alignement parfait basé sur le tableau à l'écran
 cup_actuel = "nan"
@@ -525,12 +513,13 @@ df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c
 for c in df_affichage.columns: df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 
 # --- FILTRAGE CHIRURGICAL ET DYNAMIQUE PAR RAYONS D'ALIMENTS ---
+# --- FILTRAGE CHIRURGICAL ET DYNAMIQUE PAR RAYONS D'ALIMENTS ---
 if categorie_choisie != "Toutes les catégories":
     if not df_affichage.empty and "nom" in df_affichage.columns:
-        # Calcule la catégorie et sous-catégorie à la volée pour chaque produit à l'écran
+        # Calcule le tuple (Catégorie, Sous-Catégorie) à la volée pour chaque produit à l'écran
         triage_interne = df_affichage["nom"].apply(deviner_categorie)
         
-        # On extrait séparément la catégorie principale et la sous-catégorie
+        # Extraction précise avec les indices [0] et [1]
         df_affichage["_MainCat"] = [c[0] for c in triage_interne]
         df_affichage["_SubCat"] = [c[1] for c in triage_interne]
         
@@ -541,9 +530,8 @@ if categorie_choisie != "Toutes les catégories":
         if sous_categorie_choisie != "Toutes les sous-catégories":
             df_affichage = df_affichage[df_affichage["_SubCat"] == sous_categorie_choisie]
             
-        # Nettoyage immédiat des colonnes de calcul pour ne pas polluer l'affichage
+        # Nettoyage immédiat des colonnes de calcul temporaires
         df_affichage = df_affichage.drop(columns=["_MainCat", "_SubCat"])
-
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),

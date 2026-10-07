@@ -466,10 +466,11 @@ if 'entreprise_pays' in df.columns:
         # --- NOUVEAU : FILTRE 3 - CATÉGORIE PRINCIPALE ---
         liste_categories = ["Tous"] + sorted(list(df['categorie'].unique()))
         choix_cat = st.sidebar.selectbox("Filtrer par Catégorie :", liste_categories)
-        
+
         # --- NOUVEAU : FILTRE 4 - SOUS-CATÉGORIE EN CASCADE ---
         sous_cats_possibles = CORRESPONDANCE_SOUS_CATEGORIES.get(choix_cat, ["Toutes"])
         choix_sous_cat = st.sidebar.selectbox("Filtrer par Sous-catégorie :", sous_cats_possibles)
+
         
         # Application des filtres et création de df_filtre
         df_filtre = df[df['entreprise_pays'] == choix_pays] if choix_pays != "Tous" else df.copy()

@@ -297,20 +297,20 @@ def deviner_categorie(nom_produit):
     if "boisson" in nom and any(x in nom for x in ["amande", "soya", "soy", "avoine", "végétale"]):
         return "Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)"
 
-    # 8. Alcools (Correction finale : tout en minuscules pour correspondre à 100 %)
+    # 8. Alcools (Correction finale : Textes harmonisés au pixel près avec la Partie 1)
     mots_bieres = ["bière", "biere", "cidre", "st-ambroise", "molson", "labatt", "boréale", "sleeman", "alexander keith"]
+    
     nom_isole = f" {nom} "
     
     if any(m in nom for m in mots_bieres) or " ale " in nom_isole or " ipa " in nom_isole:
         intrus = ["vitamine", "barre", "galette", "dumpling", "chèvre", "pancetta", "red bull", "énergisante"]
         if not any(x in nom for x in intrus):
-            return "Bières et Vins (Alcools)", "Bières (bières de microbrasseries québécoises, bières commerciales, cidres)"
+            return "Bières et Vins (Alcools)", "Bières (microbrasseries québécoises, commerciales, cidres)"
             
     if "vin" in nom or "wine" in nom or "bordeaux" in nom:
         if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling"]):
-            return "Bières et Vins (Alcools)", "Vins (vins rouges, blancs et rosés sélectionnés pour la vente en épicerie)"
-
-            
+            return "Bières et Vins (Alcools)", "Vins (vins rouges, blancs et rosés d'épicerie)"
+          
     if "vin" in nom or "wine" in nom or "bordeaux" in nom:
         if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling"]):
             return "Bières et Vins (Alcools)", "Vins (vins rouges, blancs et rosés sélectionnés pour la vente en épicerie)"
@@ -525,26 +525,28 @@ df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c
 
 for c in df_affichage.columns: df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 
-# --- FILTRAGE CHIRURGICAL ET DYNAMIQUE PAR RAYONS D'ALIMENTS ---
-# --- FILTRAGE CHIRURGICAL ET DYNAMIQUE PAR RAYONS D'ALIMENTS ---
+# --- FILTRAGE SIMPLE ET ULTRA-ROBUSTE PAR RAYONS D'ALIMENTS ---
 if categorie_choisie != "Toutes les catégories":
     if not df_affichage.empty and "nom" in df_affichage.columns:
-        # Calcule le tuple (Catégorie, Sous-Catégorie) à la volée pour chaque produit à l'écran
+        # Calcule le tuple (Catégorie, Sous-Catégorie) pour chaque produit à l'écran
         triage_interne = df_affichage["nom"].apply(deviner_categorie)
         
-        # Extraction précise avec les indices [0] et [1]
         df_affichage["_MainCat"] = [c[0] for c in triage_interne]
         df_affichage["_SubCat"] = [c[1] for c in triage_interne]
         
-        # 1. Application stricte du filtre de la catégorie principale de gauche
+        # 1. Filtre sur la catégorie principale (ex: Bières et Vins)
         df_affichage = df_affichage[df_affichage["_MainCat"] == categorie_choisie]
         
-        # 2. Application stricte du filtre de la sous-catégorie de gauche
+        # 2. Filtre intelligent sur la sous-catégorie (évite les erreurs de texte coupé)
         if sous_categorie_choisie != "Toutes les sous-catégories":
-            df_affichage = df_affichage[df_affichage["_SubCat"] == sous_categorie_choisie]
+            # On prend les 10 premiers caractères du choix (ex: "Bières (mi")
+            debut_choix = str(sous_categorie_choisie)[:10].lower()
+            # On vérifie si la sous-catégorie calculée commence de la même façon
+            df_affichage = df_affichage[df_affichage["_SubCat"].str.lower().str.startswith(debut_choix)]
             
-        # Nettoyage immédiat des colonnes de calcul temporaires
+        # Nettoyage immédiat des colonnes temporaires
         df_affichage = df_affichage.drop(columns=["_MainCat", "_SubCat"])
+
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),

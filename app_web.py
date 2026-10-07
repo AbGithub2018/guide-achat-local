@@ -217,6 +217,10 @@ CATEGORIES_PROJET = {
 # =====================================================================
 # PARTIE 2 : FONCTION DE TRI DYNAMIQUE (REMPLACE LES LIGNES 138 À 337)
 # =====================================================================
+def deviner_categorie(nom_produit):
+    nom = str(nom_produit).lower()
+    nom_isole = f" {nom} "
+
     # Règle prioritaire pour le Ginger Ale et les Sodas de Gingembre
     if "ginger" in nom:
         # On ignore les thés, biscuits, pommes ou bonbons au gingembre pour qu'ils soient classés ailleurs

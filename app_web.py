@@ -453,21 +453,31 @@ st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 
 if 'entreprise_pays' in df.columns:
     liste_pays = ["Tous"] + sorted([str(p).strip() for p in df['entreprise_pays'].unique() if pd.notna(p) and str(p).strip() != "" and str(p).lower() != "nan"])
     choix_pays = st.sidebar.selectbox("Filtrer par Pays propriétaire :", liste_pays)
-            # --- APARTÉ : CLASSIFICATION DES PRODUITS EN DIRECT ---
-        # On calcule les catégories pour le tableau filtré si les colonnes n'existent pas
-        if 'categorie' not in df_filtre.columns or 'sous_categorie' not in df_filtre.columns:
-            cats_temp = []
-            scats_temp = []
-            for nom_prod in df_filtre['nom']:
-                c, sc = classifier_produit_exact(nom_prod)
-                cats_temp.append(c)
-                scats_temp.append(sc)
-            df_filtre['categorie'] = cats_temp
-            df_filtre['sous_categorie'] = scats_temp
+    # --- APARTÉ : CLASSIFICATION DES PRODUITS EN DIRECT ---
+        cats_temp = []
+        scats_temp = []
+        for nom_prod in df['nom']:
+            c, sc = classifier_produit_exact(nom_prod)
+            cats_temp.append(c)
+            scats_temp.append(sc)
+        df['categorie'] = cats_temp
+        df['sous_categorie'] = scats_temp
 
         # --- NOUVEAU : FILTRE 3 - CATÉGORIE PRINCIPALE ---
-        liste_categories = ["Tous"] + sorted(list(df_filtre['categorie'].unique()))
+        liste_categories = ["Tous"] + sorted(list(df['categorie'].unique()))
         choix_cat = st.sidebar.selectbox("Filtrer par Catégorie :", liste_categories)
+        
+        # --- NOUVEAU : FILTRE 4 - SOUS-CATÉGORIE EN CASCADE ---
+        sous_cats_possibles = CORRESPONDANCE_SOUS_CATEGORIES.get(choix_cat, ["Toutes"])
+        choix_sous_cat = st.sidebar.selectbox("Filtrer par Sous-catégorie :", sous_cats_possibles)
+        
+        # Application des filtres et création de df_filtre
+        df_filtre = df[df['entreprise_pays'] == choix_pays] if choix_pays != "Tous" else df.copy()
+        if choix_cat != "Tous":
+            df_filtre = df_filtre[df_filtre['categorie'] == choix_cat]
+        if choix_sous_cat != "Toutes":
+            df_filtre = df_filtre[df_filtre['sous_categorie'] == choix_sous_cat]
+
         
         if choix_cat != "Tous":
             df_filtre = df_filtre[df_filtre['categorie'] == choix_cat]

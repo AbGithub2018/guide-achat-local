@@ -305,32 +305,39 @@ def deviner_categorie(nom_produit):
         return "Aliments surgelés", "Crème glacée et desserts surgelés (en pot, barres, gâteaux)"
 
     # 7. Boissons (non alcoolisées)
-    mots_boissons = ["cola", "coke", "pepsi", "7up", "soda", "eau", "water", "perrier", "eska", "montellier", "bubly", "dasani", "schweppes", "rickey", "mousse", "juice", "jus", "nectar", "vitaminwater", "smart water", "flow", "liquid water enhancer", "aromatisant", "mio"]
+    mots_boissons = ["cola", "coke", "pepsi", "7up", "soda", "eau", "water", "perrier", "eska", "montellier", "bubly", "dasani", "schweppes", "rickey", "mousse", "juice", "jus", "nectar", "vitaminwater", "smart water", "flow", "liquid water enhancer", "aromatisant", "mio", "café", "coffee", "thé", "tea", "tisane", "infusion"]
     
     nom_espace = f" {nom} "
     a_mots_boissons = any(m in nom for m in mots_boissons) or " eau " in nom_espace or " l eau " in nom_espace
     
     if a_mots_boissons:
-        # Exclusion chirurgicale absolue incluant poireaux, morceaux, choco, lait, vins et bières
+        # Exclusion chirurgicale absolue de toute viande, poisson ou biscuit
         intrus_boissons = [
             "veau", "agneau", "poulet", "cretonnade", "merguez", "saucisse", "boulettes", 
             "tuna", "thon", "maquereau", "sardines", "shrimp", "crackers", "craquelin", 
-            "biscuits", "snaps", "tea", "thé", "roll", "rouleau", "pruneaux", "châtaignes", 
+            "biscuits", "snaps", "roll", "rouleau", "pruneaux", "châtaignes", 
             "crepes", "gaufres", "salsa", "cheveux", "poireau", "leek", "asperge", "avocat", 
             "pamplemousse", "ruby red", "morceaux", "choco", "milk", "lactantia", "vin ", 
             "bordeaux", "beer", "st-ambroise", "ipeautre", "epeautre", "crisps", "réglisse", "reglisse", "cacao"
         ]
         
         if not any(x in nom for x in intrus_boissons):
-            # Détection ultra-stricte des jus avec des espaces pour exclure "justice"
+            # 1. Détection des Cafés, Thés et Tisanes
+            if any(c in nom for c in ["café", "coffee", "thé", "tea", "tisane", "infusion"]):
+                if not any(x in nom for x in ["biscuit", "snap", "cookie"]):
+                    return ("Boissons (non alcoolisées)", "Café, thé et tisanes (en grains ou moulu, capsules, sachets)")
+            
+            # 2. Détection stricte des Jus et nectars
             nom_espace_jus = f" {nom} "
             est_un_jus = any(j in nom for j in ["juice", "nectar", "fruitopia", "oasis", "sunrype", "watermelon"]) or " jus " in nom_espace_jus
             
-            # Gestion fine : les jus vont dans Jus et nectars, les kombuchas et vivaloe vont dans Eaux et colas
             if est_un_jus and not any(k in nom for k in ["kombucha", "vivaloe"]):
                 return ("Boissons (non alcoolisées)", "Jus et nectars (jus d'orange, jus de pomme, boissons aux fruits)")
+            
+            # 3. Par défaut, toutes les autres boissons vont dans Boissons gazeuses et eaux
             else:
                 return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
+
 
 
 

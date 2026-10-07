@@ -172,33 +172,6 @@ CORRESPONDANCE_SOUS_CATEGORIES = {
         "Alimentation saine et produits naturels"
     ]
 }
-
-    
-    
-    div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
-    
-    div[data-testid="stColumns"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 10px !important;
-    }
-    div[data-testid="column"] {
-    
-        flex: 1 1 calc(33.333% - 10px) !important;
-        min-width: calc(33.333% - 10px) !important;
-        max-width: calc(33.333% - 10px) !important;
-    }
-
-    [data-testid="stExpanderDetails"] summary span,
-    [data-testid="stExpanderDetails"] details summary,
-    .stExpander details summary span {
-        font-size: 26px !important;
-        font-weight: bold !important;
-        color: #003366 !important;
-    }
-</style>
-""")
 def charger_donnees():
     """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et nettoie les régions et entreprises."""
     try:

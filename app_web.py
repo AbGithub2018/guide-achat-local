@@ -305,14 +305,20 @@ def deviner_categorie(nom_produit):
         return "Aliments surgelés", "Crème glacée et desserts surgelés (en pot, barres, gâteaux)"
 
     # 7. Boissons (non alcoolisées)
-    if any(m in nom for m in ["cola", "coke", "pepsi", "7up", "soda", "eau", "water", "perrier", "eska", "montellier"]):
-        return "Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)"
-    if "jus" in nom or "juice" in nom or "nectar" in nom or "fruitopia" in nom or "oasis" in nom or "sunrype" in nom:
-        return "Boissons (non alcoolisées)", "Jus et nectars (jus d'orange, jus de pomme, boissons aux fruits)"
-    if any(m in nom for m in ["café", "coffee", "thé", "tea", "tisane", "infusion"]):
-        return "Boissons (non alcoolisées)", "Café, thé et tisanes (en grains ou moulu, capsules, sachets)"
-    if "boisson" in nom and any(x in nom for x in ["amande", "soya", "soy", "avoine", "végétale"]):
-        return "Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)"
+    mots_boissons = ["cola", "coke", "pepsi", "7up", "soda", "eau", "water", "perrier", "eska", "montellier", "bubly", "dasani", "schweppes", "rickey", "mousse", "juice", "jus", "nectar", "vitaminwater", "smart water", "flow", "liquid water enhancer", "aromatisant", "mio"]
+    
+    nom_espace = f" {nom} "
+    a_mots_boissons = any(m in nom for m in mots_boissons) or " eau " in nom_espace or " l eau " in nom_espace
+    
+    if a_mots_boissons:
+        # Exclusion chirurgicale absolue de toute viande, poisson, craquelin ou ingrédient solide
+        intrus_boissons = ["veau", "agneau", "poulet", "cretonnade", "merguez", "saucisse", "boulettes", "tuna", "thon", "maquereau", "sardines", "shrimp", "crackers", "craquelin", "biscuits", "snaps", "tea", "thé", "roll", "rouleau", "pruneaux", "châtaignes", "crepes", "gaufres", "salsa", "cheveux"]
+        if not any(x in nom for x in intrus_boissons):
+            if any(j in nom for j in ["jus", "juice", "nectar", "fruitopia", "oasis", "sunrype", "watermelon"]):
+                return ("Boissons (non alcoolisées)", "Jus et nectars (jus d'orange, jus de pomme, boissons aux fruits)")
+            else:
+                return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
+
 
     # 8. Alcools
     mots_bieres = ["bière", "biere", "cidre", "st-ambroise", "molson", "labatt", "boréale", "sleeman", "alexander keith"]

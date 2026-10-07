@@ -321,7 +321,7 @@ def deviner_categorie(nom_produit):
             "bordeaux", "beer", "st-ambroise", "ipeautre", "epeautre", "crisps", "réglisse", "reglisse", "cacao"
         ]
         
-            if not any(x in nom for x in intrus_boissons):
+        if not any(x in nom for x in intrus_boissons):
             # Détection ultra-stricte des jus avec des espaces pour exclure "justice"
             nom_espace_jus = f" {nom} "
             est_un_jus = any(j in nom for j in ["juice", "nectar", "fruitopia", "oasis", "sunrype", "watermelon"]) or " jus " in nom_espace_jus

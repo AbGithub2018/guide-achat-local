@@ -134,6 +134,11 @@ def charger_donnees():
                 return nom_propre.strip()
 
             df_initial['entreprise_proprietaire'] = df_initial['entreprise_proprietaire'].apply(epurer_nom_entreprise)
+        return df_initial
+    except Exception as e:
+        st.error(f"❌ Erreur de lecture : {e}")
+        return pd.DataFrame()
+
 
 # =====================================================================
 # PARTIE 1 : STRUCTURE OFFICIELLE DES CATÉGORIES ET SOUS-CATÉGORIES

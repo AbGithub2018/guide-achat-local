@@ -312,14 +312,9 @@ def deviner_categorie(nom_produit):
             return "Bières et Vins (Alcools)", "Bières (microbrasseries québécoises, commerciales, cidres)"
 
             
-    if "vin" in nom or "wine" in nom or "bordeaux" in nom:
-        if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling"]):
+        if " vin " in nom_isole or " wine" in nom or "bordeaux" in nom:
+        if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling", "vinaigre", "cracker", "vinta", "krunch", "vindaloo"]):
             return "Bières et Vins (Alcools)", "Vins (vins rouges, blancs et rosés d'épicerie)"
-          
-    if "vin" in nom or "wine" in nom or "bordeaux" in nom:
-        if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling"]):
-            return "Bières et Vins (Alcools)", "Vins (vins rouges, blancs et rosés sélectionnés pour la vente en épicerie)"
-
 
     # 9. Viandes et Poissons frais par défaut
     if "poulet" in nom or "chicken" in nom or "dindon" in nom or "volaille" in nom:

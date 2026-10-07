@@ -322,8 +322,8 @@ def deviner_categorie(nom_produit):
         ]
         
         if not any(x in nom for x in intrus_boissons):
-                # # 1. Détection des Cafés, Thés et Tisanes
-                # # 1. Détection des Cafés, Thés et Tisanes (Version épurée et ultra-stricte)
+            # # 1. Détection des Cafés, Thés et Tisanes
+            # # 1. Détection des Cafés, Thés et Tisanes (Version épurée et ultra-stricte)
                 if any(c in nom for c in ["café", "coffee", "thé", "tea", "tisane", "infusion"]):
             
             # Barrière 1 : Exclusion absolue des viandes piégées par le mot "tea" (s-t-e-a-k)

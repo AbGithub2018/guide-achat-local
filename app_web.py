@@ -217,19 +217,22 @@ CATEGORIES_PROJET = {
 # =====================================================================
 # PARTIE 2 : FONCTION DE TRI DYNAMIQUE (REMPLACE LES LIGNES 138 À 337)
 # =====================================================================
-def deviner_categorie(nom_produit):
-    nom = str(nom_produit).lower()
-    # Règle prioritaire pour le Ginger Ale (Boisson non alcoolisée)
+    # Règle prioritaire pour le Ginger Ale et les Sodas de Gingembre
     if "ginger" in nom:
-        return "Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)"
+        # On ignore les thés, biscuits, pommes ou bonbons au gingembre pour qu'ils soient classés ailleurs
+        if any(x in nom for x in ["tea", "thé", "snap", "cookie", "biscuits", "chews", "apple", "pomme", "dressing"]):
+            pass  
+        else:
+            return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
+
     
-    # 1. Fruits et Légumes
-    if any(m in nom for m in ["fraise", "pomme", "bleuet", "clementine", "ananas", "framboise", "peche", "fruit", "baies"]):
-        if not any(x in nom for x in ["surgelé", "congelé", "ice cream", "compote", "confiture", "spread", "sauce"]):
-            return "Fruits et Légumes", "Fruits frais (petits fruits, agrumes, pommes, poires)"
+    if any(m in nom for m in ["fraise", "pomme", "bleuet", "clementine", "ananas", "framboise", "peche", "fruit", "baies", "melon d'eau", "asperges", "poireaux", "avocat"]):
+        if not any(x in nom for x in ["surgelé", "congelé", "ice cream", "compote", "confiture", "spread", "sauce", "boisson", "jus", "water", "soda", "eau"]):
+            return ("Fruits et Légumes", "Fruits frais (petits fruits, agrumes, pommes, poires)")
     if any(m in nom for m in ["carotte", "legume", "légume", "epinard", "poivron", "ail", "oignon", "salade", "concombre", "chou", "betterave"]):
-        if not any(x in nom for x in ["surgelé", "congelé", "soupe", "bouillon"]):
-            return "Fruits et Légumes", "Légumes frais (légumes-feuilles, racines, fines herbes)"
+        if not any(x in nom for x in ["surgelé", "congelé", "soupe", "bouillon", "crème de", "creme de"]):
+            return ("Fruits et Légumes", "Légumes frais (légumes-feuilles, racines, fines herbes)")
+
 
     # 2. Produits laitiers et Œufs
     if any(m in nom for m in ["lait", "creme", "cream", "cremeur"]) and not any(x in nom for x in ["amande", "soya", "soy", "avoine", "vegetal", "chocolat noir"]):

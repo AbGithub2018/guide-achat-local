@@ -327,7 +327,7 @@ def deviner_categorie(nom_produit):
                 if any(c in nom for c in ["café", "coffee", "thé", "tea", "tisane", "infusion"]):
             
             # Barrière 1 : Exclusion absolue des viandes piégées par le mot "tea" (s-t-e-a-k)
-            if "steak" in nom:
+        if "steak" in nom:
                 pass # Laisse le script descendre vers le rayon Viandes
                 
             # Barrière 2 : Exclusion des chocolats, biscuits et crèmes glacées

@@ -601,20 +601,33 @@ elif choix_mode == "📸 Scanner un Code-Barres":
             st.rerun()
 
 
-# CODE DE FILTRAGE RECONFIGURÉ POUR FORCER LE SCANNER À APPLIQUER LE FILTRE
+# RECHERCHE AMÉLIORÉE : TOLÉRANTE AUX ACCENTS ET AUX MAJUSCULES
 if saisie_net:
     cup_saisi = str(saisie_net).strip()
     if 'code_upc' in df_filtre.columns:
-        # On teste si c'est un code UPC exact
+        # 1. On vérifie d'abord s'il s'agit d'un code-barres exact
         recherche_cup = df_filtre[df_filtre['code_upc'].astype(str).str.strip() == cup_saisi]
         if not recherche_cup.empty:
             df_filtre = recherche_cup
             resultats = recherche_cup
-            # Si le scan vient de la caméra, on pousse les données directement dans l'affichage principal
             df_affichage = df_filtre[['code_upc', 'nom', 'distribution'] + [c for c in ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c'] if c in df_filtre.columns]].copy().reset_index(drop=True)
         else:
-            # Sinon on teste une recherche par texte partiel (Nom du produit)
-            cond = df_filtre['nom'].str.lower().str.contains(cup_saisi.lower(), na=False)
+            # 2. Sinon, on effectue une recherche textuelle tolérante (sans accents)
+            # Petite fonction rapide pour enlever tous les accents d'un texte
+            def enlever_accents(texte):
+                t = str(texte).lower()
+                remplacements = {"é": "e", "è": "e", "ê": "e", "ë": "e", "à": "a", "â": "a", "ù": "u", "û": "u", "î": "i", "ï": "i", "ô": "o", "ç": "c"}
+                for accent, lettre in remplacements.items():
+                    t = t.replace(accent, lettre)
+                return t
+
+            # On nettoie la saisie de l'utilisateur
+            saisie_propre = enlever_accents(cup_saisi)
+            
+            # On nettoie temporairement la colonne 'nom' pour la recherche
+            noms_sans_accents = df_filtre['nom'].apply(enlever_accents)
+            cond = noms_sans_accents.str.contains(saisie_propre, na=False)
+            
             recherche_texte = df_filtre[cond]
             if not recherche_texte.empty:
                 df_filtre = recherche_texte
@@ -625,6 +638,7 @@ if saisie_net:
                 message_erreur_recherche = f"⚠️ Aucun produit trouvé."
                 df_filtre = pd.DataFrame(columns=df_filtre.columns)
                 df_affichage = pd.DataFrame(columns=df_affichage.columns)
+
 
 
 st.markdown("---")

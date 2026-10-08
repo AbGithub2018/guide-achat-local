@@ -736,8 +736,8 @@ else:
                 st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
 
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index
-    row = resultats.iloc[0]
+    index_produit_reel = resultats.index[0]  # <-- Corrigé : prend le premier index unique
+    row = resultats.iloc[0]                  # <-- Corrigé : prend la ligne unique brute
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
@@ -789,7 +789,6 @@ if resultats is not None and not resultats.empty:
 
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
-        # LIGNES DE FORMULAIRES POUR LES 8 CASES DE PRIX DYNAMIQUES
         upc_dynamique = str(row.get('code_upc', 'sans_upc'))
         def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
         
@@ -815,7 +814,7 @@ if resultats is not None and not resultats.empty:
         
     if bouton_enregistrer:
         try:
-            # ENREGISTREMENT DES 8 ENSEIGNES DANS LA SESSION STATE
+            # ENREGISTREMENT DES 8 ENSEIGNES EN UTILISANT L'INDEX UNIQUE (.at)
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
@@ -825,7 +824,7 @@ if resultats is not None and not resultats.empty:
             st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
 
-            # SAUVEGARDE EN LIGNE IMMEDIATE SUR GOOGLE SHEETS (SHEET1)
+            # SAUVEGARDE EN LIGNE SUR GOOGLE SHEETS
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(worksheet="Sheet1", data=st.session_state['df_produits'])
 

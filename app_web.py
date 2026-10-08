@@ -415,8 +415,22 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 
 # =====================================================================
-# ETAPE CORRECTIVE : CONSTRUCTION ET FILTRAGE DE L'AFFICHAGE EN AMONT
+# ETAPE OPTIMISÉE : FILTRAGE PAR CATÉGORIES ET RECONSTRUCTION
 # =====================================================================
+if categorie_choisie != "Toutes les catégories":
+    if not df_filtre.empty and "categorie_maitresse" in df_filtre.columns:
+        df_filtre = df_filtre[df_filtre["categorie_maitresse"] == categorie_choisie]
+        
+        if sous_categorie_choisie != "Toutes les sous-catégories":
+            choix_clean = str(sous_categorie_choisie).lower()
+            if "boissons" in choix_clean or "amande" in choix_clean:
+                df_filtre = df_filtre[df_filtre["sous_categorie_maitresse"].str.lower().str.contains("amande|soya|avoine|végétales|vegetales", na=False)]
+            else:
+                racine_choix = str(sous_categorie_choisie)[:15].lower().strip()
+                df_filtre["_SubShort"] = df_filtre["sous_categorie_maitresse"].str.lower().str[:15].str.strip()
+                df_filtre = df_filtre[df_filtre["_SubShort"] == racine_choix]
+                df_filtre = df_filtre.drop(columns=["_SubShort"])
+
 colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
 colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
 df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
@@ -424,31 +438,8 @@ df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c
 for c in df_affichage.columns: 
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 
-# Application immédiate du filtre de catégories sur le catalogue d'affichage
-if categorie_choisie != "Toutes les catégories":
-    if not df_affichage.empty and "nom" in df_affichage.columns:
-        triage_interne = df_affichage["nom"].apply(deviner_categorie)
-        
-        df_affichage["_MainCat"] = [c[0] for c in triage_interne]
-        df_affichage["_SubCat"] = [c[1] for c in triage_interne]
-        
-        df_affichage = df_affichage[df_affichage["_MainCat"] == categorie_choisie]
-        
-        if sous_categorie_choisie != "Toutes les sous-catégories":
-            choix_clean = str(sous_categorie_choisie).lower()
-            if "boissons" in choix_clean or "amande" in choix_clean:
-                df_affichage = df_affichage[df_affichage["_SubCat"].str.lower().str.contains("amande|soya|avoine|végétales|vegetales", na=False)]
-            else:
-                racine_choix = str(sous_categorie_choisie)[:15].lower().strip()
-                df_affichage["_SubShort"] = df_affichage["_SubCat"].str.lower().str[:15].str.strip()
-                df_affichage = df_affichage[df_affichage["_SubShort"] == racine_choix]
-                df_affichage = df_affichage.drop(columns=["_SubShort"])
-
-        df_affichage = df_affichage.drop(columns=["_MainCat", "_SubCat"])
-
-# Réinitialisation propre de l'index visuel pour détruire le décalage de sélection
 df_affichage = df_affichage.reset_index(drop=True)
-# =====================================================================
+
 # =====================================================================
 # APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (URL EXACTE INTEGRÉE)
 # =====================================================================

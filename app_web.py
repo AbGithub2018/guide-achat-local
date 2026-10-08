@@ -651,8 +651,8 @@ else:
             else:
                 st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index
-    row = resultats.iloc
+    index_produit_reel = resultats.index[0]  # 🚀 CORRECTION : Force l'utilisation du premier index unique
+    row = resultats.iloc[0]                  # 🚀 CORRECTION : Force l'extraction de l'unique ligne de produit
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
@@ -699,7 +699,6 @@ if resultats is not None and not resultats.empty:
     bloc_prix_html += '</div>'
 
     st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
-
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         upc_dynamique = str(row.get('code_upc', 'sans_upc'))
@@ -727,6 +726,7 @@ if resultats is not None and not resultats.empty:
         
     if bouton_enregistrer:
         try:
+            # Enregistrement individuel par étiquette d'index pour éviter le bogue de classe str
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()

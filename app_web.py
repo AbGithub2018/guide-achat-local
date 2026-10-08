@@ -479,7 +479,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         else:
             with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
                 # Utilisation de votre lien exact validé
-                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
+                url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
                 reponse = requests.get(url_api, headers=headers, timeout=5)
                 if reponse.status_code == 200:
@@ -679,8 +679,9 @@ else:
                 st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
 
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index
-    row = resultats.iloc
+    index_produit_reel = resultats.index[0]
+    row = resultats.iloc[0]
+
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')

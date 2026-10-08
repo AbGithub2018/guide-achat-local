@@ -347,7 +347,34 @@ def deviner_categorie(nom_produit):
     # 4. Élimination des féculents, pâtes et sauces d'accompagnement
     if any(m in nom_clean for m in [" pate ", " pates ", " sauce ", " salsa ", " vinaigrette ", " margarine ", " beurre "]):
         return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
+        # ==============================================================================
+    # EXCLUSIONS DE SÉCURITÉ BASÉES SUR VOTRE LISTE DE PRODUITS TRANSFORMAÉS
+    # ==============================================================================
+    # Extraction propre du code UPC pour la comparaison
+    upc_propre = str(nom_produit).strip().split('.')[0].lstrip('0')
 
+    # Liste des produits transformés à intercepter selon leur code UPC
+    upc_boissons = ["701648010221", "623682117653"] # Guru grenade, Tequila lime
+    upc_collations = ["063348004369", "063348004482", "058716970766"] # Maxi Fruits, Presse fruits
+    upc_produits_laitiers = ["056800027099"] # Oïkos passion fruit
+    upc_conserves_et_transformes = [
+        "061483055963", "061308100069", "628619200057", "058779717476", "771665516068",
+        "067275001118", "059749942164", "026043814000", "065250041746", "096619614752",
+        "894357002059", "060383691219", "055989069661", "667888156788", "060000132606",
+        "057961028147", "695058031207", "060383988098", "871454036187", "059749929127",
+        "065633134188", "816983020290", "661815001882", "057961018070", "069848058536"
+    ]
+
+    if upc_propre in upc_boissons:
+        return ("Boissons (non alcoolisées)", "Toutes les sous-catégories")
+    if upc_propre in upc_collations:
+        return ("Déjeuner et Collations", "Collations sucrées et confiseries (biscuits emballés, barres, bonbons)")
+    if upc_propre in upc_produits_laitiers:
+        return ("Produits laitiers et Œufs", "Yogourts et desserts laitiers (grecs, poudings, kéfir)")
+    if upc_propre in upc_conserves_et_transformes:
+        return ("Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)")
+
+    
     
     if any(m in nom for m in fruits_mots):
         return ("Fruits et Légumes", "Fruits frais (petits fruits, agrumes, pommes, poires)")

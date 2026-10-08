@@ -218,34 +218,101 @@ CATEGORIES_PROJET = {
 }
 
 def deviner_categorie(nom_produit):
-    """Version condensée et sécurisée - Interception chirurgicale des intrus."""
+    """Analyse chirurgicale absolue - PARTIE 1 (Filtres prioritaires et liquides)."""
     nom = str(nom_produit).lower()
     nom = nom.replace("é", "e").replace("è", "e").replace("à", "a").replace("'", " ").replace("’", " ")
     nom_isole = f" {nom} "
 
-    # 1. Élimination des intrus du Garde-manger (Pâtes, ingrédients, vinaigres, sauces)
-    if any(m in nom for m in ["bicarbonate", "levure", "similac", "tofu", "pate alimentaire", "pates alimentaire", "semoule", "basmari", "vinaigre", "salsa", "sauce"]):
-        return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
+    # ==============================================================================
+    # 0. INTERCEPTIONS CRITIQUES ET BLINDAGES (Produits chimiques, pâtes, levures)
+    # ==============================================================================
+    if any(m in nom for m in ["bicarbonate", "levure", "similac", "tofu", "edulcorant"]):
+        return ("Épicerie salée et Garde-manger", "Ingrédients de cuisson (farine, sucre, poudres à lever, pépites)")
 
-    # 2. Élimination des Boissons (Kombucha, thés, jus, lattes, alcools)
-    if any(m in nom for m in ["kombucha", "yop", "smoothie", "latte", "drink", "cocktail", "juice", "jus ", "the ", "tea", "punch", "breezer", "smirnoff", "fizz", "madjack"]):
-        return ("Boissons (non alcoolisées)", "Toutes les sous-catégories")
+    motifs_patate = ["pomme de terre", "pommes de terre", "gnocchi", "pierogo", "frites", "hashbrown", "tasti taters", "rissoles", "pate alimentaire", "pates alimentaire", "capelli", "basmari", "riz "]
+    if any(p in nom for p in motifs_patate):
+        if "surgelé" in nom or "congelé" in nom or "mccain" in nom or "cavendish" in nom:
+            return ("Aliments surgelés", "Fruits et légumes surgelés (mélanges de légumes, frites)")
+        return ("Épicerie salée et Garde-manger", "Pâtes, riz et grains (pâtes, riz blanc/brun, quinoa, couscous)")
 
-    # 3. Élimination des Collations et Déjeuners (Barres, biscuits, chocolats, graines sèches)
-    if any(m in nom for m in ["barre", "biscuit", "cookie", "gummies", "whippet", "patte d", "pattes d", "roules au", "roll up", "fruit o long", "fruit to go", "fruitsource", "chocolat", "excellence", "starburs", "nerds", "strudel", "kettle", "chips", "croustilles", "biscottes", "rusks", "mum-mum", "puffies", "crisps", "melona", "craquelin", "cracker", "croustade", "patience", "nutri-grain", "nutri grain", "go pure", "halls", "praeventia", "vital fruits", "juicy fruit", "fruitfull", "graine", "noix", "nut", "amande", "arachide", "wildtoots", "montagnard", "seche", "dried", "gruau", "cereale", "granola", "muesli", "special k", "muslix", "cheerios", "dejeuner pomme", "croque matin", "super grains", "hearty medleys"]):
-        return ("Déjeuner et Collations", "Toutes les sous-catégories")
+    # ==============================================================================
+    # 1. BOISSONS & LIQUIDES (Thés, Punchs, Jus, Smoothies, Cider, Kombucha, Cafés)
+    # ==============================================================================
+    mots_boissons = ["cola", "coke", "pepsi", "7up", "soda", "eau", "water", "perrier", "eska", "montellier", "bubly", "jus", "juice", "nectar", "fruitopia", "oasis", "sunrype", "cafe", "coffee", "the ", "tea", "tisane", "infusion", "punch", "moût", "mout ", "breezer", "smirnoff", "powerade", "hydra fruit", "fruit2o", "fizz", "drink", "cocktail", "boisson", "limonade", "redbull", "mate ", "pommersby", "smoothie", "latte", "limeade", "tropicana", "tradition", "codre", "cidre"]
+    if any(m in nom for m in mots_boissons) or " juice " in nom_isole or " jus " in nom_isole or " the " in nom_isole or " punch " in nom_isole or " drink " in nom_isole or " latte " in nom_isole:
+        if any(c in nom for c in ["cafe", "coffee", "the ", "tea", "tisane", "infusion", "latte"]):
+            return ("Boissons (non alcoolisées)", "Café, thé et tisanes (en grains ou moulu, capsules, sachets)")
+        if any(l in nom for l in ["amand", "soya", "soy", "avoin", "oat", "silk", "coco"]):
+            return ("Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)")
+        if any(j in nom for j in ["jus", "juice", "nectar", "fruitopia", "oasis", "sunrype", "minut", "maide", "mout", "moût", "cocktail", "limonade", "tropicana", "tradition"]) or " jus " in nom_isole:
+            return ("Boissons (non alcoolisées)", "Jus et nectars (jus d'orange, jus de pomme, boissons aux fruits)")
+        return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
 
-    # 4. Élimination des Boulangeries et Produits laitiers (Muffins, gâteaux, yogourts, fromages)
-    if any(m in nom for m in ["tarte", "muffin", "scone", "trottoir", "gateau", "cake", "pie", "pain", "bagel", "chausson", "banana bread", "genoise"]):
-        return ("Boulangerie et Pâtisserie", "Pâtisseries et desserts (gâteaux, tartes, biscuits frais)")
-    if any(m in nom for m in ["yogourt", "yogurt", "yaourt", "skyr", "iogo", "source", "activia", "oikos", "liberte", "kefir", "cream cheese", "philadelphia", "fondants bio", "fromage", "camembert", "feta"]):
+    # ==============================================================================
+    # 2. PRODUITS LAITIERS, ŒUFS ET YOGOURTS (Oikos, Astro, Liberte, Tubes)
+    # ==============================================================================
+    if any(m in nom for m in ["yogourt", "yogurt", "yaourt", "skyr", "iogo", "source", "activia", "oikos", "liberte", "kefir", "cheese", "cream cheese", "philadelphia", "fondants bio", "milk", "lait", "creme", "fromage", "camembert", "feta", "oeufs", "œufs", "tubes"]):
+        if any(m in nom for m in ["fromage", "cheese", "cheddar", "mozzarella", "parmesan", "philadelphia", "camembert", "feta"]):
+            return ("Produits laitiers et Œufs", "Fromages (fins du Québec, cheddar, mozzarella, crème)")
         return ("Produits laitiers et Œufs", "Yogourts et desserts laitiers (grecs, poudings, kéfir)")
+    
+    if "bio- k+" in nom or "soygo" in nom:
+        return ("Produits laitiers et Œufs", "Yogourts et desserts laitiers (grecs, poudings, kéfir)")
+        # ==============================================================================
+    # 3. CONFITURES, COMPOTES, SAUCES, SALSAS ET TARTINADES (Mott's, Kraft, Jell-O)
+    # ==============================================================================
+    motifs_tartinades = ["confiture", "jam", "spread", "marmelade", "gelee", "gele ", "double fruit", "kraft", "mott", "fruitsation", "squeez", "compote", "puree", "chutney", "sauce fruit", "fruit sauce", "beurre de pomme", "sirop", "tartinade", "peanut butter", "salsa", "sauce piquante", "chili", "tostitos", "doritos", "trempette", "sauce", "ketchup"]
+    if any(m in nom for m in motifs_tartinades):
+        return ("Déjeuner et Collations", "Tartinades (confitures, beurre d'arachide, miel, sirop d'érable)")
 
-    # 5. Élimination des surgelés et plats cuisinés
-    if "congelé" in nom or "congele" in nom or "surgelé" in nom or "frozen" in nom or "sorbet" in nom or "bebe" in nom or "baby" in nom or "gerber" in nom or "love child" in nom or "aliment pour" in nom:
-        return ("Aliments surgelés", "Toutes les sous-catégories")
+    # ==============================================================================
+    # 4. ÉPICERIE SALÉE & CONDIMENTS (Huiles, Vinaigres, Triscuits)
+    # ==============================================================================
+    if any(m in nom for m in ["vinaigre", "vinegar", "vinaigrette", "mayonnaise", "mayo", "moutarde", "mustard", "triscuit", "poivre noir", "huile d olive", "margarine", "beurre"]):
+        if "margarine" in nom or "beurre" in nom:
+             return ("Produits laitiers et Œufs", "Beurre et margarines (salé/non salé, tartinades)")
+        return ("Épicerie salée et Garde-manger", "Huiles, vinaigres et condiments (huile, vinaigre, mayo, ketchup)")
+    if "miel" in nom:
+        return ("Déjeuner et Collations", "Tartinades (confitures, beurre d'arachide, miel, sirop d'érable)")
 
-    # 6. CLASSIFICATION FINALE : Uniquement si c'est du fruit brut et frais
+    # ==============================================================================
+    # 5. NOIX, GRAINES ET FRUITS SÉCHÉS (Mélanges montagnards, raisins secs, séchés)
+    # ==============================================================================
+    if any(m in nom for m in ["graine", "seed", "noix", "nut", "amande", "arachide", "wildtoots", "baies cotieres", "montagnard", "seche", "dried"]):
+        return ("Déjeuner et Collations", "Noix et graines (arachides, amandes, graines de tournesol)")
+
+    # ==============================================================================
+    # 6. COLLATIONS SUCRÉES, BARRES & CHOCOLAT (Lindt Excellence, Nutri-grain, Whippet)
+    # ==============================================================================
+    motifs_collations = ["barre", "bar ", "bars", "snack", "collation", "biscuit", "cookie", "bonbon", "candy", "gummies", "realfruit", "chews", "gourde", "sour", "whippet", "patte d", "pattes d", "roule au", "roll up", "fruit o long", "fruit to go", "fruitsource", "jello", "jell-o", "chocolat", "excellence", "starburs", "nerds", "strudel", "choux", "lulu", "kettle", "chips", "croustilles", "biscottes", "rusks", "mum-mum", "puffies", "crisps", "melona", "gelato", "freeyumm", "little bites", "craquelin", "cracker", "croustade", "patience", "carres croustillants", "nutri-grain", "nutri grain", "go pure", "halls", "praeventia", "vital fruits", "juicy fruit", "fruitfull"]
+    if any(m in nom for m in motifs_collations):
+        return ("Déjeuner et Collations", "Collations sucrées et confiseries (biscuits emballés, barres, bonbons)")
+
+    # ==============================================================================
+    # 7. CÉRÉALES & GRUAU (Special K, Müslix, Cheerios)
+    # ==============================================================================
+    if any(m in nom for m in ["avoine", "oat", "cereale", "cereal", "gruau", "flakes", "granola", "muesli", "special k", "muslix", "toodle", "cheerios", "croquant pomme", "croque matin", "dejeuner pomme", "super grains", "hearty medleys"]):
+        return ("Déjeuner et Collations", "Céréales et gruaux (céréales pour enfants, granolas, gruau)")
+
+    # ==============================================================================
+    # 8. BOULANGERIE & REPAS PRETS (Gâteaux, Pains, Saucisses, Bébé Gerber/Love Child)
+    # ==============================================================================
+    if any(m in nom for m in ["tarte", "muffin", "scone", "trottor", "trottoir", "gateau", "cake", "pie", "pain", "bagel", "chausson", "banana bread", "genoise"]):
+        return ("Boulangerie et Pâtisserie", "Pâtisseries et desserts (gâteaux, tartes, biscuits frais)")
+    if any(m in nom for m in ["soupe", "soup", "bouillon", "bol ", "repas", "saucisse", "tajine", "champignons", "bebe", "baby", "gerber", "love child", "aliment pour", "snack melts"]):
+        return ("Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)")
+
+    # ==============================================================================
+    # 9. ALIMENTS SURGELÉS (Sorbets, mélanges congelés bruts)
+    # ==============================================================================
+    if "congelé" in nom or "congele" in nom or "surgelé" in nom or "frozen" in nom or "sorbet" in nom:
+        if "sorbet" in nom:
+            return ("Aliments surgelés", "Crème glacée et desserts surgelés (en pot, barres, gâteaux)")
+        return ("Aliments surgelés", "Fruits et légumes surgelés (mélanges de légumes, frites)")
+
+    # ==============================================================================
+    # 10. RESTE INTERCEPTÉ : FRUITS ET LÉGUMES BRUTS FRAIS
+    # ==============================================================================
     fruits_mots = ["fraise", "pomme", "bleuet", "clementine", "ananas", "framboise", "peche", "fruit", "baies", "grenade", "banan", "avocat", "lime", "mangue", "grapefruit", "kiwi", "melon", "rhubarbe", "poire", "citrouille"]
     if any(m in nom for m in fruits_mots):
         return ("Fruits et Légumes", "Fruits frais (petits fruits, agrumes, pommes, poires)")
@@ -254,8 +321,8 @@ def deviner_categorie(nom_produit):
     if any(m in nom for m in legumes_mots):
         return ("Fruits et Légumes", "Légumes frais (légumes-feuilles, racines, fines herbes)")
 
+    # Par défaut général
     return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
-
 
 
 
@@ -698,4 +765,3 @@ if resultats is not None and not resultats.empty:
 
 # Mention informative finale tout en bas du script central
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-

@@ -355,8 +355,8 @@ def deviner_categorie(nom_produit):
 
             # # 1.1 Détection des Boissons et laits végétaux
             if any(l in nom for l in ["amande", "almond", "soya", "soy ", "avoine", "oat ", "oatmilk", "silk", "earth's own"]):
-            if not any(x in nom for x in ["biscuit", "barre", "granola"]):
-                return ("Boissons (non alcoolisées)", "Boissons et laits végétaux (lait d'amande, de soya, d'avoine)")
+                if not any(x in nom for x in ["biscuit", "barre", "granola"]):
+                    return ("Boissons (non alcoolisées)", "Boissons et laits végétaux (lait d'amande, de soya, d'avoine)")
 
 
           

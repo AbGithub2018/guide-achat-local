@@ -751,7 +751,7 @@ if resultats is not None and not resultats.empty:
 
         bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
         
-if bouton_enregistrer:
+    if bouton_enregistrer:
         try:
             # 1. Enregistrement en mémoire des 8 prix pour le produit sélectionné
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()

@@ -579,8 +579,27 @@ if choix_mode == "⌨️ Recherche manuelle":
     if "cup" in st.query_params: st.query_params.clear()
 elif choix_mode == "📸 Scanner un Code-Barres":
     from streamlit_qrcode_scanner import qrcode_scanner
+    
+    # On initialise une mémoire pour le scan si elle n'existe pas
+    if "cup_scanne" not in st.session_state:
+        st.session_state["cup_scanne"] = ""
+        
     code_detecte = qrcode_scanner(key="scanner_officiel_live")
-    if code_detecte: saisie_net = str(code_detecte)
+    
+    # Si la caméra capte un code et que c'est un nouveau scan
+    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]:
+        st.session_state["cup_scanne"] = str(code_detecte).strip()
+        st.rerun()  # 🚀 Force l'application à appliquer le filtre immédiatement
+        
+    # On récupère le code enregistré pour filtrer les 10 500 produits
+    if st.session_state["cup_scanne"]:
+        saisie_net = st.session_state["cup_scanne"]
+        
+        # Petit bouton pour effacer le scan et revenir à la liste complète
+        if st.button("🔄 Effacer le scan actuel"):
+            st.session_state["cup_scanne"] = ""
+            st.rerun()
+
 
 if saisie_net:
     cup_saisi = saisie_net.strip()

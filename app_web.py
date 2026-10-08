@@ -68,6 +68,21 @@ st.html("""
     }
 </style>
 """)
+def sauvegarder_historique(df_histoire):
+    """Enregistre l'historique des modifications de prix dans le bon onglet 'Historique_Prix'."""
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        try:
+            df_existant = conn.read(worksheet="Historique_Prix", ttl=0)
+        except Exception:
+            df_existant = pd.DataFrame(columns=['horodatage', 'code_upc', 'distribution', 'prix', 'source'])
+        
+        df_total = pd.concat([df_existant, df_histoire], ignore_index=True)
+        conn.update(worksheet="Historique_Prix", data=df_total)
+    except Exception as e:
+        st.error(f"⚠️ Impossible de mettre à jour l'historique cloud : {e}")
+
+
 def charger_donnees():
     """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et pré-calcule les catégories."""
     try:

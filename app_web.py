@@ -456,14 +456,23 @@ if categorie_choisie != "Toutes les catégories":
                 df_filtre = df_filtre[df_filtre["_SubShort"] == racine_choix]
                 df_filtre = df_filtre.drop(columns=["_SubShort"])
 
-colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
-colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
-df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
+colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']
+
+# Si l'utilisateur n'a rien tapé ni scanné de valide, on construit l'affichage basé sur les filtres de la barre latérale
+if not saisie_net or saisie_net.strip() in ["", "****"]:
+    colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
+    df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
+else:
+    # Si une recherche est active, df_affichage a déjà été construit dans le bloc de recherche plus haut
+    if 'df_affichage' not in locals() or df_affichage.empty:
+        colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
+        df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
 
 for c in df_affichage.columns: 
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 
 df_affichage = df_affichage.reset_index(drop=True)
+
 
 # =====================================================================
 # APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (URL EXACTE INTEGRÉE)

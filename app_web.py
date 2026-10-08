@@ -72,7 +72,7 @@ st.html("""
 """)
 
 def charger_donnees():
-    """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et nettoie les régions et entreprises."""
+    """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et pré-calcule les catégories."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_initial = conn.read(worksheet="Sheet1", ttl="2m")
@@ -87,6 +87,7 @@ def charger_donnees():
             df_initial['code_upc'] = df_initial['code_upc'].replace(r'\.0$', '', regex=True).str.strip()
         else:
             df_initial['code_upc'] = ""
+
         # Gestion stricte des colonnes de prix pour éliminer les faux prix à 0$
         colonnes_prix = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tiger_giant', 'prix_dollarama', 'prix_provigo']
         for col_prix in colonnes_prix:
@@ -116,18 +117,29 @@ def charger_donnees():
             def epurer_nom_entreprise(nom):
                 if pd.isna(nom) or str(nom).lower() in ['nan', 'none', '']:
                     return ""
-                
                 nom_propre = str(nom).split(',')[0]
                 motifs_suffixes = r'\b(inc\b\.?|limitée\b|limitee\b|ltd\b\.?|company\b|cie\b\.?)'
                 nom_propre = re.sub(motifs_suffixes, '', nom_propre, flags=re.IGNORECASE)
-                
                 return nom_propre.strip()
 
             df_initial['entreprise_proprietaire'] = df_initial['entreprise_proprietaire'].apply(epurer_nom_entreprise)
+
+        # ==============================================================================
+        # 🚀 INJECTION ET CALCUL SÉCURISÉ DES CATÉGORIES EN AMONT
+        # ==============================================================================
+        if 'nom' in df_initial.columns:
+            triage_initial = df_initial['nom'].apply(deviner_categorie)
+            df_initial['categorie_maitresse'] = [c[0] if isinstance(c, tuple) else "Épicerie salée et Garde-manger" for c in triage_initial]
+            df_initial['sous_categorie_maitresse'] = [c[1] if isinstance(c, tuple) else "Toutes les sous-catégories" for c in triage_initial]
+        else:
+            df_initial['categorie_maitresse'] = "Épicerie salée et Garde-manger"
+            df_initial['sous_categorie_maitresse'] = "Toutes les sous-catégories"
+
         return df_initial
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")
         return pd.DataFrame()
+
 
 
 # =====================================================================

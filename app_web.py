@@ -751,9 +751,9 @@ if resultats is not None and not resultats.empty:
 
         bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
         
-    if bouton_enregistrer:
+if bouton_enregistrer:
         try:
-            # Enregistrement individuel par étiquette d'index pour éviter le bogue de classe str
+            # 1. Enregistrement en mémoire des 8 prix pour le produit sélectionné
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
@@ -763,12 +763,36 @@ if resultats is not None and not resultats.empty:
             st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
 
+            # 2. Sauvegarde cloud immédiate dans le PREMIER onglet (Sheet1)
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(worksheet="Sheet1", data=st.session_state['df_produits'])
 
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
+            # 3. Préparation et envoi automatique dans le DEUXIÈME onglet (Historique_Prix)
+            nouvelles_lignes = []
+            upc_produit = str(row.get('code_upc', '')).strip()
+            champs_saisis = {
+                'prix_iga': nouveau_iga, 'prix_maxi': nouveau_maxi, 'prix_metro': nouveau_metro, 'prix_super_c': nouveau_super_c,
+                'prix_walmart': nouveau_walmart, 'prix_tigre_geant': nouveau_tigre, 'prix_dollarama': nouveau_dollarama, 'prix_provigo': nouveau_provigo
+            }
+
+            for distribution_enseigne, valeur_prix in champs_saisis.items():
+                if valeur_prix and str(valeur_prix).strip() != "":
+                    try:
+                        prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
+                        nouvelle_ligne = {
+                            'horodatage': horodatage_actuel, 'code_upc': upc_produit, 'distribution': distribution_enseigne, 'prix': prix_propre, 'source': 'collaboratif'
+                        }
+                        nouvelles_lignes.append(nouvelle_ligne)
+                    except ValueError:
+                        pass
+
+            if nouvelles_lignes:
+                df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
+                sauvegarder_historique(df_nouvel_historique) # 🚀 Écrit physiquement dans 'Historique_Prix'
+
             st.session_state['dernier_horodatage'] = horodatage_actuel
-            st.success("Mise à jour de vos 8 bannières synchronisée !")
+            st.success("Mise à jour réussie dans vos 2 onglets cloud !")
             time.sleep(0.5)
             st.rerun()
 

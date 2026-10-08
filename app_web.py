@@ -601,21 +601,31 @@ elif choix_mode == "📸 Scanner un Code-Barres":
             st.rerun()
 
 
+# CODE DE FILTRAGE RECONFIGURÉ POUR FORCER LE SCANNER À APPLIQUER LE FILTRE
 if saisie_net:
-    cup_saisi = saisie_net.strip()
+    cup_saisi = str(saisie_net).strip()
     if 'code_upc' in df_filtre.columns:
+        # On teste si c'est un code UPC exact
         recherche_cup = df_filtre[df_filtre['code_upc'].astype(str).str.strip() == cup_saisi]
         if not recherche_cup.empty:
-            df_filtre, resultats = recherche_cup, recherche_cup
+            df_filtre = recherche_cup
+            resultats = recherche_cup
+            # Si le scan vient de la caméra, on pousse les données directement dans l'affichage principal
+            df_affichage = df_filtre[['code_upc', 'nom', 'distribution'] + [c for c in ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c'] if c in df_filtre.columns]].copy().reset_index(drop=True)
         else:
+            # Sinon on teste une recherche par texte partiel (Nom du produit)
             cond = df_filtre['nom'].str.lower().str.contains(cup_saisi.lower(), na=False)
             recherche_texte = df_filtre[cond]
             if not recherche_texte.empty:
                 df_filtre = recherche_texte
-                if len(recherche_texte) == 1: resultats = recherche_texte
+                df_affichage = df_filtre[['code_upc', 'nom', 'distribution'] + [c for c in ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c'] if c in df_filtre.columns]].copy().reset_index(drop=True)
+                if len(recherche_texte) == 1: 
+                    resultats = recherche_texte
             else: 
                 message_erreur_recherche = f"⚠️ Aucun produit trouvé."
                 df_filtre = pd.DataFrame(columns=df_filtre.columns)
+                df_affichage = pd.DataFrame(columns=df_affichage.columns)
+
 
 st.markdown("---")
 st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés) :")

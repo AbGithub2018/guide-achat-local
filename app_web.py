@@ -611,14 +611,18 @@ if categorie_choisie != "Toutes les catégories":
         # 1. Filtre sur la catégorie principale (ex: Bières et Vins)
         df_affichage = df_affichage[df_affichage["_MainCat"] == categorie_choisie]
         
-        # 2. Filtre intelligent sur la sous-catégorie (évite les erreurs de texte coupé)
+        # 2. Application intelligente du filtre de la sous-catégorie (tolérance laits végétaux)
         if sous_categorie_choisie != "Toutes les sous-catégories":
-            # On prend les 10 premiers caractères du choix (ex: "Bières (mi")
-            debut_choix = str(sous_categorie_choisie)[:10].lower()
-            # On vérifie si la sous-catégorie calculée commence de la même façon
-            df_affichage = df_affichage[df_affichage["_SubCat"].str.lower().str.startswith(debut_choix)]
-            
-        # Nettoyage immédiat des colonnes temporaires
+            # Sécurité pour le lait végétal : si le choix graphique contient "lait d'amande"
+            if "lait d'amande" in str(sous_categorie_choisie).lower():
+                df_affichage = df_affichage[df_affichage["_SubCat"].str.lower().str.contains("amande|soya|avoine", na=False)]
+            else:
+                # Règle générale pour les autres catégories (comparaison tolérante sur les 15 premiers caractères)
+                racine_choix = str(sous_categorie_choisie)[:15].lower().strip()
+                df_affichage["_SubShort"] = df_affichage["_SubCat"].str.lower().str[:15].str.strip()
+                df_affichage = df_affichage[df_affichage["_SubShort"] == racine_choix]
+                df_affichage = df_affichage.drop(columns=["_SubShort"])
+
         df_affichage = df_affichage.drop(columns=["_MainCat", "_SubCat"])
 
 

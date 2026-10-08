@@ -572,8 +572,10 @@ if not df_affichage.empty:
         key="tableau_consommateur"
     )
 
+    # 🚀 CORRECTION : Extraction sécurisée de l'entier unique à l'intérieur de la liste de sélection
     if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-        index_ligne_cliquee = selection_tableau["selection"]["rows"]
+        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]  # <-- Le [0] extrait le chiffre et règle le TypeError
+        
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
@@ -650,6 +652,7 @@ else:
                         st.error(f"Erreur lors de l'enregistrement : {e}")
             else:
                 st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
+
 if resultats is not None and not resultats.empty:
     index_produit_reel = resultats.index[0]  # 🚀 CORRECTION : Force l'utilisation du premier index unique
     row = resultats.iloc[0]                  # 🚀 CORRECTION : Force l'extraction de l'unique ligne de produit

@@ -707,7 +707,7 @@ else:
                 st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
 
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index[0]
+    index_produit_reel = resultats.index
     row = resultats.iloc[0]
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
@@ -726,8 +726,16 @@ if resultats is not None and not resultats.empty:
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
 
+    # CONFIGURATION DES 8 BANNIÈRES DE VOTRE GOOGLE SHEET
     bannières_config = {
-        'prix_iga': ('🔴 IGA', '#d32f2f'), 'prix_maxi': ('🟡 MAXI', '#f9d71c'), 'prix_metro': ('🟢 METRO', '#28a745'), 'prix_super_c': ('🔵 SUPER C', '#0056b3')
+        'prix_iga': ('🔴 IGA', '#d32f2f'), 
+        'prix_maxi': ('🟡 MAXI', '#f9d71c'), 
+        'prix_metro': ('🟢 METRO', '#28a745'), 
+        'prix_super_c': ('🔵 SUPER C', '#0056b3'),
+        'prix_walmart': ('🔵 WALMART', '#0071dc'),
+        'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#ffcc00'),
+        'prix_dollarama': ('💵 DOLLARAMA', '#00843d'),
+        'prix_provigo': ('🟢 PROVIGO', '#ff5a00')
     }
 
     prix_valides = {}
@@ -739,24 +747,34 @@ if resultats is not None and not resultats.empty:
 
     meilleure_banniere_col = min(prix_valides, key=prix_valides.get) if prix_valides else None
 
+    # RENDU VISUEL DE TOUS LES PRIX DISPONIBLES (SUR 8 COLONNES)
     bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
     for col_key, (label, _) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
-        bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
+        bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 135px; text-align: center; {style_card}"><div style="font-size: 11px; color: #666;">{label}</div><div style="font-size: 17px;">{affichage}</div></div>'
     bloc_prix_html += '</div>'
 
     st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
 
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
-        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+        # LIGNES DE FORMULAIRES POUR LES 8 CASES DE PRIX DYNAMIQUES
+        upc_dynamique = str(row.get('code_upc', 'sans_upc'))
         def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
-        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="form_iga")
-        nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="form_maxi")
-        nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="form_metro")
-        nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="form_super_c")
+        
+        c1, c2, c3, c4 = st.columns(4)
+        nouveau_iga = c1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key=f"form_iga_{upc_dynamique}")
+        nouveau_maxi = c2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key=f"form_maxi_{upc_dynamique}")
+        nouveau_metro = c3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key=f"form_metro_{upc_dynamique}")
+        nouveau_super_c = c4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key=f"form_super_c_{upc_dynamique}")
+        
+        c5, c6, c7, c8 = st.columns(4)
+        nouveau_walmart = c5.text_input("Prix Walmart ($) :", value=clean_price(row.get('prix_walmart', '')), key=f"form_wal_{upc_dynamique}")
+        nouveau_tigre = c6.text_input("Prix Tigre Géant ($) :", value=clean_price(row.get('prix_tigre_geant', '')), key=f"form_tig_{upc_dynamique}")
+        nouveau_dollarama = c7.text_input("Prix Dollarama ($) :", value=clean_price(row.get('prix_dollarama', '')), key=f"form_dol_{upc_dynamique}")
+        nouveau_provigo = c8.text_input("Prix Provigo ($) :", value=clean_price(row.get('prix_provigo', '')), key=f"form_pro_{upc_dynamique}")
         
         st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
         
@@ -768,17 +786,23 @@ if resultats is not None and not resultats.empty:
         
     if bouton_enregistrer:
         try:
+            # ENREGISTREMENT DES 8 ENSEIGNES DANS LA SESSION STATE
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_walmart'] = nouveau_walmart.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_tigre_geant'] = nouveau_tigre.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
+            st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
 
+            # SAUVEGARDE EN LIGNE IMMEDIATE SUR GOOGLE SHEETS (SHEET1)
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(worksheet="Sheet1", data=st.session_state['df_produits'])
 
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
             st.session_state['dernier_horodatage'] = horodatage_actuel
-            st.success("Mise à jour synchronisée avec le Nuage !")
+            st.success("Mise à jour de vos 8 bannières synchronisée !")
             time.sleep(0.5)
             st.rerun()
 

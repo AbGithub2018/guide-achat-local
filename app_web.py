@@ -313,6 +313,21 @@ def deviner_categorie(nom_produit):
     # ==============================================================================
     # 10. RESTE INTERCEPTÉ : FRUITS ET LÉGUMES BRUTS FRAIS
     # ==============================================================================
+
+    # Blocs d'exclusions de sécurité pour nettoyer les derniers intrus manufacturés
+    if any(m in nom for m in ["pate alimentaire", "pates alimentaire", "semoule", "capelli"]):
+        return ("Épicerie salée et Garde-manger", "Pâtes, riz et grains (pâtes, riz blanc/brun, quinoa, couscous)")
+        
+    if any(m in nom for m in ["kombucha", "yop", "smoothie", "latte", "drink", "cocktail", "fizz", "thé", "tea"]):
+        return ("Boissons (non alcoolisées)", "Toutes les sous-catégories")
+        
+    if any(m in nom for m in ["biscuit", "cookie", "whippet", "barre", "chocolat", "reglisse", "gaufrette"]):
+        return ("Déjeuner et Collations", "Collations sucrées et confiseries (biscuits emballés, barres, bonbons)")
+        
+    if any(m in nom for m in ["tartinade", "sauce", "salsa", "vinaigrette", "margarine", "beurre"]):
+        return ("Épicerie salée et Garde-manger", "Huiles, vinaigres et condiments (huile, vinaigre, mayo, ketchup)")
+
+    
     fruits_mots = ["fraise", "pomme", "bleuet", "clementine", "ananas", "framboise", "peche", "fruit", "baies", "grenade", "banan", "avocat", "lime", "mangue", "grapefruit", "kiwi", "melon", "rhubarbe", "poire", "citrouille"]
     if any(m in nom for m in fruits_mots):
         return ("Fruits et Légumes", "Fruits frais (petits fruits, agrumes, pommes, poires)")

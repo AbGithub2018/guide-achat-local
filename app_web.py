@@ -355,18 +355,13 @@ def deviner_categorie(nom_produit):
             # Si le produit passe toutes les barrières, c'est du VRAI café/thé en grains, moulu ou en sachets !
             else:
                 return ("Boissons (non alcoolisées)", "Café, thé et tisanes (en grains ou moulu, capsules, sachets)")
-
-            # # 1.1 Détection des Boissons et laits végétaux (Version finale épurée)
-            if any(l in nom for l in ["amande", "almond", "soya", "soy", "avoine", "oat", "oatmilk", "silk", "earth's own", "natur-a"]):
-                # Barrière de sécurité : on exclut la crème glacée, les chocolats, les barres et les biscuits
+            # # 1.1 Détection des Boissons et laits végétaux (Version ultra-compatible)
+            if any(l in nom for l in ["amand", "soya", "soy", "avoin", "oat", "silk", "nice", "coco"]):
                 intrus_laits = ["biscuit", "barre", "granola", "ice cream", "crème glacée", "creme glacee", "haagen-dazs", "chocolat en tablette"]
                 if not any(x in nom for x in intrus_laits):
                     return ("Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)")
 
-
-
-
-          
+                     
             # 2. Détection stricte des Jus et nectars
             nom_espace_jus = f" {nom} "
             est_un_jus = any(j in nom for j in ["juice", "nectar", "fruitopia", "oasis", "sunrype", "watermelon"]) or " jus " in nom_espace_jus

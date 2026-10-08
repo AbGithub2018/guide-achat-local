@@ -710,7 +710,6 @@ if resultats is not None and not resultats.empty:
     index_produit_reel = resultats.index[0]
     row = resultats.iloc[0]
 
-
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
@@ -745,15 +744,9 @@ if resultats is not None and not resultats.empty:
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
-        bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
-    for col_key, (label, _) in bannières_config.items():
-        v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
-        affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
-        style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
         bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
     bloc_prix_html += '</div>'
 
-    # Rendu final de la grande fiche produit colorée (Achat Québécois / Canadien / Étranger)
     st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
 
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
@@ -767,63 +760,29 @@ if resultats is not None and not resultats.empty:
         
         st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
         
-        # Gestion dynamique du texte du bouton d'enregistrement
         texte_barre = "💾 Enregistrer les modifications de prix"
         if "dernier_horodatage" in st.session_state:
             texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
 
         bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
+        
     if bouton_enregistrer:
         try:
-            # 1. Mise à jour en mémoire du tableau principal des produits
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
 
-            # 2. Préparation des données d'historique (Fuseau horaire du Québec)
-            nouvelles_lignes = []
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            conn.update(worksheet="Sheet1", data=st.session_state['df_produits'])
+
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
-            upc_produit = st.session_state['df_produits'].at[index_produit_reel, 'code_upc']
-
-            champs_saisis = {
-                'prix_iga': nouveau_iga,
-                'prix_maxi': nouveau_maxi,
-                'prix_metro': nouveau_metro,
-                'prix_super_c': nouveau_super_c
-            }
-
-            for distribution_enseigne, valeur_prix in champs_saisis.items():
-                if valeur_prix and str(valeur_prix).strip() != "":
-                    try:
-                        prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
-                        
-                        nouvelle_ligne = {
-                            'horodatage': horodatage_actuel,
-                            'code_upc': upc_produit,
-                            'distribution': distribution_enseigne,
-                            'prix': prix_propre,
-                            'source': 'collaboratif'
-                        }
-                        nouvelles_lignes.append(nouvelle_ligne)
-                    except ValueError:
-                        pass
-
-            # 3. Tentative d'enregistrement de l'historique dans le nuage
-            if nouvelles_lignes:
-                df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
-                try:
-                    sauvegarder_historique(df_nouvel_historique)
-                except NameError:
-                    pass
-
-            # 4. Mémorisation de l'heure du succès pour la barre verte et rafraîchissement
             st.session_state['dernier_horodatage'] = horodatage_actuel
+            st.success("Mise à jour synchronisée avec le Nuage !")
             time.sleep(0.5)
             st.rerun()
 
         except Exception as e:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
-# Mention informative finale tout en bas du script central
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")

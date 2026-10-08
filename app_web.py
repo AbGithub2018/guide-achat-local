@@ -454,10 +454,19 @@ if saisie_net and saisie_net.strip() not in ["", "****"]:
         return t
 
     if 'code_upc' in df.columns:
-        recherche_cup = df[df['code_upc'].astype(str).str.strip() == cup_saisi]
+        # 🚀 VERSION INTELLIGENTE : On prépare les deux versions (avec et sans zéro au début)
+        cup_avec_zero = cup_saisi if cup_saisi.startswith('0') else '0' + cup_saisi
+        cup_sans_zero = cup_saisi.lstrip('0')
+        
+        # On cherche d'abord la version sans zéro, puis la version avec zéro
+        recherche_cup = df[df['code_upc'].astype(str).str.strip() == cup_sans_zero]
+        if recherche_cup.empty:
+            recherche_cup = df[df['code_upc'].astype(str).str.strip() == cup_avec_zero]
+            
         if not recherche_cup.empty:
             df_filtre = recherche_cup
             resultats = recherche_cup
+
         else:
             saisie_propre = enlever_accents(cup_saisi)
             noms_sans_accents = df['nom'].apply(enlever_accents)

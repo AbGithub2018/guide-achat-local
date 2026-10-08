@@ -329,6 +329,26 @@ def deviner_categorie(nom_produit):
 
     
     fruits_mots = ["fraise", "pomme", "bleuet", "clementine", "ananas", "framboise", "peche", "fruit", "baies", "grenade", "banan", "avocat", "lime", "mangue", "grapefruit", "kiwi", "melon", "rhubarbe", "poire", "citrouille"]
+    # Entonnoir de sécurité : On élimine les produits transformés avant de valider le fruit frais
+    nom_clean = " " + nom + " "
+    
+    # 1. Élimination des collations, biscuits, gaufrettes et barres
+    if any(m in nom_clean for m in [" gaufrette ", " gaufrettes ", " biscuit ", " biscuits ", " barre ", " barres ", " galette ", " galettes ", " roules ", " roule "]):
+        return ("Déjeuner et Collations", "Collations sucrées et confiseries (biscuits emballés, barres, bonbons)")
+        
+    # 2. Élimination des produits laitiers, yogourts et alternatives végétales
+    if any(m in nom_clean for m in [" yogourt ", " yogurt ", " yaourt ", " skyr ", " iogo ", " oikos ", " activia ", " free ", " lacteo ", " yop ", " dairy "]):
+        return ("Produits laitiers et Œufs", "Yogourts et desserts laitiers (grecs, poudings, kéfir)")
+        
+    # 3. Élimination des boissons liquides et alcools
+    if any(m in nom_clean for m in [" kombucha ", " bierre ", " biere ", " cidre ", " codre ", " madjack ", " jus ", " juice ", " tea ", " thé ", " boisson ", " drink "]):
+        return ("Boissons (non alcoolisées)", "Toutes les sous-catégories")
+        
+    # 4. Élimination des féculents, pâtes et sauces d'accompagnement
+    if any(m in nom_clean for m in [" pate ", " pates ", " sauce ", " salsa ", " vinaigrette ", " margarine ", " beurre "]):
+        return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
+
+    
     if any(m in nom for m in fruits_mots):
         return ("Fruits et Légumes", "Fruits frais (petits fruits, agrumes, pommes, poires)")
         

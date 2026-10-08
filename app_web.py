@@ -43,7 +43,6 @@ st.html("""
         display: flex !important;
         visibility: visible !important;
     }
-    
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
     
@@ -57,7 +56,6 @@ st.html("""
         gap: 10px !important;
     }
     div[data-testid="column"] {
-    
         flex: 1 1 calc(33.333% - 10px) !important;
         min-width: calc(33.333% - 10px) !important;
         max-width: calc(33.333% - 10px) !important;
@@ -72,6 +70,7 @@ st.html("""
     }
 </style>
 """)
+
 def charger_donnees():
     """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et nettoie les régions et entreprises."""
     try:
@@ -88,7 +87,6 @@ def charger_donnees():
             df_initial['code_upc'] = df_initial['code_upc'].replace(r'\.0$', '', regex=True).str.strip()
         else:
             df_initial['code_upc'] = ""
-        
         # Gestion stricte des colonnes de prix pour éliminer les faux prix à 0$
         colonnes_prix = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tiger_giant', 'prix_dollarama', 'prix_provigo']
         for col_prix in colonnes_prix:
@@ -107,30 +105,22 @@ def charger_donnees():
         # 🚀 HARMONISATION ET NETTOYAGE STRICT DES RÉGIONS
         # ==============================================================================
         if 'entreprise_province_etat' in df_initial.columns and 'entreprise_pays' in df_initial.columns:
-            # Nettoyage des variantes de "Québec"
             mask_quebec = df_initial['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False)
             df_initial.loc[mask_quebec, 'entreprise_province_etat'] = 'Québec'
-            
-            # Harmonisation de la nationalité économique québécoise
             df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Québec'
 
         # ==============================================================================
-        # 🚀 NETTOYAGE CHIRURGICAL DES NOMS D'ENTREPRISES (COLONNE F)
+        # 🚀 NETTOYAGE CHIRURGICAL DES NOMS D'ENTREPRISES
         # ==============================================================================
         if 'entreprise_proprietaire' in df_initial.columns:
             def epurer_nom_entreprise(nom):
                 if pd.isna(nom) or str(nom).lower() in ['nan', 'none', '']:
                     return ""
                 
-                # 1. On coupe dès qu'il y a une virgule pour rejeter les adresses/villes
                 nom_propre = str(nom).split(',')[0]
-                
-                # 2. Suppression des suffixes légaux (Insensible à la casse, gère avec ou sans point)
-                # Supprime: inc, inc., limitée, limitee, ltd, ltd., company, cie
                 motifs_suffixes = r'\b(inc\b\.?|limitée\b|limitee\b|ltd\b\.?|company\b|cie\b\.?)'
                 nom_propre = re.sub(motifs_suffixes, '', nom_propre, flags=re.IGNORECASE)
                 
-                # 3. Nettoyage des espaces doubles ou en fin de chaîne
                 return nom_propre.strip()
 
             df_initial['entreprise_proprietaire'] = df_initial['entreprise_proprietaire'].apply(epurer_nom_entreprise)
@@ -141,7 +131,7 @@ def charger_donnees():
 
 
 # =====================================================================
-# PARTIE 1 : STRUCTURE OFFICIELLE DES CATÉGORIES ET SOUS-CATÉGORIES
+# STRUCTURE OFFICIELLE DES CATÉGORIES ET SOUS-CATÉGORIES
 # =====================================================================
 CATEGORIES_PROJET = {
     "Toutes les catégories": ["Toutes les sous-catégories"],
@@ -214,24 +204,17 @@ CATEGORIES_PROJET = {
         "Vins (vins rouges, blancs et rosés d'épicerie)"
     ]
 }
-# =====================================================================
-# PARTIE 2 : FONCTION DE TRI DYNAMIQUE (REMPLACE LES LIGNES 138 À 337)
-# =====================================================================
+
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
-    # Nettoyage des accents et des apostrophes pour attraper d'amandes et à l'avoine
     nom = nom.replace("é", "e").replace("à", "a").replace("'", " ").replace("’", " ")
     nom_isole = f" {nom} "
 
-
-    # Règle prioritaire pour le Ginger Ale et les Sodas de Gingembre
     if "ginger" in nom:
-        # On ignore les thés, biscuits, pommes ou bonbons au gingembre pour qu'ils soient classés ailleurs
         if any(x in nom for x in ["tea", "thé", "snap", "cookie", "biscuits", "chews", "apple", "pomme", "dressing"]):
             pass  
         else:
             return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
-
     
     if any(m in nom for m in ["fraise", "pomme", "bleuet", "clementine", "ananas", "framboise", "peche", "fruit", "baies", "melon d'eau", "asperges", "poireaux", "avocat"]):
         if not any(x in nom for x in ["surgelé", "congelé", "ice cream", "compote", "confiture", "spread", "sauce", "boisson", "jus", "water", "soda", "eau"]):
@@ -240,8 +223,6 @@ def deviner_categorie(nom_produit):
         if not any(x in nom for x in ["surgelé", "congelé", "soupe", "bouillon", "crème de", "creme de"]):
             return ("Fruits et Légumes", "Légumes frais (légumes-feuilles, racines, fines herbes)")
 
-
-    # 2. Produits laitiers et Œufs
     if any(m in nom for m in ["lait", "creme", "cream", "cremeur"]) and not any(x in nom for x in ["amande", "soya", "soy", "avoine", "vegetal", "chocolat noir"]):
         return "Produits laitiers et Œufs", "Laits et crèmes (lait de vache, crèmes à cuisson/café)"
     if any(m in nom for m in ["fromage", "cheese", "cheddar", "mozzarella", "ricotta", "feta", "fêta", "philadelphia", "parmesan"]):
@@ -254,7 +235,6 @@ def deviner_categorie(nom_produit):
         if not any(x in nom for x in ["chocolat", "cacao", "amande", "peanut"]):
             return "Produits laitiers et Œufs", "Beurre et margarines (salé/non salé, tartinades)"
 
-    # 3. Boulangerie et Pâtisserie
     if "bagel" in nom or "muffin" in nom or "croissant" in nom or "brioche" in nom or "chocolatine" in nom:
         return "Boulangerie et Pâtisserie", "Boulangerie déjeuner (bagels, muffins, croissants, brioches)"
     if "tortilla" in nom or "pita" in nom or "naan" in nom or "wrap" in nom:
@@ -265,7 +245,6 @@ def deviner_categorie(nom_produit):
         if not any(x in nom for x in ["surgelé", "congelé", "deep'n"]):
             return "Boulangerie et Pâtisserie", "Pâtisseries et desserts (gâteaux, tartes, biscuits frais)"
 
-    # 4. Épicerie salée et Garde-manger
     if any(m in nom for m in ["tuna", "thon", "sardines", "maquereau"]):
         return ("Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)")
     if "crackers" in nom or "craquelin" in nom or "biscuits" in nom:
@@ -283,9 +262,6 @@ def deviner_categorie(nom_produit):
     if any(m in nom for m in ["farine", "flour", "sucre", "sugar", "poudre à pâte", "baking"]):
         return ("Épicerie salée et Garde-manger", "Ingrédients de cuisson (farine, sucre, poudres à lever, pépites)")
 
-
-
-    # 5. Déjeuner et Collations
     if "céréale" in nom or "cereal" in nom or "gruau" in nom or "oat" in nom or "avoine" in nom or "flakes" in nom:
         return "Déjeuner et Collations", "Céréales et gruaux (céréales pour enfants, granolas, gruau)"
     if any(m in nom for m in ["miel", "honey", "sirop", "syrup", "confiture", "jam", "peanut butter", "beurre d'arachide"]):
@@ -297,7 +273,6 @@ def deviner_categorie(nom_produit):
     if "noix" in nom or "nut" in nom or "amande" in nom or "arachide" in nom or "graine" in nom or "seed" in nom:
         return "Déjeuner et Collations", "Noix et graines (arachides, amandes, graines de tournesol)"
 
-    # 6. Aliments surgelés
     if "pizza" in nom or "lasagne" in nom or "repas" in nom or "stromboli" in nom:
         return "Aliments surgelés", "Plats cuisinés (pizzas, lasagnes, repas individuels)"
     if any(m in nom for m in ["pépites", "nuggets", "burger", "pané", "fries", "frites", "hashbrown"]):
@@ -307,14 +282,12 @@ def deviner_categorie(nom_produit):
     if any(m in nom for m in ["crème glacée", "ice cream", "sorbet", "bâtonnet", "drumstick", "magnum", "gelato"]):
         return "Aliments surgelés", "Crème glacée et desserts surgelés (en pot, barres, gâteaux)"
 
-    # 7. Boissons (non alcoolisées)
     mots_boissons = ["cola", "coke", "pepsi", "7up", "soda", "eau", "water", "perrier", "eska", "montellier", "bubly", "dasani", "schweppes", "rickey", "mousse", "juice", "jus", "nectar", "vitaminwater", "smart water", "flow", "liquid water enhancer", "aromatisant", "mio", "café", "coffee", "thé", "tea", "tisane", "infusion"]
     
     nom_espace = f" {nom} "
     a_mots_boissons = any(m in nom for m in mots_boissons) or " eau " in nom_espace or " l eau " in nom_espace
     
     if a_mots_boissons:
-        # Exclusion chirurgicale absolue de toute viande, poisson ou biscuit
         intrus_boissons = [
             "veau", "agneau", "poulet", "cretonnade", "merguez", "saucisse", "boulettes", 
             "tuna", "thon", "maquereau", "sardines", "shrimp", "crackers", "craquelin", 
@@ -324,75 +297,49 @@ def deviner_categorie(nom_produit):
             "bordeaux", "beer", "st-ambroise", "ipeautre", "epeautre", "crisps", "réglisse", "reglisse", "cacao"
         ]
         
-        # # 1. Détection des Cafés, Thés et Tisanes (Version finale épurée)
         if any(c in nom for c in ["café", "coffee", "thé", "tea", "tisane", "infusion"]):
-            # Barrière 1 : Exclusion absolue des viandes et burritos piégés
             if any(x in nom for x in ["steak", "burrito", "steamers", "marinara"]):
                 pass
-                
-            # Barrière 2 : Exclusion des chocolats, biscuits et crèmes glacées (inclut thé social)
             elif any(x in nom for x in ["crisps", "crisp", "biscuit", "buiscuit", "cookie", "cakes", "social tea", "thé social", "glacée", "glacé au café", "almond"]):
                 if "boisson" in nom or "instant iced" in nom:
                     return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
                 else:
                     pass
-                    
-            # Barrière 3 : Exclusion des crèmes, colorants et rehausseurs de café (inclut crémette)
             elif any(x in nom for x in ["crème à café", "creme a cafe", "cremette", "crème 15%", "coffee-mate", "coffee mate", "colorant à café", "rehausseur", "whitener"]):
                 pass
-                
-            # Barrière 4 : Exclusion des sodas/colas qui mentionnent juste "sans caféine"
             elif any(x in nom for x in ["coke diet", "racinette"]):
                 return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
-                
-            # Barrière 5 : Redirection des thés glacés et cafés glacés LIQUIDES prêts-à-boire (Snapple, Good Drink...)
             elif any(g in nom for g in ["glacé", "glace", "iced", "nestea", "arizona", "brisk", "peace tea", "sanpellegrino", "frappé", "twisted", "snapple", "good drink"]):
                 if "twisted tea" in nom:
                     return ("Bières et Vins (Alcools)", "Bières (microbrasseries québécoises, commerciales, cidres)")
                 else:
                     return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
-                    
-            # Si le produit passe toutes les barrières, c'est du VRAI café/thé en grains, moulu ou en sachets !
             else:
                 return ("Boissons (non alcoolisées)", "Café, thé et tisanes (en grains ou moulu, capsules, sachets)")
-            # # 1.1 Détection des Boissons et laits végétaux (Version ultra-compatible)
-            if any(l in nom for l in ["amand", "soya", "soy", "avoin", "oat", "silk", "nice", "coco"]):
-                intrus_laits = ["biscuit", "barre", "granola", "ice cream", "crème glacée", "creme glacee", "haagen-dazs", "chocolat en tablette"]
-                if not any(x in nom for x in intrus_laits):
-                    return ("Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)")
-
-                     
-            # 2. Détection stricte des Jus et nectars
-            nom_espace_jus = f" {nom} "
-            est_un_jus = any(j in nom for j in ["juice", "nectar", "fruitopia", "oasis", "sunrype", "watermelon"]) or " jus " in nom_espace_jus
             
-            if est_un_jus and not any(k in nom for k in ["kombucha", "vivaloe"]):
-                return ("Boissons (non alcoolisées)", "Jus et nectars (jus d'orange, jus de pomme, boissons aux fruits)")
-            
-            # 3. Par défaut, toutes les autres boissons vont dans Boissons gazeuses et eaux
-            else:
-                return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
+        if any(l in nom for l in ["amand", "soya", "soy", "avoin", "oat", "silk", "nice", "coco"]):
+            intrus_laits = ["biscuit", "barre", "granola", "ice cream", "crème glacée", "creme glacee", "haagen-dazs", "chocolat en tablette"]
+            if not any(x in nom for x in intrus_laits):
+                return ("Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)")
 
+        nom_espace_jus = f" {nom} "
+        est_un_jus = any(j in nom for j in ["juice", "nectar", "fruitopia", "oasis", "sunrype", "watermelon"]) or " jus " in nom_espace_jus
+        
+        if est_un_jus and not any(k in nom for k in ["kombucha", "vivaloe"]):
+            return ("Boissons (non alcoolisées)", "Jus et nectars (jus d'orange, jus de pomme, boissons aux fruits)")
+        else:
+            return ("Boissons (non alcoolisées)", "Boissons gazeuses et eaux (colas, eaux pétillantes, de source)")
 
-
-
-    # 8. Alcools
     mots_bieres = ["bière", "biere", "cidre", "st-ambroise", "molson", "labatt", "boréale", "sleeman", "alexander keith"]
-    
-    nom_isole = f" {nom} "
-    
     if any(m in nom for m in mots_bieres) or " ale " in nom_isole or " ipa " in nom_isole:
-        # AJOUT DE "ginger" À LA FIN DE CETTE LISTE :
         intrus = ["vitamine", "barre", "galette", "dumpling", "chèvre", "pancetta", "red bull", "énergisante", "ginger"]
         if not any(x in nom for x in intrus):
             return "Bières et Vins (Alcools)", "Bières (microbrasseries québécoises, commerciales, cidres)"
-
             
     if " vin " in nom_isole or " wine" in nom or "bordeaux" in nom:
         if not any(x in nom for x in ["vitamine", "barre", "galette", "dumpling", "vinaigre", "cracker", "vinta", "krunch", "vindaloo"]):
             return "Bières et Vins (Alcools)", "Vins (vins rouges, blancs et rosés d'épicerie)"
 
-    # 9. Viandes et Poissons frais par défaut
     if "poulet" in nom or "chicken" in nom or "dindon" in nom or "volaille" in nom:
         return "Viandes et Volailles", "Volaille (poulet, dindon, poitrines, cuisses)"
     if any(m in nom for m in ["bœuf", "beef", "porc", "veau", "agneau", "steak", "rôti", "biftek", "merguez", "boulettes"]):
@@ -414,13 +361,12 @@ df = st.session_state['df_produits']
 
 if 'banniere_active' not in st.session_state:
     st.session_state['banniere_active'] = "Tous"
-
 # ==============================================================================
-# DESIGN BARRE LATÉRALE (CORRIGÉ AVEC LES VRAIS EN-TÊTES DE LA BASE DE DONNÉES)
+# DESIGN BARRE LATÉRALE (FILTRES DES POPUPS ET RAYONS)
 # ==============================================================================
 st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 22px;'>🌐 Filtrer les produits par pays d'origine</h2>")
 
-# 1. Alignement strict sur l'en-tête exact validé par la photo : 'entreprise_pays'
+# 1. Alignement strict sur le filtre pays
 if 'entreprise_pays' in df.columns:
     liste_pays = ["Tous"] + sorted([str(p).strip() for p in df['entreprise_pays'].unique() if pd.notna(p) and str(p).strip() != "" and str(p).lower() != "nan"])
     choix_pays = st.sidebar.selectbox("Filtrer par Pays propriétaire :", liste_pays)
@@ -435,19 +381,15 @@ if 'entreprise_province_etat' in df_filtre.columns:
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
 
-# =====================================================================
-# PARTIE 3 : MENUS DÉROULANTS GRAPHIQUES ET FILTRAGE DE L'AFFICHAGE
-# =====================================================================
-st.sidebar.markdown("---")  # Ligne de séparation élégante sous la Province
+st.sidebar.markdown("---")
 
-# 1. Boîte de sélection de la catégorie principale
+# 3. Boîtes de sélection des rayons d'aliments
 categorie_choisie = st.sidebar.selectbox(
     "Filtrer par Catégorie d'aliments :",
     options=list(CATEGORIES_PROJET.keys()),
     index=0
 )
 
-# 2. Boîte de sélection de la sous-catégorie (se met à jour toute seule)
 sous_cat_disponibles = CATEGORIES_PROJET[categorie_choisie]
 sous_categorie_choisie = st.sidebar.selectbox(
     "Filtrer par Sous-catégorie :",
@@ -455,64 +397,95 @@ sous_categorie_choisie = st.sidebar.selectbox(
     index=0
 )
 
-# 3. Filtrage en mémoire basé sur le nom du produit
-# 3. Filtrage en mémoire basé sur le nom du produit
-# Les choix des catégories sont mémorisés ici pour être appliqués directement au tableau central plus bas.
+# 4. Filtrage par bannière active
+banniere = st.session_state['banniere_active']
+if banniere != "Tous" and 'distribution' in df_filtre.columns:
+    df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 
+# =====================================================================
+# ETAPE CORRECTIVE : CONSTRUCTION ET FILTRAGE DE L'AFFICHAGE EN AMONT
+# =====================================================================
+colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
+colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
+df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
+
+for c in df_affichage.columns: 
+    df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
+
+# Application immédiate du filtre de catégories sur le catalogue d'affichage
+if categorie_choisie != "Toutes les catégories":
+    if not df_affichage.empty and "nom" in df_affichage.columns:
+        triage_interne = df_affichage["nom"].apply(deviner_categorie)
+        
+        df_affichage["_MainCat"] = [c[0] for c in triage_interne]
+        df_affichage["_SubCat"] = [c[1] for c in triage_interne]
+        
+        df_affichage = df_affichage[df_affichage["_MainCat"] == categorie_choisie]
+        
+        if sous_categorie_choisie != "Toutes les sous-catégories":
+            choix_clean = str(sous_categorie_choisie).lower()
+            if "boissons" in choix_clean or "amande" in choix_clean:
+                df_affichage = df_affichage[df_affichage["_SubCat"].str.lower().str.contains("amande|soya|avoine|végétales|vegetales", na=False)]
+            else:
+                racine_choix = str(sous_categorie_choisie)[:15].lower().strip()
+                df_affichage["_SubShort"] = df_affichage["_SubCat"].str.lower().str[:15].str.strip()
+                df_affichage = df_affichage[df_affichage["_SubShort"] == racine_choix]
+                df_affichage = df_affichage.drop(columns=["_SubShort"])
+
+        df_affichage = df_affichage.drop(columns=["_MainCat", "_SubCat"])
+
+# Réinitialisation propre de l'index visuel pour détruire le décalage de sélection
+df_affichage = df_affichage.reset_index(drop=True)
+# =====================================================================
+# APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (MAINTENANT PARFAITEMENT SYNCHRONISÉ)
+# =====================================================================
 st.sidebar.subheader("Aperçu du produit")
 
-# CORRECTIF DE SYNCHRONISATION INDEXATION : Alignement parfait basé sur le tableau à l'écran
 cup_actuel = "nan"
 if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     try:
-        # Récupération de l'index de la ligne cliquée
+        # Récupération de l'index de la ligne cliquée à l'écran
         index_ligne_affiche = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
         
-        # On lit le code UPC directement depuis le tableau 'df_affichage' pour éviter les décalages
-        if index_ligne_affiche < len(df_filtre):
-            raw_cup = df_filtre.iloc[index_ligne_affiche]['code_upc']
+        # SÉCURITÉ : On lit directement dans df_affichage qui contient exactement la liste filtrée à l'écran
+        if index_ligne_affiche < len(df_affichage):
+            raw_cup = df_affichage.iloc[index_ligne_affiche]['code_upc']
             cup_nettoye = str(raw_cup).strip().split('.')[0]
-            cup_actuel = cup_nettoye.zfill(12) if (len(cup_nettoye) < 12 and cup_nettoye.isdigit()) else cup_nettoye
-
+            cup_actuel = cup_nettoye.zfill(12) if (cup_nettoye.isdigit() and len(cup_nettoye) < 12) else cup_nettoye
 
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
             
-        # 1. ANALYSE DU DOSSIER LOCAL "images" SUR GITHUB (AVEC OU SANS ZÉRO)
         extensions_possibles = [".jpg", ".jpeg", ".png", ".webp", ".JPG", ".JPEG", ".PNG", ".WEBP"]
         chemin_image_locale = None
-
-        # On crée une version du code sans les zéros au début (ex: transformera "087115710514" en "87115710514")
         cup_sans_zero = cup_actuel.lstrip('0')
 
         for ext in extensions_possibles:
-                chemin_test_exact = os.path.join("images", f"{cup_actuel}{ext}")
-                chemin_test_sans_zero = os.path.join("images", f"{cup_sans_zero}{ext}")
+            chemin_test_exact = os.path.join("images", f"{cup_actuel}{ext}")
+            chemin_test_sans_zero = os.path.join("images", f"{cup_sans_zero}{ext}")
 
-                if os.path.exists(chemin_test_exact):
-                    chemin_image_locale = chemin_test_exact
-                    break
-                elif os.path.exists(chemin_test_sans_zero):
-                    chemin_image_locale = chemin_test_sans_zero
-                    break
+            if os.path.exists(chemin_test_exact):
+                chemin_image_locale = chemin_test_exact
+                break
+            elif os.path.exists(chemin_test_sans_zero):
+                chemin_image_locale = chemin_test_sans_zero
+                break
 
-            # 2. RENDU DE L'IMAGE : Priorité absolue à votre dossier GitHub
         if chemin_image_locale:
-                st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
+            st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
         else:
-                # Recours à Open Food Facts uniquement si l'image est absente de GitHub
-                with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
-                    url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
-                    headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 "}
-                    reponse = requests.get(url_api, headers=headers, timeout=5)
-                    if reponse.status_code == 200:
-                        donnees = reponse.json()
-                        if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
-                            st.sidebar.image(donnees["product"]["image_url"], caption="Photo officielle OpenFoodFacts", use_container_width=True)
-                        else:
-                            st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
+            with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
+                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
+                headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 "}
+                reponse = requests.get(url_api, headers=headers, timeout=5)
+                if reponse.status_code == 200:
+                    donnees = reponse.json()
+                    if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
+                        st.sidebar.image(donnees["product"]["image_url"], caption="Photo officielle OpenFoodFacts", use_container_width=True)
                     else:
-                        st.sidebar.error("❌ Serveur d'images indisponible.")
+                        st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
+                else:
+                    st.sidebar.error("❌ Serveur d'images indisponible.")
     except Exception as e:
         st.sidebar.error(f"Erreur Sidebar CUP : {e}")
 
@@ -538,30 +511,29 @@ with st.sidebar.expander("🔑 Administration"):
             if 'df_produits' in st.session_state: del st.session_state['df_produits']
             st.success("Produit supprimé !"), time.sleep(1), st.rerun()
 
-# 3. ZONE PRINCIPALE : Entête et Guide
+# =====================================================================
+# ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
+# =====================================================================
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
 st.html("<p style='text-align: center; font-size: 16px; color: #666;'>Scannez un code-barres pour valider l'origine et gérer vos prix d'épicerie.</p>")
 
 st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
 c_iga, c_maxi = st.columns(2)
-if c_iga.button("🔴 IGA", use_container_width=True): st.session_state['banniere_active'] = "IGA"
-if c_maxi.button("🟡 Maxi", use_container_width=True): st.session_state['banniere_active'] = "Maxi"
+if c_iga.button("🔴 IGA", use_container_width=True): st.session_state['banniere_active'] = "IGA"; st.rerun()
+if c_maxi.button("🟡 Maxi", use_container_width=True): st.session_state['banniere_active'] = "Maxi"; st.rerun()
 c_met, c_sup = st.columns(2)
-if c_met.button("🟢 Metro", use_container_width=True): st.session_state['banniere_active'] = "Metro"
-if c_sup.button("🔵 Super C", use_container_width=True): st.session_state['banniere_active'] = "Super_C"
+if c_met.button("🟢 Metro", use_container_width=True): st.session_state['banniere_active'] = "Metro"; st.rerun()
+if c_sup.button("🔵 Super C", use_container_width=True): st.session_state['banniere_active'] = "Super_C"; st.rerun()
 c_wal, c_tig = st.columns(2)
-if c_wal.button("🔵 Walmart", use_container_width=True): st.session_state['banniere_active'] = "Walmart"
-if c_tig.button("🐯 Tigre Géant", use_container_width=True): st.session_state['banniere_active'] = "Tigre_Geant"
+if c_wal.button("🔵 Walmart", use_container_width=True): st.session_state['banniere_active'] = "Walmart"; st.rerun()
+if c_tig.button("🐯 Tigre Géant", use_container_width=True): st.session_state['banniere_active'] = "Tigre_Geant"; st.rerun()
 c_dol, c_pro, c_all = st.columns(3)
-if c_dol.button("💵 Dollarama", use_container_width=True): st.session_state['banniere_active'] = "Dollarama"
-if c_pro.button("🟢 Provigo", use_container_width=True): st.session_state['banniere_active'] = "Provigo"
-if c_all.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"
-
-banniere = st.session_state['banniere_active']
-if banniere != "Tous" and 'distribution' in df_filtre.columns:
-    df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
-
-# 4. ZONE DE RECHERCHE ET SCANNER
+if c_dol.button("💵 Dollarama", use_container_width=True): st.session_state['banniere_active'] = "Dollarama"; st.rerun()
+if c_pro.button("🟢 Provigo", use_container_width=True): st.session_state['banniere_active'] = "Provigo"; st.rerun()
+if c_all.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"; st.rerun()
+# =====================================================================
+# ZONE DE RECHERCHE ET SCANNER
+# =====================================================================
 resultats, message_erreur_recherche = None, None
 choix_mode = st.radio("👉 MODE DE RECHERCHE :", ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"], horizontal=True, label_visibility="collapsed")
 saisie_net = ""
@@ -591,57 +563,17 @@ if saisie_net:
                 if len(recherche_texte) == 1: resultats = recherche_texte
             else: 
                 message_erreur_recherche = f"⚠️ Aucun produit trouvé."
-                # 🚀 AJOUT DE CETTE LIGNE POUR FORCER L'OUVERTURE DU FORMULAIRE :
                 df_filtre = pd.DataFrame(columns=df_filtre.columns)
 
-# 5. CONFIGURATION ET RENDU DU TABLEAU INTERACTIF
-colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
-colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
-df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
-
-for c in df_affichage.columns: df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
-
-# --- FILTRAGE SIMPLE ET ULTRA-ROBUSTE PAR RAYONS D'ALIMENTS ---
-if categorie_choisie != "Toutes les catégories":
-    if not df_affichage.empty and "nom" in df_affichage.columns:
-        # Calcule le tuple (Catégorie, Sous-Catégorie) pour chaque produit à l'écran
-        triage_interne = df_affichage["nom"].apply(deviner_categorie)
-        
-        df_affichage["_MainCat"] = [c[0] for c in triage_interne]
-        df_affichage["_SubCat"] = [c[1] for c in triage_interne]
-        
-        # 1. Filtre sur la catégorie principale (ex: Bières et Vins)
-        df_affichage = df_affichage[df_affichage["_MainCat"] == categorie_choisie]
-        
-        # 2. Application intelligente du filtre de la sous-catégorie (tolérance absolue laits végétaux)
-        if sous_categorie_choisie != "Toutes les sous-catégories":
-            # Si le choix graphique contient "boissons" ou "lait d'amande"
-            choix_clean = str(sous_categorie_choisie).lower()
-            if "boissons" in choix_clean or "amande" in choix_clean:
-                df_affichage = df_affichage[df_affichage["_SubCat"].str.lower().str.contains("amande|soya|avoine|végétales|vegetales", na=False)]
-            else:
-                # Règle générale pour les autres catégories
-                racine_choix = str(sous_categorie_choisie)[:15].lower().strip()
-                df_affichage["_SubShort"] = df_affichage["_SubCat"].str.lower().str[:15].str.strip()
-                df_affichage = df_affichage[df_affichage["_SubShort"] == racine_choix]
-                df_affichage = df_affichage.drop(columns=["_SubShort"])
-
-
-        df_affichage = df_affichage.drop(columns=["_MainCat", "_SubCat"])
-
+st.markdown("---")
+st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés) :")
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large")
 }
 
-st.markdown("---")
-st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés) :")
-
-# FIX CRUCIAL ET ABSOLU DU SCRIPT : On réinitialise l'index d'affichage pour éliminer le décalage !
-df_affichage = df_affichage.reset_index(drop=True)
 selection_tableau = None 
-# Cas 1 : Il y a des produits à afficher dans le tableau (Ligne 461 réécrite proprement)
 if not df_affichage.empty:
     selection_tableau = st.dataframe(
         df_affichage, 
@@ -653,14 +585,12 @@ if not df_affichage.empty:
         key="tableau_consommateur"
     )
 
-    # INTERCEPTION SÉCURISÉE DU CLIC UTILISATEUR : Uniquement si une ligne est cochée
     if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
+        index_ligne_cliquee = selection_tableau["selection"]["rows"]
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
 
-# Cas 2 : Le tableau est complètement vide -> C'est un NOUVEAU PRODUIT !
 else:
     if message_erreur_recherche:
         st.warning(message_erreur_recherche)
@@ -730,22 +660,18 @@ else:
                         }
                         
                         st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
-                        
-                        if sauvegarder_donnees(st.session_state['df_produits']):
-                            st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
-                            st.balloons()
-                            time.sleep(1)
-                            st.rerun()
+                        st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
+                        st.balloons()
+                        time.sleep(1)
+                        st.rerun()
                     except Exception as e:
                         st.error(f"Erreur lors de l'enregistrement : {e}")
             else:
                 st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
 
-# On reprend la suite normale de votre script à partir de l'ancienne ligne 474 (Vérification si un produit existant est sélectionné)
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index[0]
-    row = resultats.iloc[0]
-
+    index_produit_reel = resultats.index
+    row = resultats.iloc
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
@@ -781,8 +707,7 @@ if resultats is not None and not resultats.empty:
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
-        bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
-        bloc_prix_html = '<div style="margin: 15px  0; display: flex; gap: 12px; flex-wrap: wrap;">'
+            bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
     for col_key, (label, _) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
@@ -790,6 +715,7 @@ if resultats is not None and not resultats.empty:
         bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
     bloc_prix_html += '</div>'
 
+    # Rendu final de la grande fiche produit colorée (Achat Québécois / Canadien / Étranger)
     st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
 
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
@@ -803,24 +729,21 @@ if resultats is not None and not resultats.empty:
         
         st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
         
-        # Gestion dynamique du texte de la barre verte
+        # Gestion dynamique du texte du bouton d'enregistrement
         texte_barre = "💾 Enregistrer les modifications de prix"
         if "dernier_horodatage" in st.session_state:
             texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
 
         bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
-
-    
-        # ---> LE BLOC CI-DESSOUS EST MAINTENANT INDENTÉ À L'INTÉRIEUR DU 'IF RESULTATS' <---
     if bouton_enregistrer:
         try:
-            # 1. Mise à jour du tableau principal des produits
+            # 1. Mise à jour en mémoire du tableau principal des produits
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
 
-            # 2. Préparation de l'historique avec l'heure exacte du Québec
+            # 2. Préparation des données d'historique (Fuseau horaire du Québec)
             nouvelles_lignes = []
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
             upc_produit = st.session_state['df_produits'].at[index_produit_reel, 'code_upc']
@@ -848,19 +771,22 @@ if resultats is not None and not resultats.empty:
                     except ValueError:
                         pass
 
-            # 3. Enregistrement des lignes d'historique dans le Google Sheet
+            # 3. Tentative d'enregistrement de l'historique dans le nuage
             if nouvelles_lignes:
                 df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
-                sauvegarder_historique(df_nouvel_historique)
+                try:
+                    sauvegarder_historique(df_nouvel_historique)
+                except NameError:
+                    pass
 
-            # 4. Sauvegarde, mémorisation de l'heure pour la barre verte et rechargement
-            if sauvegarder_donnees(st.session_state['df_produits']):
-                st.session_state['dernier_horodatage'] = horodatage_actuel
-                time.sleep(0.5)
-                st.rerun()
+            # 4. Mémorisation de l'heure du succès pour la barre verte et rafraîchissement
+            st.session_state['dernier_horodatage'] = horodatage_actuel
+            time.sleep(0.5)
+            st.rerun()
 
         except Exception as e:
-            st.error(f"❌ Erreur : {e}")
+            st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
-# Cette ligne finale reste alignée tout à gauche, en dehors de la condition
+# Mention informative finale tout en bas du script central
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
+

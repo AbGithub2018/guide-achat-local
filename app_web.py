@@ -437,21 +437,24 @@ if categorie_choisie != "Toutes les catégories":
 # Réinitialisation propre de l'index visuel pour détruire le décalage de sélection
 df_affichage = df_affichage.reset_index(drop=True)
 # =====================================================================
-# APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (MAINTENANT PARFAITEMENT SYNCHRONISÉ)
+# =====================================================================
+# APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (URL EXACTE INTEGRÉE)
 # =====================================================================
 st.sidebar.subheader("Aperçu du produit")
 
 cup_actuel = "nan"
 if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     try:
-        # Récupération de l'index de la ligne cliquée à l'écran
-        index_ligne_affiche = st.session_state["tableau_consommateur"]["selection"]["rows"][0]
-        
-        # SÉCURITÉ : On lit directement dans df_affichage qui contient exactement la liste filtrée à l'écran
-        if index_ligne_affiche < len(df_affichage):
-            raw_cup = df_affichage.iloc[index_ligne_affiche]['code_upc']
-            cup_nettoye = str(raw_cup).strip().split('.')[0]
-            cup_actuel = cup_nettoye.zfill(12) if (cup_nettoye.isdigit() and len(cup_nettoye) < 12) else cup_nettoye
+        # Récupération sécurisée du premier index sélectionné
+        liste_lignes = st.session_state["tableau_consommateur"]["selection"]["rows"]
+        if liste_lignes:
+            index_ligne_affiche = liste_lignes[0]  # <-- Le [0] règle le bogue
+            
+            # Vérification stricte par rapport à la taille du tableau affiché
+            if index_ligne_affiche < len(df_affichage):
+                raw_cup = df_affichage.iloc[index_ligne_affiche]['code_upc']
+                cup_nettoye = str(raw_cup).strip().split('.')[0]
+                cup_actuel = cup_nettoye.zfill(12) if (cup_nettoye.isdigit() and len(cup_nettoye) < 12) else cup_nettoye
 
         if cup_actuel and cup_actuel != "nan":
             st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
@@ -475,8 +478,9 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
         else:
             with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
+                # Utilisation de votre lien exact validé
                 url_api = f"https://openfoodfacts.org{cup_actuel}.json"
-                headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0 "}
+                headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
                 reponse = requests.get(url_api, headers=headers, timeout=5)
                 if reponse.status_code == 200:
                     donnees = reponse.json()
@@ -488,6 +492,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
                     st.sidebar.error("❌ Serveur d'images indisponible.")
     except Exception as e:
         st.sidebar.error(f"Erreur Sidebar CUP : {e}")
+
 
 with st.sidebar.expander("🔑 Administration"):
     if "admin_connecte" not in st.session_state: st.session_state["admin_connecte"] = False
@@ -585,11 +590,15 @@ if not df_affichage.empty:
         key="tableau_consommateur"
     )
 
+    # CORRECTION DU TYPEERROR (INDEXATION STREAMLIT)
     if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-        index_ligne_cliquee = selection_tableau["selection"]["rows"]
+        # Extraction sécurisée de l'entier unique à l'intérieur de la liste de sélection
+        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]  # <-- Le [0] est ajouté ici
+        
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
+
 
 else:
     if message_erreur_recherche:

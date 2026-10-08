@@ -456,23 +456,14 @@ if categorie_choisie != "Toutes les catégories":
                 df_filtre = df_filtre[df_filtre["_SubShort"] == racine_choix]
                 df_filtre = df_filtre.drop(columns=["_SubShort"])
 
-colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']
-
-# Si l'utilisateur n'a rien tapé ni scanné de valide, on construit l'affichage basé sur les filtres de la barre latérale
-if 'saisie_net' not in locals() or not saisie_net or saisie_net.strip() in ["", "****"]:
-    colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
-    df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
-else:
-    # Si une recherche est active, df_affichage a déjà été construit dans le bloc de recherche plus haut
-    if 'df_affichage' not in locals() or df_affichage.empty:
-        colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
-        df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
+colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c']
+colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
+df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
 
 for c in df_affichage.columns: 
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 
 df_affichage = df_affichage.reset_index(drop=True)
-
 
 # =====================================================================
 # APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (URL EXACTE INTEGRÉE)
@@ -573,7 +564,6 @@ c_dol, c_pro, c_all = st.columns(3)
 if c_dol.button("💵 Dollarama", use_container_width=True): st.session_state['banniere_active'] = "Dollarama"; st.rerun()
 if c_pro.button("🟢 Provigo", use_container_width=True): st.session_state['banniere_active'] = "Provigo"; st.rerun()
 if c_all.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"; st.rerun()
-
 # =====================================================================
 # ZONE DE RECHERCHE ET SCANNER
 # =====================================================================
@@ -581,147 +571,36 @@ resultats, message_erreur_recherche = None, None
 choix_mode = st.radio("👉 MODE DE RECHERCHE :", ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"], horizontal=True, label_visibility="collapsed")
 saisie_net = ""
 
-if "cup" in st.query_params: 
-    saisie_net = str(st.query_params["cup"]).strip()
+if "cup" in st.query_params: saisie_net = str(st.query_params["cup"]).strip()
 
 if choix_mode == "⌨️ Recherche manuelle":
-    if "cup_scanne" in st.session_state: 
-        st.session_state["cup_scanne"] = ""  # Nettoie le scanner invisible
     saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN code_upc :", value=saisie_net if saisie_net else "", key="recherche_cup")    
-    if saisie: 
-        saisie_net = saisie.strip()
-    if "cup" in st.query_params: 
-        st.query_params.clear()
-        
+    if saisie: saisie_net = saisie.strip()
+    if "cup" in st.query_params: st.query_params.clear()
 elif choix_mode == "📸 Scanner un Code-Barres":
     from streamlit_qrcode_scanner import qrcode_scanner
-    if "cup_scanne" not in st.session_state:
-        st.session_state["cup_scanne"] = ""
-        
     code_detecte = qrcode_scanner(key="scanner_officiel_live")
-    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]:
-        st.session_state["cup_scanne"] = str(code_detecte).strip()
-        st.rerun()
-        
-    if st.session_state["cup_scanne"]:
-        saisie_net = st.session_state["cup_scanne"]
-        if st.button("🔄 Effacer le scan actuel"):
-            st.session_state["cup_scanne"] = ""
-            st.rerun()
-# RECHERCHE AMÉLIORÉE ET INTEGRATION DES FILTRES
-if saisie_net and saisie_net.strip() not in ["", "****"]:
-    cup_saisi = str(saisie_net).strip()
-    
-    def enlever_accents(texte):
-        t = str(texte).lower()
-        remplacements = {"é": "e", "è": "e", "ê": "e", "ë": "e", "à": "a", "â": "a", "ù": "u", "û": "u", "î": "i", "ï": "i", "ô": "o", "ç": "c"}
-        for accent, lettre in remplacements.items():
-            t = t.replace(accent, lettre)
-        return t
+    if code_detecte: saisie_net = str(code_detecte)
 
-    if 'code_upc' in df.columns:
-        recherche_cup = df[df['code_upc'].astype(str).str.strip() == cup_saisi]
+if saisie_net:
+    cup_saisi = saisie_net.strip()
+    if 'code_upc' in df_filtre.columns:
+        recherche_cup = df_filtre[df_filtre['code_upc'].astype(str).str.strip() == cup_saisi]
         if not recherche_cup.empty:
-            df_filtre = recherche_cup
-            resultats = recherche_cup
+            df_filtre, resultats = recherche_cup, recherche_cup
         else:
-            saisie_propre = enlever_accents(cup_saisi)
-            noms_sans_accents = df['nom'].apply(enlever_accents)
-            cond = noms_sans_accents.str.contains(saisie_propre, na=False)
-            recherche_texte = df[cond]
+            cond = df_filtre['nom'].str.lower().str.contains(cup_saisi.lower(), na=False)
+            recherche_texte = df_filtre[cond]
             if not recherche_texte.empty:
                 df_filtre = recherche_texte
-                if len(recherche_texte) == 1: 
-                    resultats = recherche_texte
+                if len(recherche_texte) == 1: resultats = recherche_texte
             else: 
                 message_erreur_recherche = f"⚠️ Aucun produit trouvé."
-                df_filtre = pd.DataFrame(columns=df.columns)
+                df_filtre = pd.DataFrame(columns=df_filtre.columns)
 
 st.markdown("---")
-st.markdown(f"### 📋 Liste des produits ({len(df_filtre)} affichés) :")
+st.markdown(f"### 📋 Liste des produits ({len(df_affichage)} affichés) :")
 
-colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']
-colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
-df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
-
-for c in df_affichage.columns: 
-    df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
-
-df_affichage = df_affichage.reset_index(drop=True)
-
-# =====================================================================
-# APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (URL EXACTE INTEGRÉE)
-# =====================================================================
-st.sidebar.subheader("Aperçu du produit")
-
-cup_actuel = "nan"
-if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
-    try:
-        liste_lignes = st.session_state["tableau_consommateur"]["selection"]["rows"]
-        if liste_lignes:
-            index_ligne_affiche = liste_lignes[0]
-            if index_ligne_affiche < len(df_affichage):
-                raw_cup = df_affichage.iloc[index_ligne_affiche]['code_upc']
-                cup_nettoye = str(raw_cup).strip().split('.')[0]
-                cup_actuel = cup_nettoye.zfill(12) if (cup_nettoye.isdigit() and len(cup_nettoye) < 12) else cup_nettoye
-
-        if cup_actuel and cup_actuel != "nan":
-            st.sidebar.success(f"📦 Produit détecté : {cup_actuel}")
-            
-        extensions_possibles = [".jpg", ".jpeg", ".png", ".webp", ".JPG", ".JPEG", ".PNG", ".WEBP"]
-        chemin_image_locale = None
-        cup_sans_zero = cup_actuel.lstrip('0')
-
-        for ext in extensions_possibles:
-            chemin_test_exact = os.path.join("images", f"{cup_actuel}{ext}")
-            chemin_test_sans_zero = os.path.join("images", f"{cup_sans_zero}{ext}")
-
-            if os.path.exists(chemin_test_exact):
-                chemin_image_locale = chemin_test_exact
-                break
-            elif os.path.exists(chemin_test_sans_zero):
-                chemin_image_locale = chemin_test_sans_zero
-                break
-
-        if chemin_image_locale:
-            st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
-        else:
-            with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
-                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
-                headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
-                reponse = requests.get(url_api, headers=headers, timeout=5)
-                if reponse.status_code == 200:
-                    donnees = reponse.json()
-                    if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:
-                        st.sidebar.image(donnees["product"]["image_url"], caption="Photo officielle OpenFoodFacts", use_container_width=True)
-                    else:
-                        st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
-                else:
-                    st.sidebar.error("❌ Serveur d'images indisponible.")
-    except Exception as e:
-        st.sidebar.error(f"Erreur Sidebar CUP : {e}")
-
-with st.sidebar.expander("🔑 Administration"):
-    if "admin_connecte" not in st.session_state: st.session_state["admin_connecte"] = False
-    if not st.session_state["admin_connecte"]:
-        mot_de_passe = st.text_input("Entrez le mot de passe de gestion", type="password", key="sidebar_mdp_secret")
-        if mot_de_passe == st.secrets["admin"]["password"]:
-            st.session_state["admin_connecte"] = True
-            st.rerun()
-    else:
-        st.success("🟢 Mode Admin Actif")
-        if st.button("Se déconnecter", type="primary", use_container_width=True):
-            st.session_state["admin_connecte"] = False
-            st.rerun()
-        st.markdown("---")
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df_actuel = conn.read(ttl=0)
-        cup_a_supprimer = st.text_input("code_upc du produit à supprimer", key="cup_delete_input")
-        if st.button("Supprimer le produit du Nuage", use_container_width=True) and cup_a_supprimer:
-            df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
-            conn.update(data=df_nettoye)
-            if 'df_produits' in st.session_state: del st.session_state['df_produits']
-            st.success("Produit supprimé !"), time.sleep(1), st.rerun()
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large")
@@ -739,17 +618,21 @@ if not df_affichage.empty:
         key="tableau_consommateur"
     )
 
+    # CORRECTION DU TYPEERROR (INDEXATION STREAMLIT)
     if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-        index_ligne_cliquee = selection_tableau["selection"]["rows"]
+        # Extraction sécurisée de l'entier unique à l'intérieur de la liste de sélection
+        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]  # <-- Le [0] est ajouté ici
+        
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
+
+
 else:
     if message_erreur_recherche:
         st.warning(message_erreur_recherche)
 
-    type_saisie = "Le code-barres" if saisie_net.isdigit() else "Le produit"
-    st.info(f"📦 {type_saisie} **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
+    st.info(f"📦 Le code_upc **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
     st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
     
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
@@ -780,6 +663,15 @@ else:
             if nom_nouveau:
                 with st.spinner("Enregistrement de la nouvelle fiche produit..."):
                     try:
+                        p_iga_val = prix_iga.strip() if prix_iga.strip() else ""
+                        p_maxi_val = prix_maxi.strip() if prix_maxi.strip() else ""
+                        p_metro_val = prix_metro.strip() if prix_metro.strip() else ""
+                        p_super_c_val = prix_superc.strip() if prix_superc.strip() else ""
+                        p_walmart_val = prix_walmart.strip() if prix_walmart.strip() else ""
+                        p_tigre_val = prix_tigre.strip() if prix_tigre.strip() else ""
+                        p_dollarama_val = prix_dollarama.strip() if prix_dollarama.strip() else ""
+                        p_provigo_val = prix_provigo.strip() if prix_provigo.strip() else ""
+                        
                         nouvelle_ligne = {
                             'code_upc': cup_final,
                             'nom': nom_nouveau.strip(),
@@ -792,23 +684,19 @@ else:
                             'priorite': "",
                             'usine_principale': "",
                             'reseau_distribution': "",
-                            'prix_iga': prix_iga.strip(),
-                            'prix_maxi': prix_maxi.strip(),
-                            'prix_metro': prix_metro.strip(),
-                            'prix_super_c': prix_superc.strip(),
-                            'prix_walmart': prix_walmart.strip(),
-                            'prix_tigre_geant': prix_tigre.strip(),
-                            'prix_dollarama': prix_dollarama.strip(),
-                            'prix_provigo': prix_provigo.strip(),
+                            'prix_iga': p_iga_val,
+                            'prix_maxi': p_maxi_val,
+                            'prix_metro': p_metro_val,
+                            'prix_super_c': p_super_c_val,
+                            'prix_walmart': p_walmart_val,
+                            'prix_tigre_geant': p_tigre_val,
+                            'prix_dollarama': p_dollarama_val,
+                            'prix_provigo': p_provigo_val,
                             'distribution.1': "",
                             'bannieres_disponibles': ""
                         }
                         
-                        conn = st.connection("gsheets", type=GSheetsConnection)
-                        df_total = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
-                        conn.update(worksheet="Sheet1", data=df_total)
-                        st.session_state['df_produits'] = df_total
-                        
+                        st.session_state['df_produits'] = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
                         st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
                         st.balloons()
                         time.sleep(1)
@@ -817,9 +705,11 @@ else:
                         st.error(f"Erreur lors de l'enregistrement : {e}")
             else:
                 st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
+
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index
-    row = resultats.iloc
+    index_produit_reel = resultats.index[0]
+    row = resultats.iloc[0]
+
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
@@ -838,14 +728,7 @@ if resultats is not None and not resultats.empty:
         verdict = "Les profits de ce produit quittent le pays."
 
     bannières_config = {
-        'prix_iga': ('🔴 IGA', '#d32f2f'), 
-        'prix_maxi': ('🟡 MAXI', '#f9d71c'), 
-        'prix_metro': ('🟢 METRO', '#28a745'), 
-        'prix_super_c': ('🔵 SUPER C', '#0056b3'),
-        'prix_walmart': ('🔵 WALMART', '#0071dc'),
-        'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#ffcc00'),
-        'prix_dollarama': ('💵 DOLLARAMA', '#00843d'),
-        'prix_provigo': ('🟢 PROVIGO', '#ff5a00')
+        'prix_iga': ('🔴 IGA', '#d32f2f'), 'prix_maxi': ('🟡 MAXI', '#f9d71c'), 'prix_metro': ('🟢 METRO', '#28a745'), 'prix_super_c': ('🔵 SUPER C', '#0056b3')
     }
 
     prix_valides = {}
@@ -862,58 +745,85 @@ if resultats is not None and not resultats.empty:
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
         affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
         style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
-        bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 135px; text-align: center; {style_card}"><div style="font-size: 11px; color: #666;">{label}</div><div style="font-size: 17px;">{affichage}</div></div>'
+        bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
+    for col_key, (label, _) in bannières_config.items():
+        v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
+        affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
+        style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
+        bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 140px; text-align: center; {style_card}"><div style="font-size: 12px; color: #666;">{label}</div><div style="font-size: 18px;">{affichage}</div></div>'
     bloc_prix_html += '</div>'
 
+    # Rendu final de la grande fiche produit colorée (Achat Québécois / Canadien / Étranger)
     st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
 
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
-        upc_dynamique = str(row.get('code_upc', 'sans_upc'))
+        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
         def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
-        
-        c1, c2, c3, c4 = st.columns(4)
-        nouveau_iga = c1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key=f"form_iga_{upc_dynamique}")
-        nouveau_maxi = c2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key=f"form_maxi_{upc_dynamique}")
-        nouveau_metro = c3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key=f"form_metro_{upc_dynamique}")
-        nouveau_super_c = c4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key=f"form_super_c_{upc_dynamique}")
-        
-        c5, c6, c7, c8 = st.columns(4)
-        nouveau_walmart = c5.text_input("Prix Walmart ($) :", value=clean_price(row.get('prix_walmart', '')), key=f"form_wal_{upc_dynamique}")
-        nouveau_tigre = c6.text_input("Prix Tigre Géant ($) :", value=clean_price(row.get('prix_tigre_geant', '')), key=f"form_tig_{upc_dynamique}")
-        nouveau_dollarama = c7.text_input("Prix Dollarama ($) :", value=clean_price(row.get('prix_dollarama', '')), key=f"form_dol_{upc_dynamique}")
-        nouveau_provigo = c8.text_input("Prix Provigo ($) :", value=clean_price(row.get('prix_provigo', '')), key=f"form_provigo_{upc_dynamique}")
+        nouveau_iga = col_p1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key="form_iga")
+        nouveau_maxi = col_p2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key="form_maxi")
+        nouveau_metro = col_p3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key="form_metro")
+        nouveau_super_c = col_p4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key="form_super_c")
         
         st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
         
+        # Gestion dynamique du texte du bouton d'enregistrement
         texte_barre = "💾 Enregistrer les modifications de prix"
         if "dernier_horodatage" in st.session_state:
             texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
 
         bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
-        
     if bouton_enregistrer:
         try:
+            # 1. Mise à jour en mémoire du tableau principal des produits
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_super_c'] = nouveau_super_c.strip()
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_walmart'] = nouveau_walmart.strip()
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_tigre_geant'] = nouveau_tigre.strip()
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
-            st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
 
-            conn = st.connection("gsheets", type=GSheetsConnection)
-            conn.update(worksheet="Sheet1", data=st.session_state['df_produits'])
-
+            # 2. Préparation des données d'historique (Fuseau horaire du Québec)
+            nouvelles_lignes = []
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
+            upc_produit = st.session_state['df_produits'].at[index_produit_reel, 'code_upc']
+
+            champs_saisis = {
+                'prix_iga': nouveau_iga,
+                'prix_maxi': nouveau_maxi,
+                'prix_metro': nouveau_metro,
+                'prix_super_c': nouveau_super_c
+            }
+
+            for distribution_enseigne, valeur_prix in champs_saisis.items():
+                if valeur_prix and str(valeur_prix).strip() != "":
+                    try:
+                        prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
+                        
+                        nouvelle_ligne = {
+                            'horodatage': horodatage_actuel,
+                            'code_upc': upc_produit,
+                            'distribution': distribution_enseigne,
+                            'prix': prix_propre,
+                            'source': 'collaboratif'
+                        }
+                        nouvelles_lignes.append(nouvelle_ligne)
+                    except ValueError:
+                        pass
+
+            # 3. Tentative d'enregistrement de l'historique dans le nuage
+            if nouvelles_lignes:
+                df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
+                try:
+                    sauvegarder_historique(df_nouvel_historique)
+                except NameError:
+                    pass
+
+            # 4. Mémorisation de l'heure du succès pour la barre verte et rafraîchissement
             st.session_state['dernier_horodatage'] = horodatage_actuel
-            st.success("Mise à jour de vos 8 bannières synchronisée !")
             time.sleep(0.5)
             st.rerun()
 
         except Exception as e:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
+# Mention informative finale tout en bas du script central
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-

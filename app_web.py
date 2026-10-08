@@ -109,7 +109,7 @@ def charger_donnees():
             def epurer_nom_entreprise(nom):
                 if pd.isna(nom) or str(nom).lower() in ['nan', 'none', '']:
                     return ""
-                nom_propre = str(nom).split(',')
+                nom_propre = str(nom).split(',')[0]
                 motifs_suffixes = r'\b(inc\b\.?|limitée\b|limitee\b|ltd\b\.?|company\b|cie\b\.?)'
                 nom_propre = re.sub(motifs_suffixes, '', nom_propre, flags=re.IGNORECASE)
                 return nom_propre.strip()
@@ -118,8 +118,8 @@ def charger_donnees():
 
         if 'nom' in df_initial.columns:
             triage_initial = df_initial['nom'].apply(deviner_categorie)
-            df_initial['categorie_maitresse'] = [c if isinstance(c, tuple) else "Épicerie salée et Garde-manger" for c in triage_initial]
-            df_initial['sous_categorie_maitresse'] = [c if isinstance(c, tuple) else "Toutes les sous-catégories" for c in triage_initial]
+            df_initial['categorie_maitresse'] = [c[0] if isinstance(c, tuple) else "Épicerie salée et Garde-manger" for c in triage_initial]
+            df_initial['sous_categorie_maitresse'] = [c[1] if isinstance(c, tuple) else "Toutes les sous-catégories" for c in triage_initial]
         else:
             df_initial['categorie_maitresse'] = "Épicerie salée et Garde-manger"
             df_initial['sous_categorie_maitresse'] = "Toutes les sous-catégories"
@@ -128,6 +128,7 @@ def charger_donnees():
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")
         return pd.DataFrame()
+
 CATEGORIES_PROJET = {
     "Toutes les catégories": ["Toutes les sous-catégories"],
     "Fruits et Légumes": [

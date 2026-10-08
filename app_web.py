@@ -459,7 +459,7 @@ if categorie_choisie != "Toutes les catégories":
 colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']
 
 # Si l'utilisateur n'a rien tapé ni scanné de valide, on construit l'affichage basé sur les filtres de la barre latérale
-if not saisie_net or saisie_net.strip() in ["", "****"]:
+if 'saisie_net' not in locals() or not saisie_net or saisie_net.strip() in ["", "****"]:
     colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
     df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
 else:

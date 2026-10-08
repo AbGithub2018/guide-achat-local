@@ -555,7 +555,7 @@ with st.sidebar.expander("🔑 Administration"):
             conn.update(data=df_nettoye)
             if 'df_produits' in st.session_state: del st.session_state['df_produits']
             st.success("Produit supprimé !"), time.sleep(1), st.rerun()
-            config_colonnes = {
+config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large")
 }
@@ -749,4 +749,3 @@ if resultats is not None and not resultats.empty:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-

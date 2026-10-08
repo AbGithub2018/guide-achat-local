@@ -347,7 +347,7 @@ def deviner_categorie(nom_produit):
     # 4. Élimination des féculents, pâtes et sauces d'accompagnement
     if any(m in nom_clean for m in [" pate ", " pates ", " sauce ", " salsa ", " vinaigrette ", " margarine ", " beurre "]):
         return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
-        # ==============================================================================
+    # ==============================================================================
     # EXCLUSIONS DE SÉCURITÉ BASÉES SUR VOTRE LISTE DE PRODUITS TRANSFORMAÉS
     # ==============================================================================
     # Extraction propre du code UPC pour la comparaison
@@ -373,6 +373,7 @@ def deviner_categorie(nom_produit):
         return ("Produits laitiers et Œufs", "Yogourts et desserts laitiers (grecs, poudings, kéfir)")
     if upc_propre in upc_conserves_et_transformes:
         return ("Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)")
+
 
     
     

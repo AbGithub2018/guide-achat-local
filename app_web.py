@@ -219,7 +219,10 @@ CATEGORIES_PROJET = {
 # =====================================================================
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
+    # Nettoyage des accents et des apostrophes pour attraper d'amandes et à l'avoine
+    nom = nom.replace("é", "e").replace("à", "a").replace("'", " ").replace("’", " ")
     nom_isole = f" {nom} "
+
 
     # Règle prioritaire pour le Ginger Ale et les Sodas de Gingembre
     if "ginger" in nom:

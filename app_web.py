@@ -353,10 +353,14 @@ def deviner_categorie(nom_produit):
             else:
                 return ("Boissons (non alcoolisées)", "Café, thé et tisanes (en grains ou moulu, capsules, sachets)")
 
-            # # 1.1 Détection des Boissons et laits végétaux
-            if any(l in nom for l in ["amande", "almond", "soya", "soy ", "avoine", "oat ", "oatmilk", "silk", "earth's own"]):
-                if not any(x in nom for x in ["biscuit", "barre", "granola"]):
-                    return ("Boissons (non alcoolisées)", "Boissons et laits végétaux (lait d'amande, de soya, d'avoine)")
+            # # 1.1 Détection des Boissons et laits végétaux (Version finale épurée)
+            if any(l in nom for l in ["amande", "almond", "soya", "soy", "avoine", "oat", "oatmilk", "silk", "earth's own", "natur-a"]):
+                # Barrière de sécurité : on exclut la crème glacée, les chocolats, les barres et les biscuits
+                intrus_laits = ["biscuit", "barre", "granola", "ice cream", "crème glacée", "creme glacee", "haagen-dazs", "chocolat en tablette"]
+                if not any(x in nom for x in intrus_laits):
+                    return ("Boissons (non alcoolisées)", "Boissons végétales (lait d'amande, de soya, d'avoine)")
+
+
 
 
           

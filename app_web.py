@@ -5,11 +5,12 @@ import requests
 import re
 import os
 from streamlit_gsheets import GSheetsConnection
+# Connexion à Supabase sécurisée via les secrets Streamlit
 from supabase import create_client
-# Connexion à Supabase
-SUPABASE_URL = "https://yjtgvirthcegctqircxn.supabase.co"
-SUPABASE_KEY = "sb_publishable_ExTExon0cAoi-Z8ccio5iQ_xuyYw14P"
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 
 # 1. CONFIGURATION UNIQUE DE LA PAGE (DOIT ÊTRE LA PREMIÈRE LIGNE)
 st.set_page_config(

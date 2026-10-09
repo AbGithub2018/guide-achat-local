@@ -809,27 +809,29 @@ st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.u
 # ==========================================
 # ENVOI AUTOMATIQUE DES DONNÉES (TEMPORAIRE)
 # ==========================================
-def synchroniser_vers_supabase_intelligemment():
+def synchroniser_historique_vers_supabase():
     try:
-        # On utilise EXACTEMENT la connexion qui fonctionne déjà dans votre application
+        # Connexion à votre Google Sheet
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(ttl=0) # Lit votre premier onglet Google Sheet directement
-        df = df.fillna("") # Nettoie les cases vides pour Supabase
         
-        st.write(f"📊 Connexion réussie ! {len(df)} produits trouvés dans votre Google Sheet.")
+        # ATTENTION : Remplacez "Feuille1" par le nom EXACT de votre 2e onglet Google Sheet
+        df_prix = conn.read(worksheet="Historique_Prix", ttl=0) 
+        df_prix = df_prix.fillna("") # Nettoie les cases vides pour éviter les erreurs
         
-        # Préparation et envoi par paquets de 1000 pour la stabilité
-        donnees = df.to_dict(orient="records")
+        st.write(f"📊 Connexion réussie ! {len(df_prix)} lignes trouvées dans votre 2e onglet.")
+        
+        # Envoi par paquets de 1000 pour la stabilité de la connexion
+        donnees = df_prix.to_dict(orient="records")
         taille_paquet = 1000
         for i in range(0, len(donnees), taille_paquet):
             paquet = donnees[i:i + taille_paquet]
-            supabase.table("produits").upsert(paquet).execute()
-            st.write(f"✅ Produits envoyés : lignes {i} à {min(i + taille_paquet, len(donnees))}")
+            supabase.table("historique_prix").insert(paquet).execute()
+            st.write(f"✅ Prix envoyés : lignes {i} à {min(i + taille_paquet, len(donnees))}")
             
-        st.success("🎉 Félicitations ! Votre catalogue de produits est entièrement synchronisé sur Supabase !")
+        st.success("🎉 Félicitations ! Votre historique de prix est entièrement synchronisé sur Supabase !")
     except Exception as e:
-        st.error(f"❌ Erreur lors de l'envoi : {str(e)}")
+        st.error(f"❌ Erreur lors de l'envoi des prix : {str(e)}")
 
-# Le bouton sur votre application
-if st.button("🚀 Lancer la synchronisation complète vers Supabase"):
-    synchroniser_vers_supabase_intelligemment()
+# Le nouveau bouton de synchronisation pour les prix
+if st.button("🚀 Lancer la synchronisation du 2e onglet (Prix) vers Supabase"):
+    synchroniser_historique_vers_supabase()

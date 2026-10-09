@@ -5,8 +5,9 @@ import requests
 import re
 import os
 from streamlit_gsheets import GSheetsConnection
+from supabase import create_client
 # Connexion à Supabase
-SUPABASE_URL = "https://supabase.co"
+SUPABASE_URL = "https://yjtgvirthcegctqircxn.supabase.co"
 SUPABASE_KEY = "sb_publishable_ExTExon0cAoi-Z8ccio5iQ_xuyYw14P"
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 

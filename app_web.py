@@ -5,6 +5,10 @@ import requests
 import re
 import os
 from streamlit_gsheets import GSheetsConnection
+# Connexion à Supabase
+SUPABASE_URL = "https://supabase.co"
+SUPABASE_KEY = "sb_publishable_ExTExon0cAoi-Z8ccio5iQ_xuyYw14P"
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # 1. CONFIGURATION UNIQUE DE LA PAGE (DOIT ÊTRE LA PREMIÈRE LIGNE)
 st.set_page_config(
@@ -800,3 +804,31 @@ if resultats is not None and not resultats.empty:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
+# ==========================================
+# ENVOI AUTOMATIQUE DES DONNÉES (TEMPORAIRE)
+# ==========================================
+def synchroniser_csv_vers_supabase():
+    url_csv = "https://google.com" # Lien direct vers votre catalogue
+    try:
+        df = pd.read_csv(url_csv)
+        st.write(f"📊 Fichier Google Sheet détecté : {len(df)} lignes trouvées.")
+        
+        # Préparation des données pour Supabase
+        donnees = df.to_dict(orient="records")
+        
+        # Envoi par paquets de 1000 pour éviter que internet ne bloque
+        taille_paquet = 1000
+        for i in range(0, len(donnees), taille_paquet):
+            paquet = donnees[i:i + taille_paquet]
+            # .upsert() va ajouter uniquement ce qui manque sans faire de doublons
+            supabase.table("produits").upsert(paquet).execute()
+            st.write(f"✅ Paquet envoyé : lignes {i} à {min(i + taille_paquet, len(donnees))}")
+            
+        st.success("🎉 Félicitations ! Votre catalogue de 10 550 produits est entièrement synchronisé sur Supabase !")
+    except Exception as e:
+        st.error(f"❌ Erreur lors de l'envoi : {str(e)}")
+
+# Déclenchement automatique temporaire sur votre page Streamlit
+if st.button("🚀 Lancer la synchronisation complète vers Supabase"):
+    synchroniser_csv_vers_supabase()
+

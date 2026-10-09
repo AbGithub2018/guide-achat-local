@@ -9,7 +9,7 @@ st.title("🛠️ Outil de Contrôle de Qualité des Images")
 st.write("Ce site analyse vos produits pour trouver les photos manquantes ou floues.")
 
 # Bouton pour lancer l'action
-if st.button("🚀 Démarrer l'analyse des 200 premiers produits", type="primary"):
+if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary"):
     
     with st.spinner("Connexion à votre Google Sheet et analyse des images en cours..."):
         
@@ -25,8 +25,8 @@ if st.button("🚀 Démarrer l'analyse des 200 premiers produits", type="primary
         else:
             produits_a_corriger = []
             
-            # Mode TEST : limité de 400-600  lignes
-            for index, row in df_produits.iloc[400:600].iterrows():
+            # Mode TEST : limité de 600-800  lignes
+            for index, row in df_produits.iloc[600:800].iterrows():
                 valeur_cellule = row[colonne_code]
                 if pd.isna(valeur_cellule):
                     continue

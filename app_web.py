@@ -805,33 +805,3 @@ if resultats is not None and not resultats.empty:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-# ==========================================
-# ==========================================
-# ENVOI AUTOMATIQUE DES DONNÉES (TEMPORAIRE)
-# ==========================================
-def synchroniser_historique_vers_supabase():
-    try:
-        # Connexion à votre Google Sheet
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        
-        # ATTENTION : Remplacez "Feuille1" par le nom EXACT de votre 2e onglet Google Sheet
-        df_prix = conn.read(worksheet="Historique_Prix", ttl=0) 
-        df_prix = df_prix.fillna("") # Nettoie les cases vides pour éviter les erreurs
-        
-        st.write(f"📊 Connexion réussie ! {len(df_prix)} lignes trouvées dans votre 2e onglet.")
-        
-        # Envoi par paquets de 1000 pour la stabilité de la connexion
-        donnees = df_prix.to_dict(orient="records")
-        taille_paquet = 1000
-        for i in range(0, len(donnees), taille_paquet):
-            paquet = donnees[i:i + taille_paquet]
-            supabase.table("historique_prix").insert(paquet).execute()
-            st.write(f"✅ Prix envoyés : lignes {i} à {min(i + taille_paquet, len(donnees))}")
-            
-        st.success("🎉 Félicitations ! Votre historique de prix est entièrement synchronisé sur Supabase !")
-    except Exception as e:
-        st.error(f"❌ Erreur lors de l'envoi des prix : {str(e)}")
-
-# Le nouveau bouton de synchronisation pour les prix
-if st.button("🚀 Lancer la synchronisation du 2e onglet (Prix) vers Supabase"):
-    synchroniser_historique_vers_supabase()

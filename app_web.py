@@ -812,6 +812,7 @@ def synchroniser_csv_vers_supabase():
     url_csv = "https://google.com" # Lien direct vers votre catalogue
     try:
         df = pd.read_csv(url_csv)
+        df = df.fillna("")
         st.write(f"📊 Fichier Google Sheet détecté : {len(df)} lignes trouvées.")
         
         # Préparation des données pour Supabase

@@ -806,20 +806,25 @@ if resultats is not None and not resultats.empty:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-# --- SYNCHRONISATION AUTOMATIQUE GOOGLE SHEETS VERS SUPABASE (CORRIGÉ) ---
+# --- SYNCHRONISATION AUTOMATIQUE GOOGLE SHEETS VERS SUPABASE (CORRIGÉ JSON) ---
+import numpy as np
 
 def synchroniser_donnees_vers_supabase():
     try:
         st.info("Synchronisation avec Supabase en cours...")
         
-        # On définit ou récupère la connexion directement ici pour éviter l'erreur de définition
+        # Récupération de la connexion
         conn_supabase = st.connection("gsheets", type=GSheetsConnection)
         
         # Lecture des données depuis Google Sheets
         df = conn_supabase.read(nrows=11000)
         
-        # Nettoyage et conversion en liste de dictionnaires pour Supabase
-        liste_produits = df.where(df.notnull(), None).to_dict(orient="records")
+        # NETTOYAGE ULTRA-PUISSANT DES VALEURS NAN POUR SUPABASE
+        # On force le remplacement de tous les types de NaN (standard, numpy, chaînes vides) par None
+        df_nettoye = df.replace({np.nan: None, float('nan'): None, 'NaN': None, '': None})
+        
+        # Conversion finale en dictionnaire propre pour l'envoi
+        liste_produits = df_nettoye.to_dict(orient="records")
         
         if not liste_produits:
             st.warning("Aucune donnée trouvée dans Google Sheets.")

@@ -806,31 +806,30 @@ if resultats is not None and not resultats.empty:
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
 # ==========================================
+# ==========================================
 # ENVOI AUTOMATIQUE DES DONNÉES (TEMPORAIRE)
 # ==========================================
-def synchroniser_csv_vers_supabase():
-    url_csv = "https://google.com" # Lien direct vers votre catalogue
+def synchroniser_vers_supabase_intelligemment():
     try:
-        df = pd.read_csv(url_csv)
-        df = df.fillna("")
-        st.write(f"📊 Fichier Google Sheet détecté : {len(df)} lignes trouvées.")
+        # On utilise EXACTEMENT la connexion qui fonctionne déjà dans votre application
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df = conn.read(ttl=0) # Lit votre premier onglet Google Sheet directement
+        df = df.fillna("") # Nettoie les cases vides pour Supabase
         
-        # Préparation des données pour Supabase
+        st.write(f"📊 Connexion réussie ! {len(df)} produits trouvés dans votre Google Sheet.")
+        
+        # Préparation et envoi par paquets de 1000 pour la stabilité
         donnees = df.to_dict(orient="records")
-        
-        # Envoi par paquets de 1000 pour éviter que internet ne bloque
         taille_paquet = 1000
         for i in range(0, len(donnees), taille_paquet):
             paquet = donnees[i:i + taille_paquet]
-            # .upsert() va ajouter uniquement ce qui manque sans faire de doublons
             supabase.table("produits").upsert(paquet).execute()
-            st.write(f"✅ Paquet envoyé : lignes {i} à {min(i + taille_paquet, len(donnees))}")
+            st.write(f"✅ Produits envoyés : lignes {i} à {min(i + taille_paquet, len(donnees))}")
             
-        st.success("🎉 Félicitations ! Votre catalogue de 10 550 produits est entièrement synchronisé sur Supabase !")
+        st.success("🎉 Félicitations ! Votre catalogue de produits est entièrement synchronisé sur Supabase !")
     except Exception as e:
         st.error(f"❌ Erreur lors de l'envoi : {str(e)}")
 
-# Déclenchement automatique temporaire sur votre page Streamlit
+# Le bouton sur votre application
 if st.button("🚀 Lancer la synchronisation complète vers Supabase"):
-    synchroniser_csv_vers_supabase()
-
+    synchroniser_vers_supabase_intelligemment()

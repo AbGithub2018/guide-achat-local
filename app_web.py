@@ -806,3 +806,33 @@ if resultats is not None and not resultats.empty:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
+# --- SYNCHRONISATION AUTOMATIQUE GOOGLE SHEETS VERS SUPABASE ---
+
+def synchroniser_donneas_vers_supabase():
+    try:
+        st.info("Synchronisation avec Supabase en cours...")
+        
+        # 1. Récupération des données depuis votre connexion Google Sheets existante
+        # (Le script utilise votre connexion 'connections.gsheets' configurée plus haut)
+        df = conn.read(nrows=11000) # On lit une marge confortable pour vos 10 460 lignes
+        
+        # Nettoyage rapide : conversion du DataFrame en liste de dictionnaires pour Supabase
+        # On remplace les valeurs vides (NaN) par None pour éviter les erreurs de base de données
+        liste_produits = df.where(df.notnull(), None).to_dict(orient="records")
+        
+        if not liste_produits:
+            st.warning("Aucune donnée trouvée dans Google Sheets.")
+            return
+
+        # 2. Envoi massif et sécurisé vers Supabase
+        # L'utilisation de .upsert() met à jour les produits existants et ajoute les nouveaux
+        reponse = supabase.table("produits").upsert(liste_produits).execute()
+        
+        st.success(f"Bravo ! {len(liste_produits)} produits ont été synchronisés automatiquement vers Supabase.")
+        
+    except Exception as e:
+        st.error(f"Erreur lors de la synchronisation automatique : {e}")
+
+# Enclencher la synchronisation automatiquement à chaque fois que l'application Streamlit s'ouvre ou s'actualise
+synchroniser_donneas_vers_supabase()
+

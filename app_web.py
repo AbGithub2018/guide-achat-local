@@ -5,12 +5,6 @@ import requests
 import re
 import os
 from streamlit_gsheets import GSheetsConnection
-# Connexion à Supabase sécurisée via les secrets Streamlit
-from supabase import create_client
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 
 # 1. CONFIGURATION UNIQUE DE LA PAGE (DOIT ÊTRE LA PREMIÈRE LIGNE)
 st.set_page_config(
@@ -808,35 +802,3 @@ if resultats is not None and not resultats.empty:
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
 # --- SYNCHRONISATION AUTOMATIQUE GOOGLE SHEETS VERS SUPABASE (CORRIGÉ JSON) ---
 import numpy as np
-
-def synchroniser_donnees_vers_supabase():
-    try:
-        st.info("Synchronisation avec Supabase en cours...")
-        
-        # Récupération de la connexion
-        conn_supabase = st.connection("gsheets", type=GSheetsConnection)
-        
-        # Lecture des données depuis Google Sheets
-        df = conn_supabase.read(nrows=11000)
-        
-        # NETTOYAGE ULTRA-PUISSANT DES VALEURS NAN POUR SUPABASE
-        # On force le remplacement de tous les types de NaN (standard, numpy, chaînes vides) par None
-        df_nettoye = df.replace({np.nan: None, float('nan'): None, 'NaN': None, '': None})
-        
-        # Conversion finale en dictionnaire propre pour l'envoi
-        liste_produits = df_nettoye.to_dict(orient="records")
-        
-        if not liste_produits:
-            st.warning("Aucune donnée trouvée dans Google Sheets.")
-            return
-
-        # Envoi sécurisé vers Supabase (.upsert)
-        reponse = supabase.table("produits").upsert(liste_produits).execute()
-        
-        st.success(f"Bravo ! {len(liste_produits)} produits ont été synchronisés automatiquement vers Supabase.")
-        
-    except Exception as e:
-        st.error(f"Erreur lors de la synchronisation automatique : {e}")
-
-# Lancer la synchronisation automatique
-synchroniser_donnees_vers_supabase()

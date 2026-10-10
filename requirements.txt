@@ -5,4 +5,3 @@ opencv-python-headless
 pyzbar
 streamlit-qrcode-scanner
 openpyxl
-supabase

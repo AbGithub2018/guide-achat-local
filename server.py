@@ -17,12 +17,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import os
+import json
+
 def obtenir_connexion_sheets():
     scope = ["https://google.com", "https://googleapis.com"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("secrets_google.json", scope)
+    
+    # Si l'application tourne en ligne (sur Render) avec la clé cachée en mémoire
+    if "GOOGLE_CREDENTIALS_JSON" in os.environ:
+        info_cles = json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(info_cles, scope)
+    else:
+        # Permet à votre script de fonctionner encore si vous testez localement sur votre PC
+        creds = ServiceAccountCredentials.from_json_keyfile_name("secrets_google.json", scope)
+        
     client = gspread.authorize(creds)
-    # Remplacer par le NOM EXACT de votre fichier Google Sheets si nécessaire
     return client.open("Acheter Québécois & Canadien")
+
 
 class ScanItem(BaseModel):
     code_upc: str

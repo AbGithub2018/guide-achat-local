@@ -380,18 +380,21 @@ if c_dol.button("💵 Dollarama", use_container_width=True): st.session_state['b
 if c_pro.button("🟢 Provigo", use_container_width=True): st.session_state['banniere_active'] = "Provigo"; st.rerun()
 if c_all.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"; st.rerun()
 # =====================================================================
-# ZONE DE RECHERCHE ET SCANNER
+# =====================================================================
+# ZONE DE RECHERCHE ET SCANNER (OPTIMISÉE POUR LE HORS LIGNE)
 # =====================================================================
 resultats, message_erreur_recherche = None, None
-choix_mode = st.radio("👉 MODE DE RECHERCHE :", ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"], horizontal=True, label_visibility="collapsed")
 saisie_net = ""
 
 if "cup" in st.query_params: 
     saisie_net = str(st.query_params["cup"]).strip()
 
+# FORCE L'APPLICATION À S'OUVRIR DIRECTEMENT SUR LE SCANNER EN PREMIER
+choix_mode = st.radio("👉 MODE DE RECHERCHE :", ["📸 Scanner un Code-Barres", "⌨️ Recherche manuelle"], horizontal=True, label_visibility="collapsed")
+
 if choix_mode == "⌨️ Recherche manuelle":
     if "cup_scanne" in st.session_state: 
-        st.session_state["cup_scanne"] = ""  # Nettoie le scanner invisible
+        st.session_state["cup_scanne"] = ""  
     saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN code_upc :", value=saisie_net if saisie_net else "", key="recherche_cup")    
     if saisie: 
         saisie_net = saisie.strip()
@@ -403,7 +406,7 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     if "cup_scanne" not in st.session_state:
         st.session_state["cup_scanne"] = ""
         
-    # RENDU DU SCANNER (Garde le focus et l'ouverture de caméra)
+    # RENDU DU SCANNER (Il s'ouvre maintenant immédiatement au démarrage)
     code_detecte = qrcode_scanner(key="scanner_officiel_live")
     
     # --- DEBUT INJECTION TECHNIQUE HYBRIDE POUR LE MODE HORS LIGNE ---
@@ -464,6 +467,7 @@ elif choix_mode == "📸 Scanner un Code-Barres":
         if st.button("🔄 Effacer le scan actuel"):
             st.session_state["cup_scanne"] = ""
             st.rerun()
+
 # RECHERCHE AMÉLIORÉE ET INTEGRATION DES FILTRES
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()

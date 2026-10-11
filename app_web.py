@@ -4,6 +4,7 @@ import time
 import requests
 import re
 import os
+import streamlit.components.v1 as components  # Importation essentielle pour la brique hors ligne
 from streamlit_gsheets import GSheetsConnection
 
 # 1. CONFIGURATION UNIQUE DE LA PAGE (DOIT ÊTRE LA PREMIÈRE LIGNE)
@@ -108,7 +109,6 @@ def charger_donnees():
             elif col_prix not in df_initial.columns:
                 df_initial[col_prix] = ""
             df_initial[col_prix] = df_initial[col_prix].fillna("").astype(str).str.strip().replace(["nan", "0", "0.0", "0,00"], "")
-            
         if 'distribution' not in df_initial.columns and 'reseau_distribution' in df_initial.columns:
             df_initial['distribution'] = df_initial['reseau_distribution']
         elif 'distribution' not in df_initial.columns:
@@ -143,7 +143,6 @@ def charger_donnees():
     except Exception as e:
         st.error(f"❌ Erreur de lecture : {e}")
         return pd.DataFrame()
-
 CATEGORIES_PROJET = {
     "Toutes les catégories": ["Toutes les sous-catégories"],
     "Fruits et Légumes": [
@@ -271,7 +270,6 @@ def deviner_categorie(nom_produit):
         return ("Boulangerie et Pâtisserie", "Pâtisseries et desserts (gâteaux, tartes, biscuits frais)")
     if any(m in nom for m in ["soupe", "soup", "bouillon", "bol ", "repas", "saucisse", "tajine", "champignons", "bebe", "baby", "gerber", "love child", "aliment pour", "snack melts"]):
         return ("Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)")
-
     if "congelé" in nom or "congele" in nom or "surgelé" in nom or "frozen" in nom or "sorbet" in nom:
         if "sorbet" in nom:
             return ("Aliments surgelés", "Crème glacée et desserts surgelés (en pot, barres, gâteaux)")
@@ -303,35 +301,8 @@ def deviner_categorie(nom_produit):
     if any(m in nom_clean for m in [" pate ", " pates ", " sauce ", " salsa ", " vinaigrette ", " margarine ", " beurre "]):
         return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
 
-    # CORRECTION ICI : Extraction sécurisée du texte sans créer de liste dysfonctionnelle
+    # Extraction sécurisée du texte sans créer de liste dysfonctionnelle
     upc_propre = str(nom_produit).strip().split('.')[0].lstrip('0')
-    upc_boissons = ["701648010221", "623682117653"]
-    upc_collations = ["063348004369", "063348004482", "058716970766"]
-    upc_produits_laitiers = ["056800027099"]
-    upc_conserves_et_transformes = [
-        "061483055963", "061308100069", "628619200057", "058779717476", "771665516068",
-        "067275001118", "059749942164", "026043814000", "065250041746", "096619614752",
-        "894357002059", "060383691219", "055989069661", "667888156788", "060000132606",
-        "057961028147", "695058031207", "060383988098", "871454036187", "059749929127",
-        "065633134188", "816983020290", "661815001882", "057961018070", "069848058536"
-    ]
-
-    if upc_propre in upc_boissons: return ("Boissons (non alcoolisées)", "Toutes les sous-catégories")
-    if upc_propre in upc_collations: return ("Déjeuner et Collations", "Collations sucrées et confiseries (biscuits emballés, barres, bonbons)")
-    if upc_propre in upc_produits_laitiers: return ("Produits laitiers et Œufs", "Yogourts et desserts laitiers (grecs, poudings, kéfir)")
-    if upc_propre in upc_conserves_et_transformes: return ("Épicerie salée et Garde-manger", "Conserves et soupes (légumes en conserve, thon, soupes, bouillons)")
-
-    if any(m in nom for m in fruits_mots):
-        return ("Fruits et Légumes", "Fruits frais (petits fruits, agrumes, pommes, poires)")
-        
-    legumes_mots = ["carotte", "legume", "epinard", "poivron", "ail", "oignon", "salade", "concombre", "chou", "betterave", "patate douce"]
-    if any(m in nom for m in legumes_mots):
-        return ("Fruits et Légumes", "Légumes frais (légumes-feuilles, racines, fines herbes)")
-
-    return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
-
-
-    upc_propre = str(nom_produit).strip().split('.').lstrip('0')
     upc_boissons = ["701648010221", "623682117653"]
     upc_collations = ["063348004369", "063348004482", "058716970766"]
     upc_produits_laitiers = ["056800027099"]
@@ -432,7 +403,58 @@ elif choix_mode == "📸 Scanner un Code-Barres":
     if "cup_scanne" not in st.session_state:
         st.session_state["cup_scanne"] = ""
         
+    # RENDU DU SCANNER (Garde le focus et l'ouverture de caméra)
     code_detecte = qrcode_scanner(key="scanner_officiel_live")
+    
+    # --- DEBUT INJECTION TECHNIQUE HYBRIDE POUR LE MODE HORS LIGNE ---
+    js_offline_buffer = """
+    <script>
+    function gererScanHorsLigne() {
+        const elementsText = window.parent.document.querySelectorAll('div[data-testid="stMarkdownContainer"] p');
+        let codeTrouve = "";
+        
+        elementsText.forEach(el => {
+            if (el.innerText && /^\d+$/.test(el.innerText.trim())) {
+                codeTrouve = el.innerText.trim();
+            }
+        });
+
+        if (codeTrouve !== "" && !navigator.onLine) {
+            let localScans = JSON.parse(localStorage.getItem('scans_upc_hors_ligne')) || [];
+            if (!localScans.includes(codeTrouve)) {
+                localScans.push(codeTrouve);
+                localStorage.setItem('scans_upc_hors_ligne', JSON.stringify(localScans));
+                
+                const alerteVisuelle = window.parent.document.createElement('div');
+                alerteVisuelle.style = "position:fixed;top:10px;left:50%;transform:translateX(-50%);background-color:#ff9800;color:white;padding:15px;border-radius:8px;z-index:999999;font-weight:bold;box-shadow:0px 4px 10px rgba(0,0,0,0.3);";
+                alerteVisuelle.innerText = "⚠️ Mode Hors Ligne : Code " + codeTrouve + " mémorisé localement.";
+                window.parent.document.body.appendChild(alerteVisuelle);
+                setTimeout(() => { alerteVisuelle.remove(); }, 4000);
+            }
+        }
+    }
+
+    window.addEventListener('online', function() {
+        let pendingScans = JSON.parse(localStorage.getItem('scans_upc_hors_ligne')) || [];
+        if (pendingScans.length > 0) {
+            pendingScans.forEach(upc => {
+                fetch(window.location.href + "?cup=" + upc)
+                    .then(response => {
+                        console.log("Code synchronisé avec succès : ", upc);
+                    }).catch(err => console.log("Erreur synco : ", err));
+            });
+            localStorage.removeItem('scans_upc_hors_ligne');
+            alert("🔄 Réseau rétabli ! Vos scans enregistrés hors ligne ont été synchronisés.");
+            window.location.reload();
+        }
+    });
+
+    setInterval(gererScanHorsLigne, 500);
+    </script>
+    """
+    components.html(js_offline_buffer, height=0)
+    # --- FIN INJECTION TECHNIQUE ---
+
     if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]:
         st.session_state["cup_scanne"] = str(code_detecte).strip()
         st.rerun()
@@ -454,11 +476,9 @@ if saisie_net and saisie_net.strip() not in ["", "****"]:
         return t
 
     if 'code_upc' in df.columns:
-        # 🚀 VERSION INTELLIGENTE : On prépare les deux versions (avec et sans zéro au début)
         cup_avec_zero = cup_saisi if cup_saisi.startswith('0') else '0' + cup_saisi
         cup_sans_zero = cup_saisi.lstrip('0')
         
-        # On cherche d'abord la version sans zéro, puis la version avec zéro
         recherche_cup = df[df['code_upc'].astype(str).str.strip() == cup_sans_zero]
         if recherche_cup.empty:
             recherche_cup = df[df['code_upc'].astype(str).str.strip() == cup_avec_zero]
@@ -466,7 +486,6 @@ if saisie_net and saisie_net.strip() not in ["", "****"]:
         if not recherche_cup.empty:
             df_filtre = recherche_cup
             resultats = recherche_cup
-
         else:
             saisie_propre = enlever_accents(cup_saisi)
             noms_sans_accents = df['nom'].apply(enlever_accents)
@@ -480,7 +499,7 @@ if saisie_net and saisie_net.strip() not in ["", "****"]:
                 message_erreur_recherche = f"⚠️ Aucun produit trouvé."
                 df_filtre = pd.DataFrame(columns=df.columns)
 
-# Application stricte des catégories de la barre latérale uniquement si aucune recherche n'est active
+# Application stricte des catégories si aucune recherche n'est active
 if 'saisie_net' not in locals() or not saisie_net or saisie_net.strip() in ["", "****"]:
     if categorie_choisie != "Toutes les catégories" and not df_filtre.empty and "categorie_maitresse" in df_filtre.columns:
         df_filtre = df_filtre[df_filtre["categorie_maitresse"] == categorie_choisie]
@@ -494,7 +513,6 @@ if 'saisie_net' not in locals() or not saisie_net or saisie_net.strip() in ["", 
                 df_filtre["_SubShort"] = df_filtre["sous_categorie_maitresse"].str.lower().str[:15].str.strip()
                 df_filtre = df_filtre[df_filtre["_SubShort"] == racine_choix]
                 df_filtre = df_filtre.drop(columns=["_SubShort"])
-
 st.markdown("---")
 st.markdown(f"### 📋 Liste des produits ({len(df_filtre)} affichés) :")
 
@@ -506,11 +524,9 @@ for c in df_affichage.columns:
     df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 
 df_affichage = df_affichage.reset_index(drop=True)
-# =====================================================================
-# APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (URL EXACTE INTEGRÉE)
-# =====================================================================
-st.sidebar.subheader("Aperçu du produit")
 
+# APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE
+st.sidebar.subheader("Aperçu du produit")
 cup_actuel = "nan"
 if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     try:
@@ -544,7 +560,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
         else:
             with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
-                url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
+                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
                 reponse = requests.get(url_api, headers=headers, timeout=5)
                 if reponse.status_code == 200:
@@ -557,7 +573,6 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
                     st.sidebar.error("❌ Serveur d'images indisponible.")
     except Exception as e:
         st.sidebar.error(f"Erreur Sidebar CUP : {e}")
-
 with st.sidebar.expander("🔑 Administration"):
     if "admin_connecte" not in st.session_state: st.session_state["admin_connecte"] = False
     if not st.session_state["admin_connecte"]:
@@ -579,6 +594,7 @@ with st.sidebar.expander("🔑 Administration"):
             conn.update(data=df_nettoye)
             if 'df_produits' in st.session_state: del st.session_state['df_produits']
             st.success("Produit supprimé !"), time.sleep(1), st.rerun()
+
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large")
@@ -586,30 +602,16 @@ config_colonnes = {
 
 selection_tableau = None 
 if not df_affichage.empty:
-    selection_tableau = st.dataframe(
-        df_affichage, 
-        column_config=config_colonnes, 
-        use_container_width=True,
-        hide_index=True, 
-        selection_mode="single-row", 
-        on_select="rerun", 
-        key="tableau_consommateur"
-    )
-
-    # 🚀 CORRECTION : Extraction sécurisée de l'entier unique à l'intérieur de la liste de sélection
+    selection_tableau = st.dataframe(df_affichage, column_config=config_colonnes, use_container_width=True, hide_index=True, selection_mode="single-row", on_select="rerun", key="tableau_consommateur")
     if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]  # <-- Le [0] extrait le chiffre et règle le TypeError
-        
+        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
 else:
-    if message_erreur_recherche:
-        st.warning(message_erreur_recherche)
-
+    if message_erreur_recherche: st.warning(message_erreur_recherche)
     type_saisie = "Le code-barres" if (saisie_net and saisie_net.isdigit()) else "Le produit"
     st.info(f"📦 {type_saisie} **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
-    st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
     
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
         nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
@@ -618,73 +620,35 @@ else:
         province = st.text_input("Province / État (ex: Québec)")
         pays = st.text_input("Pays", value="Canada")
         distribution = st.text_input("Réseau d'épicerie (ex: IGA, Maxi, Metro, Super C)")
-        
         st.write("---")
-        st.write("**Entrez les prix constatés en magasin (optionnel) :**")
         col1, col2, col3, col4 = st.columns(4)
-        with col1: prix_iga = st.text_input("Prix IGA ($)", value="")
-        with col2: prix_maxi = st.text_input("Prix Maxi ($)", value="")
-        with col3: prix_metro = st.text_input("Prix Metro ($)", value="")
-        with col4: prix_superc = st.text_input("Prix Super C ($)", value="")
-    
+        prix_iga = col1.text_input("Prix IGA ($)", value="")
+        prix_maxi = col2.text_input("Prix Maxi ($)", value="")
+        prix_metro = col3.text_input("Prix Metro ($)", value="")
+        prix_superc = col4.text_input("Prix Super C ($)", value="")
         col5, col6, col7, col8 = st.columns(4)
-        with col5: prix_walmart = st.text_input("Prix Walmart ($)", value="")
-        with col6: prix_tigre = st.text_input("Prix Tigre Géant ($)", value="")
-        with col7: prix_dollarama = st.text_input("Prix Dollarama ($)", value="")
-        with col8: prix_provigo = st.text_input("Prix Provigo ($)", value="")
-
+        prix_walmart = col5.text_input("Prix Walmart ($)", value="")
+        prix_tigre = col6.text_input("Prix Tigre Géant ($)", value="")
+        prix_dollarama = col7.text_input("Prix Dollarama ($)", value="")
+        prix_provigo = col8.text_input("Prix Provigo ($)", value="")
         bouton_creer = st.form_submit_button("🚀 Enregistrer le nouveau produit dans le Nuage", type="primary", use_container_width=True)
 
-        if bouton_creer:
-            if nom_nouveau:
-                with st.spinner("Enregistrement de la nouvelle fiche produit..."):
-                    try:
-                        nouvelle_ligne = {
-                            'code_upc': cup_final,
-                            'nom': nom_nouveau.strip(),
-                            'siege_social': entreprise.strip(),
-                            'lieu_usine': "",
-                            'distribution': distribution.strip(),
-                            'entreprise_proprietaire': "",
-                            'entreprise_province_etat': province.strip(),
-                            'entreprise_pays': pays.strip(),
-                            'priorite': "",
-                            'usine_principale': "",
-                            'reseau_distribution': "",
-                            'prix_iga': prix_iga.strip(),
-                            'prix_maxi': prix_maxi.strip(),
-                            'prix_metro': prix_metro.strip(),
-                            'prix_super_c': prix_superc.strip(),
-                            'prix_walmart': prix_walmart.strip(),
-                            'prix_tigre_geant': prix_tigre.strip(),
-                            'prix_dollarama': prix_dollarama.strip(),
-                            'prix_provigo': prix_provigo.strip(),
-                            'distribution.1': "",
-                            'bannieres_disponibles': ""
-                        }
-                        
-                        conn = st.connection("gsheets", type=GSheetsConnection)
-                        df_total = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
-                        conn.update(worksheet="Sheet1", data=df_total)
-                        st.session_state['df_produits'] = df_total
-                        
-                        st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
-                        st.balloons()
-                        time.sleep(1)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Erreur lors de l'enregistrement : {e}")
-            else:
-                st.error("⚠️ Le Nom du produit est obligatoire pour valider la fiche.")
-
+        if bouton_creer and nom_nouveau:
+            try:
+                nouvelle_ligne = {'code_upc': cup_final, 'nom': nom_nouveau.strip(), 'siege_social': enterprise.strip(), 'lieu_usine': "", 'distribution': distribution.strip(), 'entreprise_proprietaire': "", 'entreprise_province_etat': province.strip(), 'entreprise_pays': pays.strip(), 'priorite': "", 'usine_principale': "", 'reseau_distribution': "", 'prix_iga': prix_iga.strip(), 'prix_maxi': prix_maxi.strip(), 'prix_metro': prix_metro.strip(), 'prix_super_c': prix_superc.strip(), 'prix_walmart': prix_walmart.strip(), 'prix_tigre_geant': prix_tigre.strip(), 'prix_dollarama': prix_dollarama.strip(), 'prix_provigo': prix_provigo.strip(), 'distribution.1': "", 'bannieres_disponibles': ""}
+                conn = st.connection("gsheets", type=GSheetsConnection)
+                df_total = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
+                conn.update(worksheet="Sheet1", data=df_total)
+                st.session_state['df_produits'] = df_total
+                st.success("🎉 Fiche ajoutée !")
+                st.balloons(), time.sleep(1), st.rerun()
+            except Exception as e: st.error(f"Erreur : {e}")
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index[0]  # 🚀 CORRECTION : Force l'utilisation du premier index unique
-    row = resultats.iloc[0]                  # 🚀 CORRECTION : Force l'extraction de l'unique ligne de produit
+    index_produit_reel = resultats.index[0]
+    row = resultats.iloc[0]
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')
-    compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
-    
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
     if "québec" in prov.lower():
@@ -697,26 +661,15 @@ if resultats is not None and not resultats.empty:
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
 
-    bannières_config = {
-        'prix_iga': ('🔴 IGA', '#d32f2f'), 
-        'prix_maxi': ('🟡 MAXI', '#f9d71c'), 
-        'prix_metro': ('🟢 METRO', '#28a745'), 
-        'prix_super_c': ('🔵 SUPER C', '#0056b3'),
-        'prix_walmart': ('🔵 WALMART', '#0071dc'),
-        'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#ffcc00'),
-        'prix_dollarama': ('💵 DOLLARAMA', '#00843d'),
-        'prix_provigo': ('🟢 PROVIGO', '#ff5a00')
-    }
-
+    bannières_config = {'prix_iga': ('🔴 IGA', '#d32f2f'), 'prix_maxi': ('🟡 MAXI', '#f9d71c'), 'prix_metro': ('🟢 METRO', '#28a745'), 'prix_super_c': ('🔵 SUPER C', '#0056b3'), 'prix_walmart': ('🔵 WALMART', '#0071dc'), 'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#ffcc00'), 'prix_dollarama': ('💵 DOLLARAMA', '#00843d'), 'prix_provigo': ('🟢 PROVIGO', '#ff5a00')}
     prix_valides = {}
     for col_key, _ in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '').replace('$', '').replace(',', '.').strip()
-        if v_prix and v_prix.lower() != "non inscrit" and v_prix != "":
+        if v_prix and v_prix != "":
             try: prix_valides[col_key] = float(v_prix)
             except ValueError: pass
 
     meilleure_banniere_col = min(prix_valides, key=prix_valides.get) if prix_valides else None
-
     bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
     for col_key, (label, _) in bannières_config.items():
         v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
@@ -727,33 +680,26 @@ if resultats is not None and not resultats.empty:
 
     st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
+    
     with st.form("formulaire_prix_epicerie"):
         upc_dynamique = str(row.get('code_upc', 'sans_upc'))
         def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
-        
         c1, c2, c3, c4 = st.columns(4)
         nouveau_iga = c1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key=f"form_iga_{upc_dynamique}")
         nouveau_maxi = c2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key=f"form_maxi_{upc_dynamique}")
         nouveau_metro = c3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key=f"form_metro_{upc_dynamique}")
         nouveau_super_c = c4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key=f"form_super_c_{upc_dynamique}")
-        
         c5, c6, c7, c8 = st.columns(4)
         nouveau_walmart = c5.text_input("Prix Walmart ($) :", value=clean_price(row.get('prix_walmart', '')), key=f"form_wal_{upc_dynamique}")
         nouveau_tigre = c6.text_input("Prix Tigre Géant ($) :", value=clean_price(row.get('prix_tigre_geant', '')), key=f"form_tig_{upc_dynamique}")
         nouveau_dollarama = c7.text_input("Prix Dollarama ($) :", value=clean_price(row.get('prix_dollarama', '')), key=f"form_dol_{upc_dynamique}")
         nouveau_provigo = c8.text_input("Prix Provigo ($) :", value=clean_price(row.get('prix_provigo', '')), key=f"form_provigo_{upc_dynamique}")
-        
         st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
-        
-        texte_barre = "💾 Enregistrer les modifications de prix"
-        if "dernier_horodatage" in st.session_state:
-            texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})"
-
+        texte_barre = f"💾 Enregistrer les modifications de prix (Fait le : {st.session_state['dernier_horodatage']})" if "dernier_horodatage" in st.session_state else "💾 Enregistrer les modifications de prix"
         bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
         
     if bouton_enregistrer:
         try:
-            # 1. Enregistrement en mémoire des 8 prix pour le produit sélectionné
             st.session_state['df_produits'].at[index_produit_reel, 'prix_iga'] = nouveau_iga.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_maxi'] = nouveau_maxi.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_metro'] = nouveau_metro.strip()
@@ -763,42 +709,25 @@ if resultats is not None and not resultats.empty:
             st.session_state['df_produits'].at[index_produit_reel, 'prix_dollarama'] = nouveau_dollarama.strip()
             st.session_state['df_produits'].at[index_produit_reel, 'prix_provigo'] = nouveau_provigo.strip()
 
-            # 2. Sauvegarde cloud immédiate dans le PREMIER onglet (Sheet1)
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(worksheet="Sheet1", data=st.session_state['df_produits'])
 
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
-            # 3. Préparation et envoi automatique dans le DEUXIÈME onglet (Historique_Prix)
             nouvelles_lignes = []
             upc_produit = str(row.get('code_upc', '')).strip()
-            champs_saisis = {
-                'prix_iga': nouveau_iga, 'prix_maxi': nouveau_maxi, 'prix_metro': nouveau_metro, 'prix_super_c': nouveau_super_c,
-                'prix_walmart': nouveau_walmart, 'prix_tigre_geant': nouveau_tigre, 'prix_dollarama': nouveau_dollarama, 'prix_provigo': nouveau_provigo
-            }
+            champs_saisis = {'prix_iga': nouveau_iga, 'prix_maxi': nouveau_maxi, 'prix_metro': nouveau_metro, 'prix_super_c': nouveau_super_c, 'prix_walmart': nouveau_walmart, 'prix_tigre_geant': nouveau_tigre, 'prix_dollarama': nouveau_dollarama, 'prix_provigo': nouveau_provigo}
 
             for distribution_enseigne, valeur_prix in champs_saisis.items():
                 if valeur_prix and str(valeur_prix).strip() != "":
                     try:
                         prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
-                        nouvelle_ligne = {
-                            'horodatage': horodatage_actuel, 'code_upc': upc_produit, 'distribution': distribution_enseigne, 'prix': prix_propre, 'source': 'collaboratif'
-                        }
-                        nouvelles_lignes.append(nouvelle_ligne)
-                    except ValueError:
-                        pass
+                        nouvelles_lignes.append({'horodatage': horodatage_actuel, 'code_upc': upc_produit, 'distribution': distribution_enseigne, 'prix': prix_propre, 'source': 'collaboratif'})
+                    except ValueError: pass
 
-            if nouvelles_lignes:
-                df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
-                sauvegarder_historique(df_nouvel_historique) # 🚀 Écrit physiquement dans 'Historique_Prix'
-
+            if nouvelles_lignes: sauvegarder_historique(pd.DataFrame(nouvelles_lignes))
             st.session_state['dernier_horodatage'] = horodatage_actuel
-            st.success("Mise à jour réussie dans vos 2 onglets cloud !")
-            time.sleep(0.5)
-            st.rerun()
-
-        except Exception as e:
-            st.error(f"❌ Erreur lors de la sauvegarde : {e}")
+            st.success("Mise à jour réussie !")
+            time.sleep(0.5), st.rerun()
+        except Exception as e: st.error(f"❌ Erreur : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-# --- SYNCHRONISATION AUTOMATIQUE GOOGLE SHEETS VERS SUPABASE (CORRIGÉ JSON) ---
-import numpy as np

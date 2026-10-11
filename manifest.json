@@ -1,0 +1,17 @@
+{
+  "short_name": "Achat Local",
+  "name": "Mon Guide d'Achat Local - Québec & Canada",
+  "icons": [
+    {
+      "src": "https://flaticon.com",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#003366",
+  "theme_color": "#003366",
+  "display": "standalone",
+  "orientation": "portrait"
+)

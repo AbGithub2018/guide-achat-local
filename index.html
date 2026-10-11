@@ -1,1 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acheter Québécois & Canadien</title>
+    <!-- Moteur de scan chargé de manière sécurisée -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-top: 8px solid #003366; }
+        h1 { color: #003366; font-size: 24px; margin-bottom: 5px; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-top: 15px; }
+        .btn { background: #2e7d32; color: white; border: none; padding: 15px; width: 100%; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+        .btn:disabled { background: #cccccc; cursor: not-allowed; }
+        .status-box { background: #e1f5fe; color: #0d47a1; padding: 12px; margin-top: 15px; border-radius: 6px; font-weight: bold; font-size: 16px; }
+        .counter { font-size: 14px; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h1>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>
+    <p style="color:#666; margin:0;">Scannez vos codes-barres même sans réseau au fond du magasin.</p>
+    
+    <div id="reader"></div>
+    <div class="counter" id="scanCounter">0 produit(s) en mémoire tampon locale</div>
+    <div id="resultatBox" class="status-box" style="display:none;"></div>
+
+    <button class="btn" id="syncBtn" onclick="synchroniserDonnees()">🔄 Synchroniser avec Google Sheets</button>
+</div>
+
+<script>
+    function rafraichirCompteur() {
+        let localBuffer = JSON.parse(localStorage.getItem("buffer_scans")) || [];
+        document.getElementById("scanCounter").innerText = localBuffer.length + " produit(s) en mémoire tampon locale";
+        document.getElementById("syncBtn").disabled = localBuffer.length === 0;
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        let upc = decodedText.trim();
+        let resBox = document.getElementById("resultatBox");
+        resBox.style.display = "block";
+        resBox.innerText = "📦 Code détecté : " + upc + " (Sauvegardé localement)";
+
+        let localBuffer = JSON.parse(localStorage.getItem("buffer_scans")) || [];
+        
+        localBuffer.push({
+            code_upc: upc,
+            horodatage: new Date().toLocaleString("fr-CA", { timeZone: "America/Toronto" }).substring(0, 16)
+        });
+
+        localStorage.setItem("buffer_scans", JSON.stringify(localBuffer));
+        rafraichirCompteur();
+
+        if (navigator.vibrate) navigator.vibrate(100);
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+        fps: 15, 
+        qrbox: { width: 300, height: 180 },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.EAN_13]
+    });
+    html5QrcodeScanner.render(onScanSuccess);
+
+    async function synchroniserDonnees() {
+        let localBuffer = JSON.parse(localStorage.getItem("buffer_scans")) || [];
+        if (localBuffer.length === 0) return;
+
+        document.getElementById("syncBtn").innerText = "⏳ Envoi en cours...";
+        
+        try {
+            // Cette adresse changera pour l'URL Render officielle à la toute fin
+            const response = await fetch("http://localhost:8000/api/synchroniser", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(localBuffer)
+            });
+
+            if (response.ok) {
+                alert("🎉 Synchronisation réussie dans vos 2 onglets Google Sheets !");
+                localStorage.removeItem("buffer_scans");
+                document.getElementById("resultatBox").style.display = "none";
+            } else {
+                alert("⚠️ Le serveur Python a répondu avec une erreur.");
+            }
+        } catch (error) {
+            alert("❌ Impossible de joindre le serveur. Êtes-vous sûr d'avoir récupéré du réseau ?");
+        }
+
+        document.getElementById("syncBtn").innerText = "🔄 Synchroniser avec Google Sheets";
+        rafraichirCompteur();
+    }
+
+    rafraichirCompteur();
+</script>
+</body>
+</html>

@@ -72,7 +72,7 @@
         
         try {
             // Cette adresse changera pour l'URL Render officielle à la toute fin
-            const response = await fetch("http://localhost:8000/api/synchroniser", {
+            const response = await fetch("https://guide-achat-local.onrender.com/api/synchroniser", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(localBuffer)

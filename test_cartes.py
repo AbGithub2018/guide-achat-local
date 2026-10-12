@@ -15,7 +15,7 @@ if ville_saisie:
     terme_encode = urllib.parse.quote(recherche_complete)
     
     # 4. Construction de l'URL universelle de recherche Google Maps
-    lien_maps = f"https://www.google.com/maps/search/{terme_encode}"
+    lien_maps = f"https://www.google.com/maps/search/?api=1&query={terme_encode}"
     
     # 5. Bouton d'action pour l'utilisateur
     st.link_button(f"🚀 Ouvrir la carte pour {ville_saisie}", lien_maps)

@@ -23,7 +23,7 @@ config = REGIONS[region_choisie]
 terme_recherche = urllib.parse.quote("épiceries")
 
 # 5. Construction de l'URL complète et absolue vers Google Maps
-lien_maps = f"https://google.com{terme_recherche}/@{config['lat']},{config['lon']},{config['zoom']}z"
+lien_maps = f"https://www.google.com/maps/search/épiceries/@{config['lat']},{config['lon']},{config['zoom']}z"
 
 # 6. Bouton d'action pour l'utilisateur
 st.link_button("🚀 Ouvrir la carte de la région", lien_maps)

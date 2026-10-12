@@ -217,7 +217,7 @@ CATEGORIES_PROJET = {
 }
 def deviner_categorie(nom_produit):
     nom = str(nom_produit).lower()
-    nom = nom.replace("é", "e").replace("è", "e").replace("à", "a").replace("'", " ").replace("’", " ")
+    nom = nom.replace("é", "e").replace("è", "e").replace("à", "a").replace("'", " ").replace('"', ' ')
     nom_isole = f" {nom} "
 
     if any(m in nom for m in ["bicarbonate", "levure", "similac", "tofu", "edulcorant"]):

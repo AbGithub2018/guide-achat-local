@@ -34,7 +34,7 @@
 </div>
 
 <script>
-    // URL de votre script Google Apps (à remplacer par le vôtre si nécessaire)
+    // URL de votre script Google Apps (pensez à mettre la vôtre après avoir republié le script)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5agGszemOQTkN5dUo11aZy8mZ7HtSlDvlEz328vVmo2nC7UMx26h4D0DxO0P1NSWR/exec";
 
     // Mettre à jour le compteur visuel au chargement
@@ -79,18 +79,20 @@
             return;
         }
 
-        alert("Tentative de synchronisation de " + produits.length + " produits...");
-
+        // Changement : On envoie le JSON sous forme de chaîne brute pour éviter le blocage CORS de Google Apps Script
         fetch(WEB_APP_URL, {
             method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
+            mode: "cors", 
             body: JSON.stringify({ actions: "sync", donnees: produits })
         })
-        .then(() => {
-            alert("Synchronisation réussie avec Google Sheets !");
-            localStorage.removeItem('produits_scannes'); // Vide la mémoire locale après succès
-            majCompteur();
+        .then(response => {
+            if (response.ok || response.type === 'opaque') {
+                alert("Synchronisation réussie avec Google Sheets !");
+                localStorage.removeItem('produits_scannes'); // Vide la mémoire locale uniquement si l'envoi a fonctionné
+                majCompteur();
+            } else {
+                alert("Erreur lors de l'envoi des données au serveur.");
+            }
         })
         .catch(error => {
             alert("Erreur de connexion. Vérifiez votre réseau : " + error);

@@ -653,7 +653,8 @@ try:
             st.sidebar.error("Impossible de charger les coordonnées de cette ville.")
 
 except Exception as erreur_carte:
-    st.sidebar.warning("Le module de recherche géographique est indisponible.")
+    st.sidebar.warning(f"Le module de recherche géographique est indisponible.")
+    st.sidebar.error(f"Détail de l'erreur : {erreur_carte}")
 
 # =====================================================================
 

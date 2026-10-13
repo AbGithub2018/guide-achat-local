@@ -1,52 +1,66 @@
 import streamlit as st
 import pandas as pd
 import urllib.parse
+import re
 
 st.title("📍 Localisateur d'Épiceries du Québec")
 st.write("Sélectionnez n'importe quelle municipalité officielle pour afficher ses épiceries avec un zoom idéal.")
 
-# 1. Chargement automatique du fichier gouvernemental mis sur votre GitHub
+# Fonction pour convertir les coordonnées textuelles (ex: 47° 22' 34" N) en nombres décimaux
+def dms_a_decimal(coord_str, est_longitude=False):
+    try:
+        if pd.isna(coord_str):
+            return None
+        # Extraction de tous les nombres présents dans le texte
+        chiffres = [float(x) for x in re.findall(r"\d+", str(coord_str))]
+        if len(chiffres) >= 3:
+            degres, minutes, secondes = chiffres[0], chiffres[1], chiffres[2]
+            decimal = degres + (minutes / 60.0) + (secondes / 3600.0)
+            # Au Québec, la longitude est à l'Ouest (O), donc elle doit être négative
+            if est_longitude:
+                decimal = -decimal
+            return decimal
+    except Exception:
+        return None
+    return None
+
 @st.cache_data
 def charger_donnees():
-    # On charge le fichier en gérant les différents encodages de texte possibles pour les accents
+    # Chargement en utilisant le point-virgule comme séparateur selon votre image
     try:
-        df = pd.read_csv("municipalités.csv", encoding="utf-8")
+        df = pd.read_csv("municipalités.csv", sep=";", encoding="utf-8")
     except FileNotFoundError:
         try:
-            df = pd.read_csv("municipalites.csv", encoding="utf-8")
+            df = pd.read_csv("municipalites.csv", sep=";", encoding="utf-8")
         except FileNotFoundError:
-            df = pd.read_csv("municipalites.csv", encoding="latin-1")
+            df = pd.read_csv("municipalites.csv", sep=";", encoding="latin-1")
     except Exception:
-        df = pd.read_csv("municipalités.csv", encoding="latin-1")
+        df = pd.read_csv("municipalités.csv", sep=";", encoding="latin-1")
     return df
 
 try:
     df_villes = charger_donnees()
-    
-    # Nettoyage des noms de colonnes pour enlever les espaces ou sauts de ligne invisibles
     df_villes.columns = df_villes.columns.str.strip()
 
-    # 2. Création du menu déroulant trié par ordre alphabétique de toutes les villes du Québec
+    # Création de la liste des villes
     liste_villes = sorted(df_villes["Nom de la municipalité"].dropna().unique())
     ville_selectionnee = st.selectbox("Sélectionnez votre municipalité :", liste_villes)
 
     if ville_selectionnee:
-        # 3. Extraction de la ligne correspondant à la ville choisie
+        # Récupération de la ligne de la ville
         infos_ville = df_villes[df_villes["Nom de la municipalité"] == ville_selectionnee].iloc[0]
         
-        # Récupération des coordonnées géographiques exactes du gouvernement
-        lat = infos_ville["Latitude du point central"]
-        lon = infos_ville["Longitude du point central"]
+        # Conversion des formats textes en chiffres décimaux
+        lat = dms_a_decimal(infos_ville["Latitude"], est_longitude=False)
+        lon = dms_a_decimal(infos_ville["Longitude"], est_longitude=True)
         
-        # Encodage sécurisé du terme de recherche
-        terme_recherche = urllib.parse.quote("épiceries")
-        
-        # 4. L'URL absolue avec le ZOOM FORCÉ (13z = échelle de centre-ville serrée)
-        lien_maps = f"https://www.google.com/maps/search/{terme_recherche}/@{lat},{lon},13z"
-        
-        # 5. Affichage du bouton d'action pour le consommateur
-        st.link_button(f"🚀 Ouvrir la carte pour {ville_selectionnee}", lien_maps)
+        if lat and lon:
+            terme_recherche = urllib.parse.quote("épiceries")
+            # L'URL absolue parfaite avec zoom forcé à 13z
+            lien_maps = f"https://www.google.com/maps/search/{terme_recherche}/@{lat},{lon},13z"
+            st.link_button(f"🚀 Ouvrir la carte pour {ville_selectionnee}", lien_maps)
+        else:
+            st.error("Impossible de lire les coordonnées géographiques pour cette municipalité.")
 
 except Exception as e:
-    st.error("Erreur lors de la lecture du fichier. Assurez-vous d'avoir téléversé 'municipalités.csv' sur GitHub.")
-    st.info("Vérifiez également que les titres de vos colonnes dans le fichier s'appellent exactement : 'Nom de la municipalité', 'Latitude du point central' et 'Longitude du point central'.")
+    st.error(f"Erreur lors de la configuration de l'application : {e}")

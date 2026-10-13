@@ -1,36 +1,52 @@
 import streamlit as st
+import pandas as pd
 import urllib.parse
-from geopy.geocoders import Nominatim
 
 st.title("📍 Localisateur d'Épiceries du Québec")
-st.write("Entrez le nom de n'importe quelle municipalité pour afficher ses épiceries avec un zoom parfait.")
+st.write("Sélectionnez n'importe quelle municipalité officielle pour afficher ses épiceries avec un zoom idéal.")
 
-# 1. Saisie de la ville par l'utilisateur
-ville_saisie = st.text_input("Entrez votre ville ou municipalité :", "Sainte-Marie")
-
-if ville_saisie:
+# 1. Chargement automatique du fichier gouvernemental mis sur votre GitHub
+@st.cache_data
+def charger_donnees():
+    # On charge le fichier en gérant les différents encodages de texte possibles pour les accents
     try:
-        # 2. Utilisation d'un géolocalisateur gratuit pour trouver la latitude et la longitude exactes
-        geolocator = Nominatim(user_agent="localisateur_epiceries_quebec")
-        location = geolocator.geocode(f"{ville_saisie}, Québec, Canada")
-        
-        if location:
-            lat = location.latitude
-            lon = location.longitude
-            
-            # Encodage du mot épiceries
-            terme_recherche = urllib.parse.quote("épiceries")
-            
-            # 3. L'URL parfaite avec coordonnées ET zoom bloqué à 13 (échelle de ville)
-            lien_maps = f"https://google.com{terme_recherche}/@{lat},{lon},13z"
-            
-            # 4. Le bouton d'action
-            st.link_button(f"🚀 Ouvrir la carte pour {ville_saisie}", lien_maps)
-        else:
-            st.error("Municipalité introuvable. Assurez-vous de bien orthographier le nom.")
-            
+        df = pd.read_csv("municipalités.csv", encoding="utf-8")
+    except FileNotFoundError:
+        try:
+            df = pd.read_csv("municipalites.csv", encoding="utf-8")
+        except FileNotFoundError:
+            df = pd.read_csv("municipalites.csv", encoding="latin-1")
     except Exception:
-        # Solution de secours si le service de géolocalisation est surchargé
-        terme_encode = urllib.parse.quote(f"épiceries, {ville_saisie}, Québec, Canada")
-        lien_maps = f"https://www.google.com/maps/search/?api=1&query={terme_encode}"
-        st.link_button(f"🚀 Ouvrir la carte pour {ville_saisie} (Zoom automatique)", lien_maps)
+        df = pd.read_csv("municipalités.csv", encoding="latin-1")
+    return df
+
+try:
+    df_villes = charger_donnees()
+    
+    # Nettoyage des noms de colonnes pour enlever les espaces ou sauts de ligne invisibles
+    df_villes.columns = df_villes.columns.str.strip()
+
+    # 2. Création du menu déroulant trié par ordre alphabétique de toutes les villes du Québec
+    liste_villes = sorted(df_villes["Nom de la municipalité"].dropna().unique())
+    ville_selectionnee = st.selectbox("Sélectionnez votre municipalité :", liste_villes)
+
+    if ville_selectionnee:
+        # 3. Extraction de la ligne correspondant à la ville choisie
+        infos_ville = df_villes[df_villes["Nom de la municipalité"] == ville_selectionnee].iloc[0]
+        
+        # Récupération des coordonnées géographiques exactes du gouvernement
+        lat = infos_ville["Latitude du point central"]
+        lon = infos_ville["Longitude du point central"]
+        
+        # Encodage sécurisé du terme de recherche
+        terme_recherche = urllib.parse.quote("épiceries")
+        
+        # 4. L'URL absolue avec le ZOOM FORCÉ (13z = échelle de centre-ville serrée)
+        lien_maps = f"https://www.google.com/maps/search/{terme_recherche}/@{lat},{lon},13z"
+        
+        # 5. Affichage du bouton d'action pour le consommateur
+        st.link_button(f"🚀 Ouvrir la carte pour {ville_selectionnee}", lien_maps)
+
+except Exception as e:
+    st.error("Erreur lors de la lecture du fichier. Assurez-vous d'avoir téléversé 'municipalités.csv' sur GitHub.")
+    st.info("Vérifiez également que les titres de vos colonnes dans le fichier s'appellent exactement : 'Nom de la municipalité', 'Latitude du point central' et 'Longitude du point central'.")

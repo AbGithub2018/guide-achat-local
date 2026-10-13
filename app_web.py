@@ -579,6 +579,84 @@ with st.sidebar.expander("🔑 Administration"):
             conn.update(data=df_nettoye)
             if 'df_produits' in st.session_state: del st.session_state['df_produits']
             st.success("Produit supprimé !"), time.sleep(1), st.rerun()
+            # =====================================================================
+# 🗺️ ZONE CARTOGRAPHIQUE : LOCALISATEUR D'ÉPICERIES DU QUÉBEC
+# =====================================================================
+
+# 1. Fonction pour convertir vos formats textes (ex: 46° 26' 67" N) en chiffres décimaux
+def dms_a_decimal_sidebar(coord_str, est_longitude=False):
+    try:
+        if pd.isna(coord_str):
+            return None
+        chiffres = [float(x) for x in re.findall(r"\d+", str(coord_str))]
+        if len(chiffres) >= 3:
+            degres, minutes, secondes = chiffres[0], chiffres[1], chiffres[2]
+            decimal = degres + (minutes / 60.0) + (secondes / 3600.0)
+            if est_longitude:
+                decimal = -decimal
+            return decimal
+    except Exception:
+        return None
+    return None
+
+# 2. Chargement en cache de votre base de données 'municipalités.csv'
+@st.cache_data
+def charger_villes_sidebar():
+    try:
+        df_muni = pd.read_csv("municipalités.csv", sep=";", encoding="utf-8")
+    except FileNotFoundError:
+        try:
+            df_muni = pd.read_csv("municipalites.csv", sep=";", encoding="utf-8")
+        except FileNotFoundError:
+            df_muni = pd.read_csv("municipalites.csv", sep=";", encoding="latin-1")
+    except Exception:
+        df_muni = pd.read_csv("municipalités.csv", sep=";", encoding="latin-1")
+    return df_muni
+
+# 3. Rendu visuel dans votre barre latérale (Sidebar)
+try:
+    df_villes = charger_villes_sidebar()
+    df_villes.columns = df_villes.columns.str.strip()
+    
+    # Extraction de la liste unique et triée des villes du Québec
+    liste_villes_quebec = sorted(df_villes["Nom de la municipalité"].dropna().unique())
+    
+    # Création de la section graphique dans votre menu de gauche
+    st.sidebar.markdown("---")
+    st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 20px; font-weight: bold;'>🗺️ Épiceries à proximité</h2>")
+    st.sidebar.write("Affichez instantanément les supermarchés de votre région :")
+    
+    # Menu déroulant de sélection
+    ville_choisie = st.sidebar.selectbox(
+        "Sélectionnez votre municipalité :", 
+        options=liste_villes_quebec, 
+        key="cle_sidebar_municipalite_choisie"
+    )
+
+    if ville_choisie:
+        # Recherche de la ligne correspondant à la municipalité sélectionnée
+        infos_commune = df_villes[df_villes["Nom de la municipalité"] == ville_choisie].iloc[0]
+        
+        # Traduction des coordonnées géographiques avec vos variables du test
+        lat = dms_a_decimal_sidebar(infos_commune["Latitude"], est_longitude=False)
+        lon = dms_a_decimal_sidebar(infos_commune["Longitude"], est_longitude=True)
+        
+        if lat and lon:
+            terme_recherche = urllib.parse.quote("épiceries")
+            
+            # VOTRE LIEN EXACT DU TEST :
+            lien_maps = f"https://www.google.com/maps/search/{terme_recherche}/@{lat},{lon},13z"
+            
+            # Bouton d'action étiré dans la barre de gauche
+            st.sidebar.link_button(f"🚀 Ouvrir Google Maps", lien_maps, use_container_width=True)
+        else:
+            st.sidebar.error("Impossible de charger les coordonnées de cette ville.")
+
+except Exception as erreur_carte:
+    st.sidebar.warning("Le module de recherche géographique est indisponible.")
+
+# =====================================================================
+
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large")

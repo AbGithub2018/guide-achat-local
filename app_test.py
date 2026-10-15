@@ -46,7 +46,8 @@ def calculer_distance_km(lat1, lon1, lat2, lon2):
 def charger_commerces_du_fichier(chemin_fichier):
     """Lit le fichier GeoJSON fourni et le convertit en tableau utilisable"""
     try:
-        with open(chemin_pdf, 'r', encoding='utf-8') as f:
+        # CORRECTION ICI : Utilisation de la bonne variable passée en paramètre
+        with open(chemin_fichier, 'r', encoding='utf-8') as f:
             geojson_data = json.load(f)
             
         liste_commerces = []
@@ -62,7 +63,6 @@ def charger_commerces_du_fichier(chemin_fichier):
                 
                 # Récupération du nom ou de la marque
                 nom = properties.get('brand') or properties.get('name') or "Commerce alimentaire"
-                type_boutique = properties.get('shop', 'supermarket')
                 
                 # Extraction de l'adresse textuelle si présente
                 ville_doc = properties.get('addr:city', '')
@@ -94,7 +94,7 @@ def charger_commerces_du_fichier(chemin_fichier):
         return pd.DataFrame()
 
 # --- INITIALISATION DE L'APPLICATION ---
-# Enregistrez le contenu de votre texte dans un fichier nommé 'commerces.geojson' à côté de votre script
+# Veillez à ce que votre fichier de données soit nommé ainsi à la racine de votre GitHub
 df_global_commerces = charger_commerces_du_fichier("commerces.geojson")
 
 # --- INTERFACE UTILISATEUR ---
@@ -123,7 +123,7 @@ if cp_saisi.strip() and not df_global_commerces.empty:
         
         for index, row in df_affichage.iterrows():
             with st.container():
-                col_info, col_lien = st.columns([2, 1])
+                col_info, col_lien = st.columns()
                 with col_info:
                     st.markdown(f"**{row['Bannière']}**")
                     st.caption(f"Plus proche succursale détectée à environ : {round(row['Distance (km)'], 1)} km")

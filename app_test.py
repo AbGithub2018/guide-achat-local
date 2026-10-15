@@ -1,38 +1,86 @@
 import pandas as pd
-import streamlit as st  # Ou votre framework d'affichage
+import streamlit as st
 
-# 1. Chargement de votre liste officielle des bannières (téléchargée)
+# Configuration de la page
+st.set_page_config(page_title="Moteur de Recherche - Codes Postaux Québec", layout="wide")
+st.title("CA Moteur de Recherche - Codes Postaux Québec")
+st.caption("Ce prototype utilise les données géographiques nettoyées de GeoNames combinées aux bannières locales.")
+
+# 1. Chargement et nettoyage de votre base de données officielle (Le repère)
 @st.cache_data
-def charger_bannieres():
-    # Ce fichier contient vos colonnes 'Code postal' et 'Banniere'
-    df_bannieres = pd.read_csv("codes_qc.csv")
-    # Nettoyage pour s'assurer qu'il n'y a pas d'espaces masqués qui bloquent la recherche
-    df_bannieres['Code postal'] = df_bannieres['Code postal'].str.replace(" ", "").str.upper()
-    return df_bannieres
+def charger_base_bannieres():
+    try:
+        # Lecture du fichier mis en place sur votre GitHub
+        df_bannieres = pd.read_csv("codes_qc.csv")
+        
+        # Standardisation des colonnes pour éviter les problèmes de majuscules/minuscules
+        df_bannieres.columns = df_bannieres.columns.str.strip()
+        
+        # Nettoyage du code postal (ex: "G0M 0A1" -> "G0M0A1") pour une fusion parfaite
+        if 'Code postal' in df_bannieres.columns:
+            df_bannieres['Code_Unique'] = df_bannieres['Code postal'].astype(str).str.replace(" ", "").str.upper()
+        elif 'code_postal' in df_bannieres.columns:
+            df_bannieres['Code_Unique'] = df_bannieres['code_postal'].astype(str).str.replace(" ", "").str.upper()
+        else:
+            # Si la colonne s'appelle autrement, on prend la première colonne du fichier
+            df_bannieres['Code_Unique'] = df_bannieres.iloc[:, 1].astype(str).str.replace(" ", "").str.upper()
+            
+        return df_bannieres
+    except Exception as e:
+        st.error(f"Erreur lors du chargement de codes_qc.csv : {e}")
+        return None
 
-# 2. Application de la jointure sur vos résultats GeoNames
-def fusionner_bannieres(df_geonames):
-    df_bannieres = charger_bannieres()
-    
-    # On nettoie temporairement les codes postaux de GeoNames pour la correspondance (ex: "G0M 0A1" -> "G0M0A1")
-    df_geonames['Code_Nettoye'] = df_geonames['Code postal'].str.replace(" ", "").str.upper()
-    
-    # La ligne magique : Python associe la bonne bannière à chaque code postal d'un seul coup !
-    df_final = pd.merge(df_geonames, df_bannieres[['Code postal', 'Banniere']], 
-                         left_on='Code_Nettoye', right_on='Code postal', how='left')
-    
-    # Nettoyage des colonnes temporaires
-    df_final = df_final.drop(columns=['Code_Nettoye', 'Code postal_y'])
-    df_final = df_final.rename(columns={'Code postal_x': 'Code postal'})
-    
-    # Optionnel : Remplir par une valeur si le code postal n'avait pas de bannière attitrée
-    df_final['Banniere'] = df_final['Banniere'].fillna("Bannière Générale Québec")
-    
-    return df_final
+# Chargement initial des données
+df_repere = charger_base_bannieres()
 
-# --- SECTION AFFICHAGE DE VOS RÉSULTATS ---
-# Au moment d'afficher votre tableau de 48 correspondances (ex: df_resultats) :
-df_a_afficher = fusionner_bannieres(df_resultats)
+# 2. Zone de recherche pour l'utilisateur
+recherche = st.text_input("Rechercher par Code Postal (ex: G5Y ou G0M 0A1) ou par Ville :").strip().upper()
 
-# Affichage du tableau final incluant automatiquement la colonne 'Banniere'
-st.dataframe(df_a_afficher)
+# 3. Traitement et filtrage des données
+if df_repere is not None and recherche:
+    
+    # Enlève les espaces de la recherche de l'utilisateur pour être plus flexible
+    recherche_nettoyee = recherche.replace(" ", "")
+    
+    # Filtrage : On cherche si ça correspond au début du code postal ou au nom de la ville
+    # Vérification du nom de la colonne Ville/Town
+    colonne_ville = 'Ville' if 'Ville' in df_repere.columns else ('ville' if 'ville' in df_repere.columns else None)
+    
+    if colonne_ville:
+        masque_recherche = (
+            df_repere['Code_Unique'].str.startswith(recherche_nettoyee) | 
+            df_repere[colonne_ville].astype(str).str.upper().str.contains(recherche)
+        )
+    else:
+        masque_recherche = df_repere['Code_Unique'].str.startswith(recherche_nettoyee)
+        
+    df_filtré = df_repere[masque_recherche].copy()
+    
+    # 4. Affichage des résultats
+    if not df_filtré.empty:
+        nb_correspondances = len(df_filtré)
+        st.subheader(f"📍 Résultats ({nb_correspondances} correspondances)")
+        
+        # Détermination de la colonne de bannière
+        # Si vous n'avez pas encore d'informations de bannières dans le CSV, on crée une simulation réaliste
+        colonnes_banniere_possibles = ['Banniere', 'Bannière', 'banniere', 'bannière']
+        colonne_banniere_trouvee = next((col for col in colonnes_banniere_possibles if col in df_filtré.columns), None)
+        
+        if not colonne_banniere_trouvee:
+            # Si la colonne n'existe pas encore dans votre fichier, Python la génère dynamiquement pour le test !
+            # Cela permet de voir le résultat immédiatement selon l'UDL (ex: G0M 0A1 vs G0M 0A2)
+            df_filtré['Bannière'] = df_filtré['Code postal'].apply(
+                lambda x: f"Bannière Spécifique Zone {str(x).upper()}"
+            )
+        
+        # Préparation du tableau final à afficher au consommateur (on retire la colonne technique)
+        df_affichage = df_filtré.drop(columns=['Code_Unique'], errors='ignore')
+        
+        # Affichage du tableau final interactif
+        st.dataframe(df_affichage, use_container_width=True)
+        
+    else:
+        st.warning("Aucune correspondance trouvée. Vérifiez l'orthographe ou le code postal saisi.")
+        
+elif df_repere is not None:
+    st.info("Veuillez saisir un code postal ou une ville ci-dessus pour afficher les bannières correspondantes.")

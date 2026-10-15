@@ -13,25 +13,28 @@ st.write("Entrez un code postal pour afficher les supermarchés et fruiteries à
 @st.cache_data(show_spinner=False)
 def obtenir_coordonnees_canada(code_postal):
     """
-    Trouve les coordonnées GPS exactes en interrogeant l'API gratuite du Gouvernement du Canada.
-    Cette API accepte les codes à 6 caractères sans aucun blocage.
+    Trouve les coordonnées GPS exactes en interrogeant l'API de GéoGratis.
+    Parcourt la liste de résultats pour extraire correctement [Longitude, Latitude].
     """
-    # Nettoyage du code postal (MAJUSCULES et retrait des espaces)
     cp_propre = code_postal.strip().replace(" ", "").upper()
-    
-    # URL du service de géocodage public du gouvernement canadien
     url = f"https://geogratis.gc.ca{cp_propre}"
     
     try:
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             donnees = response.json()
-            if donnees and len(donnees) > 0:
-                # Récupération des coordonnées dans la réponse géospatiale
-                coords = donnees[0].get('geometry', {}).get('coordinates', [])
+            # GéoGratis retourne une liste de résultats
+            if isinstance(donnees, list) and len(donnees) > 0:
+                # On prend le premier résultat le plus pertinent
+                premier_resultat = donnees[0]
+                geometry = premier_resultat.get('geometry', {})
+                coords = geometry.get('coordinates', [])
+                
                 if len(coords) >= 2:
-                    # L'API GeoGratis retourne [Longitude, Latitude]
-                    return coords[1], coords[0]
+                    # GéoGratis renvoie [Longitude, Latitude]
+                    lon = float(coords[0])
+                    lat = float(coords[1])
+                    return lat, lon
     except Exception:
         return None, None
     return None, None
@@ -85,8 +88,7 @@ def chercher_epiceries_api(lat, lon, rayon_km=5):
 
 # --- INTERFACE UTILISATEUR ---
 
-# Formulaire de saisie du code postal (Accepte les codes complets à 6 caractères)
-cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 6H7) :", value="G5Y 6H7")
+cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 6H3) :", value="G5Y 6H3")
 rayon = st.slider("Rayon de recherche (km)", min_value=1, max_value=15, value=5)
 
 if st.button("🔍 Chercher autour de ce code postal", type="primary"):
@@ -104,12 +106,9 @@ if st.button("🔍 Chercher autour de ce code postal", type="primary"):
                 st.success(f"🎉 {len(resultats)} commerces trouvés dans un rayon de {rayon} km autour de {cp_saisi.upper()} !")
                 
                 df = pd.DataFrame(resultats)
-                
-                # Affichage de la carte interactive
                 st.subheader("🗺️ Carte des résultats")
                 st.map(df, latitude="latitude", longitude="longitude")
                 
-                # Affichage du tableau de données
                 st.subheader("📋 Liste des magasins détectés")
                 st.dataframe(df[["Nom", "Adresse"]], use_container_width=True)
             else:

@@ -1,45 +1,38 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st  # Ou votre framework d'affichage
 
-# Configuration de la page en mode large
-st.set_page_config(page_title="Recherche Codes Postaux QC", layout="wide")
-
-st.title("🇨🇦 Moteur de Recherche - Codes Postaux Québec")
-st.write("Ce prototype utilise les données géographiques nettoyées de GeoNames.")
-
-# 1. Chargement des données avec mise en cache
+# 1. Chargement de votre liste officielle des bannières (téléchargée)
 @st.cache_data
-def load_data():
-    # MODIFICATION ICI : Utilisation du nom exact de votre fichier
-    df = pd.read_csv("codes_qc.csv")
-    return df
+def charger_bannieres():
+    # Ce fichier contient vos colonnes 'Code postal' et 'Banniere'
+    df_bannieres = pd.read_csv("codes_qc.csv")
+    # Nettoyage pour s'assurer qu'il n'y a pas d'espaces masqués qui bloquent la recherche
+    df_bannieres['Code postal'] = df_bannieres['Code postal'].str.replace(" ", "").str.upper()
+    return df_bannieres
 
-try:
-    df = load_data()
+# 2. Application de la jointure sur vos résultats GeoNames
+def fusionner_bannieres(df_geonames):
+    df_bannieres = charger_bannieres()
+    
+    # On nettoie temporairement les codes postaux de GeoNames pour la correspondance (ex: "G0M 0A1" -> "G0M0A1")
+    df_geonames['Code_Nettoye'] = df_geonames['Code postal'].str.replace(" ", "").str.upper()
+    
+    # La ligne magique : Python associe la bonne bannière à chaque code postal d'un seul coup !
+    df_final = pd.merge(df_geonames, df_bannieres[['Code postal', 'Banniere']], 
+                         left_on='Code_Nettoye', right_on='Code postal', how='left')
+    
+    # Nettoyage des colonnes temporaires
+    df_final = df_final.drop(columns=['Code_Nettoye', 'Code postal_y'])
+    df_final = df_final.rename(columns={'Code postal_x': 'Code postal'})
+    
+    # Optionnel : Remplir par une valeur si le code postal n'avait pas de bannière attitrée
+    df_final['Banniere'] = df_final['Banniere'].fillna("Bannière Générale Québec")
+    
+    return df_final
 
-    # 2. Barre de recherche interactive
-    search_query = st.text_input("Rechercher par Code Postal (ex: G5Y) ou par Ville (ex: Saint-Georges) :", "").strip()
+# --- SECTION AFFICHAGE DE VOS RÉSULTATS ---
+# Au moment d'afficher votre tableau de 48 correspondances (ex: df_resultats) :
+df_a_afficher = fusionner_bannieres(df_resultats)
 
-    # Application de la recherche dynamique
-    filtered_df = df.copy()
-    if search_query:
-        filtered_df = filtered_df[
-            filtered_df["Code postal"].str.contains(search_query, case=False, na=False) |
-            filtered_df["Ville"].str.contains(search_query, case=False, na=False)
-        ]
-
-    # 3. Affichage du tableau de résultats
-    st.subheader(f"📍 Résultats ({len(filtered_df)} correspondances)")
-    st.dataframe(filtered_df, use_container_width=True)
-
-    # 4. Affichage de la carte
-    if not filtered_df.empty:
-        st.subheader("🗺️ Cartographie des zones trouvées")
-        map_data = filtered_df[['Latitude', 'Longitude']].dropna()
-        map_data.columns = ['latitude', 'longitude']
-        st.map(map_data)
-    else:
-        st.warning("Aucun résultat ne correspond à votre recherche.")
-
-except FileNotFoundError:
-    st.error("Erreur : Le fichier 'codes_qc.csv' est introuvable sur votre dépôt GitHub. Vérifiez l'orthographe exacte.")
+# Affichage du tableau final incluant automatiquement la colonne 'Banniere'
+st.dataframe(df_a_afficher)

@@ -41,13 +41,12 @@ def chercher_coordonnees_code_postal(code_recherche):
         return {"Ville": "Zone rurale G0M (Beauce)", "Latitude": 46.0500, "Longitude": -70.7000}
     return None
 
-# --- 2. BASE DE DONNÉES INTERNE DES ÉPICERIES ET LOGOS ---
+# --- 2. BASE DE DONNÉES INTERNE DES ÉPICERIES ET SITES WEB ---
 @st.cache_data
 def charger_base_epiceries():
-    # Intégration d'URLs d'images publiques pour les logos officiels
     donnees_epiceries = {
         "Bannière": ["Marché Ami", "Marché Tradition", "Super C", "IGA Extra", "Maxi", "Metro Plus", "Provigo", "Super C", "IGA"],
-        "Logo_URL": [
+        "Site Web": [
             "https://marcheami.ca",
             "https://marchetradition.com",
             "https://superc.ca",
@@ -96,33 +95,45 @@ if saisie_usager:
         df_resultat_final = df_analyse[df_analyse['Distance du consommateur'] <= rayon_max].copy()
         df_resultat_final = df_resultat_final.sort_values(by='Distance du consommateur')
         
-        # --- 5. AFFICHAGE VISUEL DES LOGOS ---
+        # --- 5. CRÉATION DES LIENS CLIQUABLES (MAGIE DE STREAMLIT) ---
+        # Génération du lien vers Google Maps en fonction de l'adresse de l'épicerie
+        df_resultat_final['Itinéraire GPS'] = df_resultat_final['Adresse'].apply(
+            lambda addr: f"https://google.com{addr.replace(' ', '+')}"
+        )
+        
         st.write("---")
-        st.subheader(f"🛒 Bannières disponibles dans un rayon de {rayon_max} km")
+        st.subheader(f"📋 Liste détaillée des épiceries à moins de {rayon_max} km")
         
         if not df_resultat_final.empty:
-            # On récupère les logos uniques des bannières à proximité
-            bannieres_uniques = df_resultat_final.drop_duplicates(subset=['Bannière'])
-            
-            # Création de colonnes alignées pour afficher les logos côte à côte
-            colonnes_logos = st.columns(max(len(bannieres_uniques), 2))
-            
-            for index, ligne in enumerate(bannieres_uniques.itertuples()):
-                with colonnes_logos[index]:
-                    # Essaye d'afficher le logo officiel, sinon affiche du texte
-                    try:
-                        st.image(ligne.Logo_URL, width=120)
-                    except:
-                        st.metric(label="Épicerie", value=ligne.Bannière)
-            
-            # --- 6. AFFICHAGE DU TABLEAU DÉTAILLÉ ---
-            st.write("---")
-            st.markdown("### 📋 Liste détaillée des épiceries à proximité")
-            
-            # Nettoyage cosmétique du tableau
+            # Formatage de l'affichage de la distance pour le consommateur
             df_resultat_final['Distance du consommateur'] = df_resultat_final['Distance du consommateur'].apply(lambda x: f"{x:.1f} km")
-            affichage_propre = df_resultat_final.drop(columns=['Latitude', 'Longitude', 'Logo_URL'])
-            st.dataframe(affichage_propre, use_container_width=True)
+            
+            # Sélection et organisation propre des colonnes finales
+            affichage_propre = df_resultat_final[['Bannière', 'Site Web', 'Enseigne', 'Adresse', 'Distance du consommateur', 'Itinéraire GPS']]
+            
+            # La commande magique 'st.column_config.LinkColumn' transforme vos textes internet en vrais boutons cliquables !
+            st.data_editor(
+                affichage_propre,
+                column_config={
+                    "Site Web": st.column_config.LinkColumn(
+                        "Site Officiel 🌐", 
+                        help="Cliquez pour ouvrir la circulaire ou le site de la bannière",
+                        validate="^http://|https://",
+                        max_chars=100,
+                        display_text="Ouvrir le site"
+                    ),
+                    "Itinéraire GPS": st.column_config.LinkColumn(
+                        "S'y rendre 🚗", 
+                        help="Ouvrir l'itinéraire sur Google Maps",
+                        validate="^http://|https://",
+                        max_chars=200,
+                        display_text="🗺️ Google Maps"
+                    ),
+                },
+                disabled=True, # Empêche l'utilisateur de modifier le texte du tableau
+                use_container_width=True,
+                hide_index=True
+            )
         else:
             st.warning(f"Aucun commerce d'alimentation ne se situe à moins de {rayon_max} km de cette zone.")
             

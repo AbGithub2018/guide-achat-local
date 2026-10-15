@@ -10,7 +10,6 @@ st.title("🍲 Radar Alimentaire : Commerces d'alimentation autour de vous")
 st.write("Entrez votre code postal pour découvrir tous les points de vente d'aliments dans un rayon de 15 km (Supermarchés, Dollarama, Tigre Géant, etc.).")
 
 # --- BASE DE DONNÉES LOCALE DE GÉOLOCALISATION DES CODES POSTAUX (Fiabilité 100%) ---
-# Permet de trouver instantanément le centre GPS du code postal pour initier la recherche
 BASE_COORDONNEES = {
     "G5Y": (46.1211, -70.6718),  # Saint-Georges
     "G5X": (46.2000, -70.7667),  # Beauceville
@@ -26,19 +25,15 @@ def obtenir_centre_gps(code_postal):
         rta = cp_propre[:3]
         if rta in BASE_COORDONNEES:
             return BASE_COORDONNEES[rta], rta
-    # Par défaut pour le test si la RTA n'est pas encore mappée : Saint-Georges
+    # Par défaut pour le test : Saint-Georges
     return BASE_COORDONNEES["G5Y"], "G5Y (Mode Test - Saint-Georges)"
 
 # --- RECHERCHE ÉLARGIE DES COMMERCES (Supermarchés + Magasins à rabais + Variétés) ---
 @st.cache_data(show_spinner=False, ttl=300)
 def chercher_tous_commerces_alimentaires(lat, lon, rayon_km):
-    # Utilisation d'un serveur miroir Overpass alternatif plus tolérant avec Streamlit Cloud
     url_overpass = "https://mail.ru"
-    # Si le miroir échoue, on bascule automatiquement sur le serveur principal
-    
     rayon_metres = rayon_km * 1000
     
-    # Requête Overpass QL élargie pour attraper Dollarama, Tigre Géant, Super C, Walmart, etc.
     requete_overpass = f"""
     [out:json][timeout:30];
     (
@@ -73,7 +68,6 @@ def chercher_tous_commerces_alimentaires(lat, lon, rayon_km):
                         nom = tags.get('name', 'Commerce d\'alimentation')
                         brand = tags.get('brand', '')
                         
-                        # Filtrer ou enrichir le nom si la marque est définie (ex: Dollarama, Walmart)
                         if brand and brand.lower() not in nom.lower():
                             nom = f"{brand} ({nom})"
                             
@@ -96,7 +90,7 @@ def chercher_tous_commerces_alimentaires(lat, lon, rayon_km):
 
 # --- INTERFACE GRAPHIQUE STREAMLIT ---
 
-col1, col2 = st.columns([1, 2])
+col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("⚙️ Paramètres")
@@ -109,46 +103,28 @@ with col2:
         if not cp_saisi.strip():
             st.warning("Veuillez saisir un code postal.")
         else:
-            # 1. Obtenir le centre de recherche
             (target_lat, target_lon), rta_detectee = obtenir_centre_gps(cp_saisi)
             
             with st.spinner("Scan de la zone en cours..."):
-                # 2. Lancer la recherche élargie
                 resultats = chercher_tous_commerces_alimentaires(target_lat, target_lon, rayon)
                 
             if resultats:
                 st.success(f"🎉 {len(resultats)} points de vente d'aliments détectés dans un rayon de {rayon} km autour de {rta_detectee} !")
-                
                 df = pd.DataFrame(resultats)
-                
-                # Suppression des doublons potentiels (nodes et ways superposés)
                 df = df.drop_duplicates(subset=["Nom", "Adresse"])
                 
-                # Affichage de la carte native Streamlit
                 st.subheader("🗺️ Carte interactive des points de vente")
                 st.map(df, latitude="latitude", longitude="longitude")
                 
-                # Affichage de la liste de données
                 st.subheader("📋 Liste complète des commerces détectés")
                 st.dataframe(df[["Nom", "Adresse"]], use_container_width=True, hide_index=True)
             else:
-                # Solution de repli immédiate en cas de blocage persistant des adresses IP de Streamlit Cloud
-                st.info("ℹ️ Les serveurs cartographiques publics sont actuellement saturés. Voici votre outil de repli direct sur Google Maps :")
+                st.info("ℹ️ Les serveurs cartographiques publics tiers sont surchargés. Voici votre outil de repli direct sur Google Maps :")
                 
                 requete_maps = f"alimentation, supermarché, Dollarama, Tigre Géant près de {cp_saisi.strip().upper()}, QC"
                 url_maps = f"https://google.com{urllib.parse.quote(requete_maps)}"
                 
                 st.link_button("🗺️ Ouvrir le Radar sur Google Maps", url_maps, type="secondary", use_container_width=True)
                 
-                # Affichage d'un aperçu
                 url_embed = f"https://google.com{urllib.parse.quote(cp_saisi.strip().upper() + ' grocery supermarket discount store')}&t=&z=12&ie=UTF8&iwloc=&output=embed"
                 st.components.v1.iframe(url_embed, height=500, scrolling=True)
-
-# Spécification cartographique locale pour la session utilisateur
-<layout>
-dynamicMapPlaceholder(naturalLanguagePrompt="Overview: Points de vente d'alimentation autour du code postal saisi au Québec. Category (Magasins): 1. Maxi Saint-Georges - Supermarché grande surface. 2. Supercentre Walmart - Produits d'épicerie et généraux. 3. Dollarama - Section alimentation et collations à bas prix. 4. Tigre Géant - Épicerie et vêtements à rabais.")
-</layout>
-
-<FollowUp>
-Si vous testez ce code sur votre serveur, est-ce que le **système de détection élargi** affiche les points sur la carte ou est-ce que l'application bascule automatiquement sur l'**outil de secours Google Maps intégré** ?
-</FollowUp>

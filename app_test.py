@@ -104,7 +104,7 @@ with col2:
         else:
             (target_lat, target_lon), rta_detectee = obtenir_centre_gps(cp_saisi)
             
-            with St.spinner("Scan de la zone en cours..."):
+            with st.spinner("Scan de la zone en cours..."):
                 resultats = chercher_tous_commerces_alimentaires(target_lat, target_lon, rayon)
                 
             if resultats:
@@ -124,7 +124,6 @@ with col2:
                 requete_maps = f"alimentation, supermarché, Dollarama, Tigre Géant, Maxi, Super C près de {cp_saisi.strip().upper()}, QC"
                 url_maps = f"https://google.com{urllib.parse.quote(requete_maps)}"
                 
-                # Message explicatif soigné pour le consommateur
                 st.write("Pour contourner les limites des serveurs cloud, cliquez ci-dessous pour ouvrir la carte complète avec l'ensemble des supermarchés et magasins à rabais du secteur :")
                 
                 st.link_button("🌐 Ouvrir la carte complète sur Google Maps", url_maps, type="primary", use_container_width=True)

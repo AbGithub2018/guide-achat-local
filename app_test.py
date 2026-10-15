@@ -63,7 +63,7 @@ def charger_base_epiceries():
         "Bannière": ["Marché Ami", "Marché Tradition", "IGA Extra", "IGA", "Super C", "Maxi", "IGA", "Super C"],
         "Site Web": [
             "https://marcheami.ca",
-            "https://marchetradition.com",
+            "https://www.marchestradition.com/fr/stores/les-marches-tradition-10/?utm_source=G&utm_medium=lpm&utm_campaign=SobeysMontreal",
             "https://iga.net",
             "https://iga.net",
             "https://superc.ca",

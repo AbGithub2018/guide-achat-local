@@ -1,43 +1,37 @@
 import streamlit as st
 import requests
 import pandas as pd
-from geopy.geocoders import Nominatim
 
-# Configuration de la page de test Streamlit
+# Configuration de la page Streamlit
 st.set_page_config(page_title="Localisateur d'Épiceries", page_icon="📍")
 
 st.title("📍 Localisateur d'Épiceries du Québec")
 st.write("Entrez un code postal pour afficher les supermarchés et fruiteries à proximité.")
 
-# --- FONCTIONS DE GÉOLOCALISATION (Mises en cache pour la performance) ---
+# --- FONCTIONS DE GÉOLOCALISATION VIA L'API GOUVERNEMENTALE CANADIENNE ---
 
 @st.cache_data(show_spinner=False)
-def obtenir_coordonnees_par_cp(code_postal):
+def obtenir_coordonnees_canada(code_postal):
     """
-    Transforme le code postal en Latitude/Longitude via OpenStreetMap.
-    Nettoie et tronque le code postal à 3 caractères pour garantir la compatibilité avec Nominatim.
+    Trouve les coordonnées GPS exactes en interrogeant l'API gratuite du Gouvernement du Canada.
+    Cette API accepte les codes à 6 caractères sans aucun blocage.
     """
-    # Nettoyage de l'entrée utilisateur (retrait des espaces et mise en majuscules)
+    # Nettoyage du code postal (MAJUSCULES et retrait des espaces)
     cp_propre = code_postal.strip().replace(" ", "").upper()
     
-    # Stratégie de contournement : Si le code fait plus de 3 caractères, on ne garde que les 3 premiers (ex: G5Y)
-    # Nominatim gère beaucoup mieux les secteurs généraux canadiens que les codes ultra-précis.
-    if len(cp_propre) >= 3:
-        cp_propre = cp_propre[:3]
-    else:
-        return None, None
-
-    geolocator = Nominatim(
-        user_agent="localisateur_epiceries_quebec_final_version", 
-        timeout=15
-    )
+    # URL du service de géocodage public du gouvernement canadien
+    url = f"https://geogratis.gc.ca{cp_propre}"
     
     try:
-        # Requête optimisée pour le Québec
-        requete = f"{cp_propre}, Quebec, Canada"
-        emplacement = geolocator.geocode(requete)
-        if emplacement:
-            return emplacement.latitude, emplacement.longitude
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            donnees = response.json()
+            if donnees and len(donnees) > 0:
+                # Récupération des coordonnées dans la réponse géospatiale
+                coords = donnees[0].get('geometry', {}).get('coordinates', [])
+                if len(coords) >= 2:
+                    # L'API GeoGratis retourne [Longitude, Latitude]
+                    return coords[1], coords[0]
     except Exception:
         return None, None
     return None, None
@@ -73,7 +67,7 @@ def chercher_epiceries_api(lat, lon, rayon_km=5):
                 e_lon = element.get('lon') or element.get('center', {}).get('lon')
                 
                 if e_lat and e_lon:
-                    nom = tags.get('name', 'Épicerie indépendante / Sans nom')
+                    nom = tags.get('name', 'Épicerie indépendante')
                     rue = tags.get('addr:street', '')
                     numero = tags.get('addr:housenumber', '')
                     adresse = f"{numero} {rue}".strip() if rue else "Adresse non renseignée"
@@ -91,35 +85,34 @@ def chercher_epiceries_api(lat, lon, rayon_km=5):
 
 # --- INTERFACE UTILISATEUR ---
 
-# Formulaire de saisie du code postal
-cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 6H3) :", value="G5Y 6H3")
+# Formulaire de saisie du code postal (Accepte les codes complets à 6 caractères)
+cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 6H7) :", value="G5Y 6H7")
 rayon = st.slider("Rayon de recherche (km)", min_value=1, max_value=15, value=5)
 
 if st.button("🔍 Chercher autour de ce code postal", type="primary"):
     if not cp_saisi.strip() or len(cp_saisi.strip()) < 3:
-        st.warning("Veuillez entrer un code postal valide d'au moins 3 caractères.")
+        st.warning("Veuillez entrer un code postal canadien valide.")
     else:
-        with st.spinner("Localisation du secteur du code postal..."):
-            lat, lon = obtenir_coordonnees_par_cp(cp_saisi)
+        with st.spinner("Localisation par l'API du Canada..."):
+            lat, lon = obtenir_coordonnees_canada(cp_saisi)
             
         if lat and lon:
             with st.spinner("Recherche des commerces à proximité..."):
                 resultats = chercher_epiceries_api(lat, lon, rayon)
                 
             if resultats:
-                st.success(f"🎉 {len(resultats)} commerces trouvés dans un rayon de {rayon} km autour du secteur {cp_saisi[:3].upper()} !")
+                st.success(f"🎉 {len(resultats)} commerces trouvés dans un rayon de {rayon} km autour de {cp_saisi.upper()} !")
                 
-                # Création du DataFrame requis par st.map
                 df = pd.DataFrame(resultats)
                 
                 # Affichage de la carte interactive
                 st.subheader("🗺️ Carte des résultats")
                 st.map(df, latitude="latitude", longitude="longitude")
                 
-                # Affichage du tableau de données complet
+                # Affichage du tableau de données
                 st.subheader("📋 Liste des magasins détectés")
                 st.dataframe(df[["Nom", "Adresse"]], use_container_width=True)
             else:
-                st.info(f"Aucune épicerie trouvée dans ce rayon autour du secteur {cp_saisi[:3].upper()}. Essayez d'augmenter le rayon.")
+                st.info(f"Aucune épicerie trouvée dans un rayon de {rayon} km autour de ce point.")
         else:
-            st.error("Le serveur de géolocalisation gratuit a rejeté la requête ou le code postal est inconnu. Veuillez réessayer.")
+            st.error("Le code postal est introuvable ou l'API gouvernementale ne répond pas. Vérifiez le format.")

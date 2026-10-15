@@ -88,7 +88,8 @@ if cp_saisi.strip() and not df_global_commerces.empty:
         
         for index, row in df_affichage.iterrows():
             with st.container():
-                col_info, col_lien = st.columns()
+                # CORRECTION ICI : Ajout du chiffre 2 pour spécifier le nombre de colonnes
+                col_info, col_lien = st.columns(2)
                 with col_info:
                     st.markdown(f"**{row['Bannière']}**")
                     st.caption(f"Succursale trouvée dans votre rayon de recherche.")

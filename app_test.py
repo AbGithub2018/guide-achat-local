@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
+import json
 import numpy as np
+import requests
 
 # Configuration de la page Streamlit
 st.set_page_config(page_title="Radar Alimentaire Québec", page_icon="🍲", layout="centered")
@@ -8,26 +10,34 @@ st.set_page_config(page_title="Radar Alimentaire Québec", page_icon="🍲", lay
 st.title("🍲 Radar Alimentaire Québécois")
 st.write("Entrez votre code postal pour lister les enseignes alimentaires disponibles à proximité.")
 
-# --- 1. BASE DE DONNÉES LOCALES DES CODES POSTAUX (POSTES CANADA) ---
-BASE_COORDONNEES_QC = {
-    "G5Y": (46.1211, -70.6718, "Saint-Georges"),
-    "G5X": (46.2000, -70.7667, "Beauceville"),
-    "G6B": (45.5833, -70.8833, "Lac-Mégantic"),
-    "G6E": (46.4333, -71.0333, "Sainte-Marie"),
-    "G1K": (46.8139, -71.2222, "Québec Centre"),
-    "H2W": (45.5167, -73.5750, "Montréal (Plateau)"),
-    "H3B": (45.5017, -73.5667, "Montréal Centre"),
-    "J1H": (45.4000, -71.8900, "Sherbrooke"),
-    "J9T": (48.5667, -78.1167, "Amos"),
-}
-
-def obtenir_gps_secteur(code_postal):
+# --- 1. GÉOLOCALISATION DYNAMIQUE VIA L'API DU GOUVERNEMENT DU CANADA ---
+@st.cache_data(show_spinner=False)
+def obtenir_gps_gouvernement(code_postal):
+    """
+    Interroge l'API officielle de Ressources naturelles Canada pour trouver
+    la latitude, la longitude et le nom de la municipalité de n'importe quel code postal.
+    """
     cp_propre = code_postal.strip().replace(" ", "").upper()
-    if len(cp_propre) >= 3:
-        rta = cp_propre[:3]
-        if rta in BASE_COORDONNEES_QC:
-            return BASE_COORDONNEES_QC[rta]
-    return BASE_COORDONNEES_QC["G5Y"]
+    url = f"https://geogratis.gc.ca{cp_propre}"
+    
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            donnees = response.json()
+            if isinstance(donnees, list) and len(donnees) > 0:
+                # Extraction du premier résultat le plus précis
+                premier = donnees[0]
+                nom_lieu = premier.get('title', 'Secteur inconnu')
+                geometry = premier.get('geometry', {})
+                coords = geometry.get('coordinates', [])
+                
+                if len(coords) >= 2:
+                    # GéoGratis renvoie [Longitude, Latitude]
+                    return float(coords[1]), float(coords[0]), nom_lieu
+    except Exception:
+        pass
+    # Fallback par défaut si l'API ne répond pas (Saint-Georges)
+    return 46.1211, -70.6718, "Saint-Georges (Mode Secours)"
 
 # --- 2. CALCUL MATHÉMATIQUE DE PROXIMITÉ (HAVERSINE) ---
 def calculer_distance_km(lat1, lon1, lat2, lon2):
@@ -39,62 +49,87 @@ def calculer_distance_km(lat1, lon1, lat2, lon2):
     c = 2 * np.arcsin(np.sqrt(a))
     return R * c
 
-# --- 3. CHARGEMENT EMBEDDÉ DES DONNÉES DE VOTRE DOCUMENT ---
+# --- 3. CHARGEMENT DYNAMIQUE DE VOTRE FICHIER GEOJSON ---
 @st.cache_data(show_spinner=False)
-def charger_commerces_directs():
-    """Données extraites directement de votre document cartographique fournissant les points GPS réels"""
-    donnees_extraites = [
-        {"Bannière": "Super C", "Adresse": "8585 Boulevard Lacroix, Saint-Georges", "Site Web": "https://superc.ca", "latitude": 46.1329594, "longitude": -70.6981938},
-        {"Bannière": "IGA Extra", "Adresse": "Montréal", "Site Web": "https://iga.net", "latitude": 45.4060804, "longitude": -73.4964169},
-        {"Bannière": "Metro", "Adresse": "Montréal", "Site Web": "https://metro.ca", "latitude": 45.4459086, "longitude": -73.8156631},
-        {"Bannière": "IGA Extra", "Adresse": "90 Boulevard d'Anjou, Châteauguay", "Site Web": "https://iga.net", "latitude": 45.3596381, "longitude": -73.7334332},
-        {"Bannière": "Metro", "Adresse": "105 Rue Principale, Châteauguay", "Site Web": "https://metro.ca", "latitude": 45.3572064, "longitude": -73.7570174},
-        {"Bannière": "Super C", "Adresse": "Châteauguay", "Site Web": "https://superc.ca", "latitude": 45.3584805, "longitude": -73.7226325},
-        {"Bannière": "Provigo", "Adresse": "Montréal", "Site Web": "https://provigo.ca", "latitude": 45.5088138, "longitude": -73.5717973},
-        {"Bannière": "Maxi", "Adresse": "6381 Route Transcanadienne, Pointe-Claire", "Site Web": "https://maxi.ca", "latitude": 45.4671133, "longitude": -73.8268437},
-        {"Bannière": "Maxi", "Adresse": "Boulevard Taschereau, La Prairie", "Site Web": "https://maxi.ca", "latitude": 45.4216883, "longitude": -73.4866387},
-        {"Bannière": "Maxi", "Adresse": "7200 Boulevard Taschereau, Brossard", "Site Web": "https://maxi.ca", "latitude": 45.4604109, "longitude": -73.4679184},
-        {"Bannière": "Walmart Supercentre", "Adresse": "Trois-Rivières", "Site Web": "https://walmart.ca", "latitude": 46.3241616, "longitude": -72.5655232},
-        {"Bannière": "Dollarama", "Adresse": "Sherbrooke", "Site Web": "https://dollarama.com", "latitude": 45.3994984, "longitude": -71.9182897},
-        {"Bannière": "Tigre Géant", "Adresse": "Québec", "Site Web": "https://gianttiger.com", "latitude": 46.8150849, "longitude": -71.2236292}
-    ]
-    return pd.DataFrame(donnees_extraites)
+def charger_commerces_du_fichier(chemin_fichier):
+    """Lit votre fichier GeoJSON et extrait les bannières avec leurs coordonnées réelles"""
+    try:
+        with open(chemin_fichier, 'r', encoding='utf-8') as f:
+            geojson_data = json.load(f)
+            
+        liste_commerces = []
+        for feature in geojson_data.get('features', []):
+            properties = feature.get('properties', {})
+            geometry = feature.get('geometry', {})
+            coords = geometry.get('coordinates', [])
+            
+            if len(coords) >= 2:
+                # Format GeoJSON : [Longitude, Latitude]
+                lon = float(coords[0])
+                lat = float(coords[1])
+                
+                # Récupération de l'enseigne
+                nom = properties.get('brand') or properties.get('name') or "Commerce alimentaire"
+                
+                # Détermination automatique du site internet
+                nom_lower = nom.lower()
+                url_site = "https://google.com"
+                if "maxi" in nom_lower: url_site = "https://maxi.ca"
+                elif "super c" in nom_lower: url_site = "https://superc.ca"
+                elif "iga" in nom_lower: url_site = "https://iga.net"
+                elif "metro" in nom_lower: url_site = "https://metro.ca"
+                elif "dollarama" in nom_lower: url_site = "https://dollarama.com"
+                elif "walmart" in nom_lower: url_site = "https://walmart.ca"
+                elif "provigo" in nom_lower: url_site = "https://provigo.ca"
+                
+                liste_commerces.append({
+                    "Bannière": nom,
+                    "Site Web": url_site,
+                    "latitude": lat,
+                    "longitude": lon
+                })
+        return pd.DataFrame(liste_commerces)
+    except Exception as e:
+        st.error(f"Fichier de données manquant ou invalide : {e}")
+        return pd.DataFrame()
 
-df_global_commerces = charger_commerces_directs()
+# Chargement initial des données
+df_global_commerces = charger_commerces_du_fichier("commerces.geojson")
 
 # --- INTERFACE UTILISATEUR ---
-cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 6H3 ou H2W 1A2) :", value="G5Y 6H3")
+cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 6H3, H8R 3C2, H2W 1A2) :", value="H8R 3C2")
 rayon_recherche = st.slider("Rayon de recherche maximal (km) :", min_value=1, max_value=25, value=15)
 
 if cp_saisi.strip() and not df_global_commerces.empty:
-    # 1. Obtenir le centre géographique du secteur
-    (centre_lat, centre_lon, nom_municipalite) = obtenir_gps_secteur(cp_saisi)
+    # 1. Appel à l'API gouvernementale pour trouver la vraie municipalité et ses coordonnées GPS
+    with st.spinner("Recherche de la municipalité officielle..."):
+        centre_lat, centre_lon, nom_municipalite = obtenir_gps_gouvernement(cp_saisi)
+    
     rta_saisie = cp_saisi.strip().replace(" ", "").upper()[:3]
     
-    # 2. Calculer les distances réelles
+    # 2. Calcul des distances réelles par rapport à cette vraie localisation
     df_global_commerces['Distance (km)'] = df_global_commerces.apply(
         lambda row: calculer_distance_km(centre_lat, centre_lon, row['latitude'], row['longitude']), axis=1
     )
     
-    # 3. Filtrer par rayon
+    # 3. Filtrer pour extraire uniquement les magasins dans le rayon
     df_resultats = df_global_commerces[df_global_commerces['Distance (km)'] <= rayon_recherche].sort_values(by='Distance (km)')
     
     if not df_resultats.empty:
         st.subheader(f"🏬 Enseignes à proximité de {nom_municipalite} ({rta_saisie}) :")
         st.write("Cliquez sur la bannière pour ouvrir directement son site web.")
         
-        # Filtrer pour n'afficher qu'une seule fois chaque grande enseigne trouvée dans la zone
+        # Regrouper par enseigne unique pour éviter les doublons dans la liste
         df_affichage = df_resultats.drop_duplicates(subset=["Bannière"])
         
         for index, row in df_affichage.iterrows():
             with st.container():
-                # CORRECTION ICI : Ajout du chiffre 2 pour spécifier le nombre de colonnes
                 col_info, col_lien = st.columns(2)
                 with col_info:
                     st.markdown(f"**{row['Bannière']}**")
-                    st.caption(f"Succursale trouvée dans votre rayon de recherche.")
+                    st.caption(f"Succursale la plus proche détectée à {round(row['Distance (km)'], 1)} km")
                 with col_lien:
                     st.link_button(f"🌐 Visiter {row['Bannière']}", row['Site Web'], use_container_width=True)
                 st.markdown(" ")
     else:
-        st.info(f"Aucune bannière de notre liste n'a été répertoriée dans un rayon de {rayon_recherche} km autour de {nom_municipalite}.")
+        st.info(f"Aucune enseigne de notre base de données n'a été détectée dans un rayon de {rayon_recherche} km autour de {nom_municipalite}.")

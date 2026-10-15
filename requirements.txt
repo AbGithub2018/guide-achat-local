@@ -6,3 +6,5 @@ pyzbar
 streamlit-qrcode-scanner
 openpyxl
 geopy
+requests>=2.31.0
+geopy>=2.4.1

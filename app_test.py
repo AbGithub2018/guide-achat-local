@@ -136,9 +136,7 @@ if saisie_usager:
         df_resultat_final = df_resultat_final.sort_values(by='Distance du consommateur')
         
         # --- CORRECTION DU FORMAT DE L'URL GOOGLE MAPS (Ajout du / après .com et protocole API officiel) ---
-        df_resultat_final['Itinéraire GPS'] = df_resultat_final['Adresse'].apply(
-            lambda addr: f"https://google.com{urllib.parse.quote(addr)}"
-        )
+        df_resultat_final['Itinéraire GPS'] = df_resultat_final['Adresse'].apply(lambda addr: f"https://google.com{urllib.parse.quote(addr)}")
         
         # Infiltration des mots-clés de localisation dans les sites officiels pour éviter le bug de La Romaine
         df_resultat_final['Site Web'] = df_resultat_final.apply(

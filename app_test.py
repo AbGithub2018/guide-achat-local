@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import pandas as pd
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
 
 # Configuration de la page de test Streamlit
 st.set_page_config(page_title="Localisateur d'Épiceries", page_icon="📍")
@@ -16,20 +15,30 @@ st.write("Entrez un code postal pour afficher les supermarchés et fruiteries à
 def obtenir_coordonnees_par_cp(code_postal):
     """
     Transforme le code postal en Latitude/Longitude via OpenStreetMap.
-    Intègre un timeout de 10s et une gestion d'erreur pour éviter les plantages.
+    Nettoie et tronque le code postal à 3 caractères pour garantir la compatibilité avec Nominatim.
     """
+    # Nettoyage de l'entrée utilisateur (retrait des espaces et mise en majuscules)
+    cp_propre = code_postal.strip().replace(" ", "").upper()
+    
+    # Stratégie de contournement : Si le code fait plus de 3 caractères, on ne garde que les 3 premiers (ex: G5Y)
+    # Nominatim gère beaucoup mieux les secteurs généraux canadiens que les codes ultra-précis.
+    if len(cp_propre) >= 3:
+        cp_propre = cp_propre[:3]
+    else:
+        return None, None
+
     geolocator = Nominatim(
-        user_agent="localisateur_epiceries_quebec_production_v2", 
-        timeout=10
+        user_agent="localisateur_epiceries_quebec_final_version", 
+        timeout=15
     )
+    
     try:
-        # On force la recherche au Québec, Canada pour maximiser la précision
-        requete = f"{code_postal}, Quebec, Canada"
+        # Requête optimisée pour le Québec
+        requete = f"{cp_propre}, Quebec, Canada"
         emplacement = geolocator.geocode(requete)
         if emplacement:
             return emplacement.latitude, emplacement.longitude
-    except Exception as e:
-        # Capture les surcharges ou les coupures de serveur proprement
+    except Exception:
         return None, None
     return None, None
 
@@ -83,14 +92,14 @@ def chercher_epiceries_api(lat, lon, rayon_km=5):
 # --- INTERFACE UTILISATEUR ---
 
 # Formulaire de saisie du code postal
-cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 7W1) :", value="")
+cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 6H3) :", value="G5Y 6H3")
 rayon = st.slider("Rayon de recherche (km)", min_value=1, max_value=15, value=5)
 
 if st.button("🔍 Chercher autour de ce code postal", type="primary"):
-    if not cp_saisi.strip():
-        st.warning("Veuillez entrer un code postal valide.")
+    if not cp_saisi.strip() or len(cp_saisi.strip()) < 3:
+        st.warning("Veuillez entrer un code postal valide d'au moins 3 caractères.")
     else:
-        with st.spinner("Localisation du code postal..."):
+        with st.spinner("Localisation du secteur du code postal..."):
             lat, lon = obtenir_coordonnees_par_cp(cp_saisi)
             
         if lat and lon:
@@ -98,7 +107,7 @@ if st.button("🔍 Chercher autour de ce code postal", type="primary"):
                 resultats = chercher_epiceries_api(lat, lon, rayon)
                 
             if resultats:
-                st.success(f"🎉 {len(resultats)} commerces trouvés dans un rayon de {rayon} km !")
+                st.success(f"🎉 {len(resultats)} commerces trouvés dans un rayon de {rayon} km autour du secteur {cp_saisi[:3].upper()} !")
                 
                 # Création du DataFrame requis par st.map
                 df = pd.DataFrame(resultats)
@@ -111,6 +120,6 @@ if st.button("🔍 Chercher autour de ce code postal", type="primary"):
                 st.subheader("📋 Liste des magasins détectés")
                 st.dataframe(df[["Nom", "Adresse"]], use_container_width=True)
             else:
-                st.info("Aucune épicerie trouvée dans ce rayon autour du code postal.")
+                st.info(f"Aucune épicerie trouvée dans ce rayon autour du secteur {cp_saisi[:3].upper()}. Essayez d'augmenter le rayon.")
         else:
-            st.error("Le serveur de géolocalisation est ralenti ou le code postal est introuvable. Veuillez réessayer ou vérifier le format (ex: G5Y 7W1).")
+            st.error("Le serveur de géolocalisation gratuit a rejeté la requête ou le code postal est inconnu. Veuillez réessayer.")

@@ -9,7 +9,7 @@ st.set_page_config(page_title="Radar Alimentaire Québec", page_icon="🍲", lay
 st.title("🍲 Radar Alimentaire : Commerces d'alimentation autour de vous")
 st.write("Entrez votre code postal pour découvrir tous les points de vente d'aliments dans un rayon de 15 km (Supermarchés, Dollarama, Tigre Géant, etc.).")
 
-# --- BASE DE DONNÉES LOCALE DE GÉOLOCALISATION DES CODES POSTAUX (Fiabilité 100%) ---
+# --- BASE DE DONNÉES LOCALE DE GÉOLOCALISATION DES CODES POSTAUX ---
 BASE_COORDONNEES = {
     "G5Y": (46.1211, -70.6718),  # Saint-Georges
     "G5X": (46.2000, -70.7667),  # Beauceville
@@ -25,10 +25,9 @@ def obtenir_centre_gps(code_postal):
         rta = cp_propre[:3]
         if rta in BASE_COORDONNEES:
             return BASE_COORDONNEES[rta], rta
-    # Par défaut pour le test : Saint-Georges
     return BASE_COORDONNEES["G5Y"], "G5Y (Mode Test - Saint-Georges)"
 
-# --- RECHERCHE ÉLARGIE DES COMMERCES (Supermarchés + Magasins à rabais + Variétés) ---
+# --- RECHERCHE ÉLARGIE DES COMMERCES ---
 @st.cache_data(show_spinner=False, ttl=300)
 def chercher_tous_commerces_alimentaires(lat, lon, rayon_km):
     url_overpass = "https://mail.ru"
@@ -73,7 +72,7 @@ def chercher_tous_commerces_alimentaires(lat, lon, rayon_km):
                             
                         rue = tags.get('addr:street', '')
                         numero = tags.get('addr:housenumber', '')
-                        adresse = f"{numero} {rue}".strip() if rue else "Adresse non spécifiée dans OpenStreetMap"
+                        adresse = f"{numero} {rue}".strip() if rue else "Adresse non spécifiée"
                         
                         commerces.append({
                             "Nom": nom, 
@@ -105,7 +104,7 @@ with col2:
         else:
             (target_lat, target_lon), rta_detectee = obtenir_centre_gps(cp_saisi)
             
-            with st.spinner("Scan de la zone en cours..."):
+            with St.spinner("Scan de la zone en cours..."):
                 resultats = chercher_tous_commerces_alimentaires(target_lat, target_lon, rayon)
                 
             if resultats:
@@ -119,12 +118,13 @@ with col2:
                 st.subheader("📋 Liste complète des commerces détectés")
                 st.dataframe(df[["Nom", "Adresse"]], use_container_width=True, hide_index=True)
             else:
-                st.info("ℹ️ Les serveurs cartographiques publics tiers sont surchargés. Voici votre outil de repli direct sur Google Maps :")
+                st.info("🗺️ Redirection immédiate vers Google Maps pour l'affichage de tous les commerces alimentaires.")
                 
-                requete_maps = f"alimentation, supermarché, Dollarama, Tigre Géant près de {cp_saisi.strip().upper()}, QC"
+                # Requête de recherche exhaustive demandée : Super C, Dollarama, Tigre Géant, Maxi, etc.
+                requete_maps = f"alimentation, supermarché, Dollarama, Tigre Géant, Maxi, Super C près de {cp_saisi.strip().upper()}, QC"
                 url_maps = f"https://google.com{urllib.parse.quote(requete_maps)}"
                 
-                st.link_button("🗺️ Ouvrir le Radar sur Google Maps", url_maps, type="secondary", use_container_width=True)
+                # Message explicatif soigné pour le consommateur
+                st.write("Pour contourner les limites des serveurs cloud, cliquez ci-dessous pour ouvrir la carte complète avec l'ensemble des supermarchés et magasins à rabais du secteur :")
                 
-                url_embed = f"https://google.com{urllib.parse.quote(cp_saisi.strip().upper() + ' grocery supermarket discount store')}&t=&z=12&ie=UTF8&iwloc=&output=embed"
-                st.components.v1.iframe(url_embed, height=500, scrolling=True)
+                st.link_button("🌐 Ouvrir la carte complète sur Google Maps", url_maps, type="primary", use_container_width=True)

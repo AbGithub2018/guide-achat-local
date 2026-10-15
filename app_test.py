@@ -16,12 +16,10 @@ def calculer_distance(lat1, lon1, lat2, lon2):
     c = 2 * np.arcsin(np.sqrt(a))
     return R * c
 
-# --- 1. BASE DE DONNÉES INTERNE DES CODES POSTAUX (RTA + UDL EXTREMEMENT PRÉCIS) ---
+# --- 1. BASE DE DONNÉES INTERNE DES CODES POSTAUX ---
 @st.cache_data
 def chercher_coordonnees_code_postal(code_recherche):
     code_nettoye = str(code_recherche).replace(" ", "").upper()
-    
-    # Cartographie exacte de votre secteur de la Beauce (chaque UDL a ses coordonnées propres)
     base_codes_postaux = {
         "G0M1G0": {"Ville": "La Guadeloupe", "Latitude": 45.9652, "Longitude": -70.9395},
         "G0M0A1": {"Ville": "Saint-Philibert", "Latitude": 46.1264, "Longitude": -70.5820},
@@ -37,22 +35,29 @@ def chercher_coordonnees_code_postal(code_recherche):
         "G5Y7W9": {"Ville": "Saint-Georges", "Latitude": 46.1180, "Longitude": -70.6720},
         "G5Y5B8": {"Ville": "Saint-Georges", "Latitude": 46.1264, "Longitude": -70.6820},
     }
-    
-    # Retourne les données du code postal précis si trouvé
     if code_nettoye in base_codes_postaux:
         return base_codes_postaux[code_nettoye]
-        
-    # Si l'utilisateur tape juste la RTA "G0M", on le positionne par défaut au centre de la zone (Beauce)
     if code_nettoye.startswith("G0M"):
         return {"Ville": "Zone rurale G0M (Beauce)", "Latitude": 46.0500, "Longitude": -70.7000}
-        
     return None
 
-# --- 2. BASE DE DONNÉES INTERNE DES ÉPICERIES (PROXIMITÉ REELLE) ---
+# --- 2. BASE DE DONNÉES INTERNE DES ÉPICERIES ET LOGOS ---
 @st.cache_data
 def charger_base_epiceries():
+    # Intégration d'URLs d'images publiques pour les logos officiels
     donnees_epiceries = {
         "Bannière": ["Marché Ami", "Marché Tradition", "Super C", "IGA Extra", "Maxi", "Metro Plus", "Provigo", "Super C", "IGA"],
+        "Logo_URL": [
+            "https://marcheami.ca",
+            "https://marchetradition.com",
+            "https://superc.ca",
+            "https://iga.net",
+            "https://maxi.ca",
+            "https://metro.ca",
+            "https://provigo.ca",
+            "https://superc.ca",
+            "https://iga.net"
+        ],
         "Enseigne": ["Marché Ami La Guadeloupe", "Marché Tradition St-Honoré", "Super C Saint-Georges", "IGA Familles Rodriguez", "Maxi Saint-Georges", "Metro Plus Giguère", "Provigo Le Sieur", "Super C Sainte-Marie", "IGA Marché de la Chaudière"],
         "Adresse": ["1405 Rue principale, La Guadeloupe, QC", "441 Rue principale, Saint-Honoré-de-Shenley, QC", "8585 Boulevard Lacroix, Saint-Georges, QC", "9000 Boulevard Lacroix, Saint-Georges, QC", "10400 Boulevard Lacroix, Saint-Georges, QC", "12550 Boulevard Lacroix, Saint-Georges, QC", "150 120e Rue, Saint-Georges, QC", "1000 Route du Président-Kennedy, Sainte-Marie, QC", "125 Route du Président-Kennedy, Beauceville, QC"],
         "Latitude":  [45.9652, 45.9790, 46.1264, 46.1312, 46.1420, 46.1550, 46.1180, 46.4385, 46.2155],
@@ -82,41 +87,44 @@ if saisie_usager:
         
         st.success(f"📍 Consommateur localisé à : **{ville_client}** ({saisie_usager})")
         
-        # Calcul des distances réelles face à notre base de magasins d'alimentation
         df_analyse = df_epiceries.copy()
         df_analyse['Distance du consommateur'] = calculer_distance(
             lat_client, lon_client, 
             df_analyse['Latitude'], df_analyse['Longitude']
         )
         
-        # Filtrage strict par le curseur 0-50 km
         df_resultat_final = df_analyse[df_analyse['Distance du consommateur'] <= rayon_max].copy()
         df_resultat_final = df_resultat_final.sort_values(by='Distance du consommateur')
         
-        # Formatage de l'affichage de la distance
-        df_resultat_final['Distance du consommateur'] = df_resultat_final['Distance du consommateur'].apply(lambda x: f"{x:.1f} km")
-        
-        # --- 5. AFFICHAGE DES BANNIÈRES ---
+        # --- 5. AFFICHAGE VISUEL DES LOGOS ---
         st.write("---")
-        st.subheader(f"🛒 Bannières d'alimentation disponibles dans un rayon de {rayon_max} km")
+        st.subheader(f"🛒 Bannières disponibles dans un rayon de {rayon_max} km")
         
         if not df_resultat_final.empty:
-            enseignes_uniques = df_resultat_final['Bannière'].unique()
+            # On récupère les logos uniques des bannières à proximité
+            bannieres_uniques = df_resultat_final.drop_duplicates(subset=['Bannière'])
             
-            # Disposition dynamique des bannières trouvées
-            onglets = st.columns(len(enseignes_uniques))
-            for index, banniere in enumerate(enseignes_uniques):
-                with onglets[index]:
-                    st.info(f"⚡ **{banniere}**")
+            # Création de colonnes alignées pour afficher les logos côte à côte
+            colonnes_logos = st.columns(max(len(bannieres_uniques), 2))
             
+            for index, ligne in enumerate(bannieres_uniques.itertuples()):
+                with colonnes_logos[index]:
+                    # Essaye d'afficher le logo officiel, sinon affiche du texte
+                    try:
+                        st.image(ligne.Logo_URL, width=120)
+                    except:
+                        st.metric(label="Épicerie", value=ligne.Bannière)
+            
+            # --- 6. AFFICHAGE DU TABLEAU DÉTAILLÉ ---
+            st.write("---")
             st.markdown("### 📋 Liste détaillée des épiceries à proximité")
-            affichage_propre = df_resultat_final.drop(columns=['Latitude', 'Longitude'])
+            
+            # Nettoyage cosmétique du tableau
+            df_resultat_final['Distance du consommateur'] = df_resultat_final['Distance du consommateur'].apply(lambda x: f"{x:.1f} km")
+            affichage_propre = df_resultat_final.drop(columns=['Latitude', 'Longitude', 'Logo_URL'])
             st.dataframe(affichage_propre, use_container_width=True)
         else:
             st.warning(f"Aucun commerce d'alimentation ne se situe à moins de {rayon_max} km de cette zone.")
-            
-    else:
-        st.error("Code postal non configuré pour le test. Utilisez les codes de test de la Beauce (ex: G0M 1G0, G0M 0A1, G5Y 7W9).")
             
 else:
     st.info("👋 Saisissez un code postal complet ci-dessus pour charger l'interface de recherche par rayon.")

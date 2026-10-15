@@ -11,7 +11,7 @@ st.write("Ce prototype utilise les données géographiques nettoyées de GeoName
 @st.cache_data
 def load_data():
     # MODIFICATION ICI : Utilisation du nom exact de votre fichier
-    df = pd.read_csv("code_qc.csv")
+    df = pd.read_csv("codes_qc.csv")
     return df
 
 try:
@@ -42,4 +42,4 @@ try:
         st.warning("Aucun résultat ne correspond à votre recherche.")
 
 except FileNotFoundError:
-    st.error("Erreur : Le fichier 'code_qc.csv' est introuvable sur votre dépôt GitHub. Vérifiez l'orthographe exacte.")
+    st.error("Erreur : Le fichier 'codes_qc.csv' est introuvable sur votre dépôt GitHub. Vérifiez l'orthographe exacte.")

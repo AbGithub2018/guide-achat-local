@@ -1,129 +1,62 @@
 import streamlit as st
-import requests
 import pandas as pd
-import urllib.parse
 
-# Configuration de la page Streamlit
-st.set_page_config(page_title="Radar Alimentaire Québec", page_icon="🍲", layout="wide")
+# Configuration de la page Streamlit (Propre et centrée pour l'utilisateur)
+st.set_page_config(page_title="Mon Guide Achat Local", page_icon="🛒", layout="centered")
 
-st.title("🍲 Radar Alimentaire : Commerces d'alimentation autour de vous")
-st.write("Entrez votre code postal pour découvrir tous les points de vente d'aliments dans un rayon de 15 km (Supermarchés, Dollarama, Tigre Géant, etc.).")
+st.title("🛒 Trouver mes bannières locales")
+st.write("Entrez votre code postal pour lister les enseignes d'alimentation disponibles dans votre secteur et accéder à leurs sites.")
 
-# --- BASE DE DONNÉES LOCALE DE GÉOLOCALISATION DES CODES POSTAUX ---
-BASE_COORDONNEES = {
-    "G5Y": (46.1211, -70.6718),  # Saint-Georges
-    "G5X": (46.2000, -70.7667),  # Beauceville
-    "G6B": (45.5833, -70.8833),  # Lac-Mégantic
-    "G6E": (46.4333, -71.0333),  # Sainte-Marie
-    "G1K": (46.8139, -71.2222),  # Québec Centre
-    "H2W": (45.5167, -73.5750),  # Montréal
-}
+# --- BASE DE DONNÉES TEXTUELLE (Simulée pour le test - Sera liée à votre Google Sheets) ---
+# Chaque ligne représente une bannière réelle avec son site web et les secteurs (RTA) où elle est présente.
+DONNEES_COMMERCES = [
+    {"Bannière": "Maxi", "Type": "Supermarché", "Site Web": "https://maxi.ca", "Secteurs": ["G5Y", "G5X", "G6E", "G1K", "H2W"]},
+    {"Bannière": "Super C", "Type": "Supermarché", "Site Web": "https://superc.ca", "Secteurs": ["G5Y", "G6E", "G1K", "H2W"]},
+    {"Bannière": "IGA", "Type": "Supermarché", "Site Web": "https://iga.net", "Secteurs": ["G5Y", "G5X", "G6B", "G1K", "H2W"]},
+    {"Bannière": "Metro", "Type": "Supermarché", "Site Web": "https://metro.ca", "Secteurs": ["G5Y", "G6B", "G1K", "H2W"]},
+    {"Bannière": "Dollarama", "Type": "Magasin à rabais (Aliments)", "Site Web": "https://dollarama.com", "Secteurs": ["G5Y", "G5X", "G6B", "G6E", "G1K", "H2W"]},
+    {"Bannière": "Tigre Géant", "Type": "Magasin à rabais (Aliments)", "Site Web": "https://gianttiger.com", "Secteurs": ["G5Y", "G1K", "H2W"]},
+    {"Bannière": "Walmart Supercentre", "Type": "Grande surface", "Site Web": "https://walmart.ca", "Secteurs": ["G5Y", "G1K", "H2W"]},
+    {"Bannière": "Les Pères Nature", "Type": "Marché local / Fruiterie", "Site Web": "https://lesperesnature.com", "Secteurs": ["G5Y"]},
+]
 
-def obtenir_centre_gps(code_postal):
-    cp_propre = code_postal.strip().replace(" ", "").upper()
-    if len(cp_propre) >= 3:
-        rta = cp_propre[:3]
-        if rta in BASE_COORDONNEES:
-            return BASE_COORDONNEES[rta], rta
-    return BASE_COORDONNEES["G5Y"], "G5Y (Mode Test - Saint-Georges)"
+# Convertir la liste en DataFrame Pandas pour pouvoir la filtrer facilement
+df_commerces = pd.DataFrame(DONNEES_COMMERCES)
 
-# --- RECHERCHE ÉLARGIE DES COMMERCES ---
-@st.cache_data(show_spinner=False, ttl=300)
-def chercher_tous_commerces_alimentaires(lat, lon, rayon_km):
-    url_overpass = "https://mail.ru"
-    rayon_metres = rayon_km * 1000
+# --- INTERFACE UTILISATEUR ---
+
+# Champ de saisie simple
+cp_saisi = st.text_input("Entrez votre code postal (ex: G5Y 6H3) :", value="G5Y 6H3")
+
+if cp_saisi.strip():
+    # Nettoyage de l'entrée et extraction de la RTA (3 premiers caractères, ex: G5Y)
+    cp_propre = cp_saisi.strip().replace(" ", "").upper()
+    rta_utilisateur = cp_propre[:3] if len(cp_propre) >= 3 else ""
     
-    requete_overpass = f"""
-    [out:json][timeout:30];
-    (
-      node["shop"="supermarket"](around:{rayon_metres},{lat},{lon});
-      way["shop"="supermarket"](around:{rayon_metres},{lat},{lon});
-      node["shop"="grocery"](around:{rayon_metres},{lat},{lon});
-      way["shop"="grocery"](around:{rayon_metres},{lat},{lon});
-      node["shop"="department_store"](around:{rayon_metres},{lat},{lon});
-      way["shop"="department_store"](around:{rayon_metres},{lat},{lon});
-      node["shop"="variety_store"](around:{rayon_metres},{lat},{lon});
-      way["shop"="variety_store"](around:{rayon_metres},{lat},{lon});
-      node["shop"="convenience"](around:{rayon_metres},{lat},{lon});
-      way["shop"="convenience"](around:{rayon_metres},{lat},{lon});
-    );
-    out body center;
-    """
-    
-    commerces = []
-    urls_a_tester = [url_overpass, "https://overpass-api.de"]
-    
-    for url in urls_a_tester:
-        try:
-            response = requests.post(url, data={'data': requete_overpass}, timeout=15)
-            if response.status_code == 200:
-                donnees = response.json()
-                for element in donnees.get('elements', []):
-                    tags = element.get('tags', {})
-                    e_lat = element.get('lat') or element.get('center', {}).get('lat')
-                    e_lon = element.get('lon') or element.get('center', {}).get('lon')
+    if len(rta_utilisateur) == 3:
+        # Filtrer le tableau : on garde uniquement les lignes où le secteur de l'utilisateur est présent
+        df_filtre = df_commerces[df_commerces['Secteurs'].apply(lambda x: rta_utilisateur in x)]
+        
+        if not df_filtre.empty:
+            st.subheader(f"🏬 Enseignes disponibles autour de {rta_utilisateur} :")
+            st.write("Cliquez sur le bouton d'une bannière pour visiter son site internet officiel.")
+            
+            # Affichage sous forme de liste propre avec des boutons d'action individuels
+            for index, row in df_filtre.iterrows():
+                # Création d'un encadré visuel pour chaque commerce
+                with st.container():
+                    col_info, col_lien = st.columns([3, 2])
                     
-                    if e_lat and e_lon:
-                        nom = tags.get('name', 'Commerce d\'alimentation')
-                        brand = tags.get('brand', '')
+                    with col_info:
+                        st.markdown(f"**{row['Bannière']}**")
+                        st.caption(f"Catégorie : {row['Type']}")
                         
-                        if brand and brand.lower() not in nom.lower():
-                            nom = f"{brand} ({nom})"
-                            
-                        rue = tags.get('addr:street', '')
-                        numero = tags.get('addr:housenumber', '')
-                        adresse = f"{numero} {rue}".strip() if rue else "Adresse non spécifiée"
-                        
-                        commerces.append({
-                            "Nom": nom, 
-                            "Adresse": adresse, 
-                            "latitude": float(e_lat), 
-                            "longitude": float(e_lon)
-                        })
-                if commerces:
-                    break
-        except Exception:
-            continue
-            
-    return commerces
-
-# --- INTERFACE GRAPHIQUE STREAMLIT ---
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("⚙️ Paramètres")
-    cp_saisi = st.text_input("Votre code postal :", value="G5Y 6H3")
-    rayon = st.slider("Rayon maximal de recherche (km) :", min_value=1, max_value=15, value=15)
-    bouton_recherche = st.button("🔍 Lancer la détection", type="primary", use_container_width=True)
-
-with col2:
-    if bouton_recherche:
-        if not cp_saisi.strip():
-            st.warning("Veuillez saisir un code postal.")
+                    with col_lien:
+                        # Bouton natif Streamlit qui ouvre le lien dans un nouvel onglet de façon 100% sécurisée
+                        st.link_button(f"🌐 Visiter {row['Bannière']}", row['Site Web'], use_container_width=True)
+                    
+                    st.markdown(" ") # Petit espace de séparation
         else:
-            (target_lat, target_lon), rta_detectee = obtenir_centre_gps(cp_saisi)
-            
-            with st.spinner("Scan de la zone en cours..."):
-                resultats = chercher_tous_commerces_alimentaires(target_lat, target_lon, rayon)
-                
-            if resultats:
-                st.success(f"🎉 {len(resultats)} points de vente d'aliments détectés dans un rayon de {rayon} km autour de {rta_detectee} !")
-                df = pd.DataFrame(resultats)
-                df = df.drop_duplicates(subset=["Nom", "Adresse"])
-                
-                st.subheader("🗺️ Carte interactive des points de vente")
-                st.map(df, latitude="latitude", longitude="longitude")
-                
-                st.subheader("📋 Liste complète des commerces détectés")
-                st.dataframe(df[["Nom", "Adresse"]], use_container_width=True, hide_index=True)
-            else:
-                st.info("🗺️ Redirection immédiate vers Google Maps pour l'affichage de tous les commerces alimentaires.")
-                
-                # Requête de recherche exhaustive demandée : Super C, Dollarama, Tigre Géant, Maxi, etc.
-                requete_maps = f"alimentation, supermarché, Dollarama, Tigre Géant, Maxi, Super C près de {cp_saisi.strip().upper()}, QC"
-                url_maps = f"https://google.com{urllib.parse.quote(requete_maps)}"
-                
-                st.write("Pour contourner les limites des serveurs cloud, cliquez ci-dessous pour ouvrir la carte complète avec l'ensemble des supermarchés et magasins à rabais du secteur :")
-                
-                st.link_button("🌐 Ouvrir la carte complète sur Google Maps", url_maps, type="primary", use_container_width=True)
+            st.info(f"Aucune bannière enregistrée pour le secteur {rta_utilisateur} dans notre base de test.")
+    else:
+        st.warning("Veuillez entrer un code postal complet (Format: A1B 2C3).")

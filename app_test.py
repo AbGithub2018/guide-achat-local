@@ -137,9 +137,7 @@ if saisie_usager:
         
         # --- RESTRUCTURATION DES LIENS DE NAVIGATION (UNITAIRE ET SÉCURISÉE) ---
         df_resultat_final['Itinéraire GPS'] = df_resultat_final['Adresse'].apply(
-            lambda addr: f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(addr)}")
-        )
-        
+            lambda addr: f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(addr)}")        
         df_resultat_final['Site Web'] = df_resultat_final['Site Web'].astype(str)
         
         st.write("---")

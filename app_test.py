@@ -41,7 +41,7 @@ def chercher_coordonnees_csv_strict(code_recherche):
             resultat = chunk[chunk['Code_Strict'] == code_nettoye]
             
             if not resultat.empty:
-                ligne = resultat.iloc[0]
+                ligne = resultat.iloc
                 col_ville = next((c for c in ['Ville', 'ville', 'place_name'] if c in chunk.columns), 'Ville')
                 col_lat = next((c for c in ['Latitude', 'latitude'] if c in chunk.columns), 'Latitude')
                 col_lon = next((c for c in ['Longitude', 'longitude'] if c in chunk.columns), 'Longitude')
@@ -135,13 +135,12 @@ if saisie_usager:
         df_resultat_final = df_analyse[df_analyse['Distance du consommateur'] <= rayon_max].copy()
         df_resultat_final = df_resultat_final.sort_values(by='Distance du consommateur')
         
-        # --- CORRECTION DU FORMAT DE L'URL GOOGLE MAPS (Ajout du / après .com et protocole API officiel) ---
-        df_resultat_final['Itinéraire GPS'] = df_resultat_final['Adresse'].apply(lambda addr: f"https://google.com{urllib.parse.quote(addr)}")
-        
-        # Infiltration des mots-clés de localisation dans les sites officiels pour éviter le bug de La Romaine
-        df_resultat_final['Site Web'] = df_resultat_final.apply(
-            lambda row: f"{row['Site Web']}?query={urllib.parse.quote(row['Adresse'])}" if "locator" in row['Site Web'] or "trouver" in row['Site Web'] else row['Site Web'], axis=1
+        # --- RESTRUCTURATION DES LIENS DE NAVIGATION (UNITAIRE ET SÉCURISÉE) ---
+        df_resultat_final['Itinéraire GPS'] = df_resultat_final['Adresse'].apply(
+            lambda addr: f"https://google.com{urllib.parse.quote(addr)}"
         )
+        
+        df_resultat_final['Site Web'] = df_resultat_final['Site Web'].astype(str)
         
         st.write("---")
         st.subheader(f"📋 Épiceries disponibles à moins de {rayon_max} km")

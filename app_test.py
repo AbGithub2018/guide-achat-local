@@ -1,188 +1,109 @@
-import pandas as pd
 import streamlit as st
-import numpy as np
-import urllib.parse
-import os
+import pandas as pd
+from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
+import time
 
-st.set_page_config(page_title="Moteur de Recherche Alimentaire - Québec", layout="wide")
-st.title("CA Moteur de Recherche - Trouver mon Épicerie")
-st.caption("Moteur géospatiale basé exclusivement sur la matrice officielle des codes postaux et des municipalités du Québec.")
+# 1. Configuration de la page
+st.set_page_config(page_title="Recherche de Commerces", layout="wide")
+st.title("🍎 Recherche de commerces d'alimentation au Québec")
 
-# --- FORMULE DE CALCUL DE DISTANCE GPS ---
-def calculer_distance(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Rayon de la Terre en kilomètres
-    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
-    c = 2 * np.arcsin(np.sqrt(a))
-    return R * c
-
-# --- 1. CHARGEMENT GLOBAL DE VOTRE LISTE DE CODES POSTAUX ET MUNICIPALITÉS ---
+# 2. Chargement des données depuis GitHub
 @st.cache_data
-def charger_tous_les_codes_qc():
-    fichier_csv = "codes_qc.csv"
-    if not os.path.exists(fichier_csv):
-        st.error(f"❌ Le fichier '{fichier_csv}' est introuvable dans le dossier.")
-        return None
-    try:
-        # Tente d'abord de lire avec une virgule, si ça échoue, tente le point-virgule d'Excel
-        try:
-            df = pd.read_csv(fichier_csv, low_memory=False, sep=',')
-            if len(df.columns) <= 1:
-                df = pd.read_csv(fichier_csv, low_memory=False, sep=';')
-        except:
-            df = pd.read_csv(fichier_csv, low_memory=False, sep=';')
-            
-        df.columns = df.columns.str.strip()
-        
-        # Identification automatique des colonnes clés
-        col_cp = next((c for c in ['Code postal', 'code_postal', 'CodePostal', 'postal_code'] if c in df.columns), df.columns[0])
-        col_ville = next((c for c in ['Ville', 'ville', 'place_name', 'Municipalité'] if c in df.columns), 'Ville')
-        col_lat = next((c for c in ['Latitude', 'latitude'] if c in df.columns), None)
-        col_lon = next((c for c in ['Longitude', 'longitude'] if c in df.columns), None)
-        
-        if not col_lat or not col_lon:
-            st.error(f"❌ Impossible de trouver les colonnes de Latitude/Longitude. Colonnes détectées : {list(df.columns)}")
-            return None
-        
-        # Nettoyage et standardisation
-        df['Code_Strict'] = df[col_cp].astype(str).str.replace(" ", "").str.upper()
-        df['Latitude'] = pd.to_numeric(df[col_lat], errors='coerce')
-        df['Longitude'] = pd.to_numeric(df[col_lon], errors='coerce')
-        df['Ville_Propre'] = df[col_ville].astype(str).str.strip()
-        
-        return df[['Code_Strict', 'Ville_Propre', 'Latitude', 'Longitude']]
-    except Exception as e:
-        st.error(f"Erreur lors de la lecture de codes_qc.csv : {e}")
-        return None
-
-df_codes_global = charger_tous_les_codes_qc()
-
-# --- 2. CHARGEMENT DE VOTRE MATRICE DE DISPONIBILITÉS (1-0) ---
-@st.cache_data
-def charger_disponibilites_magasins():
-    fichier_csv = "disponibilite_magasins.csv"
-    if not os.path.exists(fichier_csv):
-        st.error(f"❌ Le fichier '{fichier_csv}' est introuvable.")
-        return None
-    try:
-        # Même sécurité de séparateur pour le fichier des magasins
-        try:
-            df = pd.read_csv(fichier_csv, low_memory=False, sep=',')
-            if len(df.columns) <= 1:
-                df = pd.read_csv(fichier_csv, low_memory=False, sep=';')
-        except:
-            df = pd.read_csv(fichier_csv, low_memory=False, sep=';')
-            
-        df.columns = df.columns.str.strip()
-        # On utilise la première colonne pour l'indexation des codes postaux des magasins
-        df['Code_Strict'] = df[df.columns[0]].astype(str).str.replace(" ", "").str.upper()
-        return df
-    except Exception as e:
-        st.error(f"Erreur lors de la lecture de disponibilite_magasins.csv : {e}")
-        return None
-
-df_matrice_bannieres = charger_disponibilites_magasins()
-
-# --- CONFIGURATION DES LIENS DE CIRCULAIRES ---
-LIENS_BANNIERES = {
-    "IGA": "https://iga.net", "Maxi": "https://maxi.ca", "Metro": "https://metro.ca",
-    "Super C": "https://superc.ca", "Walmart": "https://walmart.ca", "Tigre Geant": "https://tigregeant.com",
-    "Dollarama": "https://dollarama.com", "Provigo": "https://provigo.ca", "Costco": "https://costco.ca",
-    "Marché Ami": "https://marcheami.ca", "Marché Tradition": "https://marchestradition.com"
-}
-
-# --- 3. INTERFACE UTILISATEUR ---
-col_recherche, col_curseur = st.columns(2)
-
-with col_recherche:
-    saisie_usager = st.text_input("Saisissez votre code postal complet (ex: G0M 1G0, G5Y 7W9) :").strip().upper()
-
-with col_curseur:
-    rayon_max = st.slider("Agrandir le rayon de recherche en kilomètres :", min_value=0, max_value=100, value=25, step=5)
-
-# --- 4. CALCULS GÉOSPATIAUX DYNAMIQUES ---
-if saisie_usager and df_codes_global is not None and df_matrice_bannieres is not None:
-    code_client_strict = saisie_usager.replace(" ", "")
+def load_data():
+    # Remplacez par le lien "Raw" de votre fichier GitHub
+    url = "https://githubusercontent.com"
+    df = pd.read_csv(url)
     
-    # Étape A : Trouver la position GPS du code postal de l'usager
-    ligne_client = df_codes_global[df_codes_global['Code_Strict'] == code_client_strict]
-    
-    if not ligne_client.empty:
-        lat_client = ligne_client.iloc[0]['Latitude']
-        lon_client = ligne_client.iloc[0]['Longitude']
-        ville_client = ligne_client.iloc[0]['Ville_Propre']
-        
-        st.success(f"📍 Position identifiée : **{ville_client}** ({saisie_usager})")
-        
-        # Étape B : Associer les coordonnées GPS à chaque code postal présent dans votre fichier magasin
-        codes_configures = df_matrice_bannieres['Code_Strict'].unique()
-        df_magasins_gps = df_codes_global[df_codes_global['Code_Strict'].isin(codes_configures)].copy()
-        
-        # Étape C : Calculer la distance entre le client et toutes les localisations de la matrice
-        df_magasins_gps['Distance'] = calculer_distance(
-            lat_client, lon_client, df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
-        )
-        
-        # Étape D : Filtrer selon le rayon choisi par l'utilisateur
-        df_zones_dans_rayon = df_magasins_gps[df_magasins_gps['Distance'] <= rayon_max].copy()
-        
-        # Étape E : Extraire les bannières actives (marquées '1') pour les codes postaux dans le rayon
-        liste_magasins_trouves = []
-        
-        for index, zone in df_zones_dans_rayon.iterrows():
-            code_zone = zone['Code_Strict']
-            distance_zone = zone['Distance']
-            nom_municipalite = zone['Ville_Propre']
-            
-            ligne_matrice = df_matrice_bannieres[df_matrice_bannieres['Code_Strict'] == code_zone]
-            
-            if not ligne_matrice.empty:
-                donnees_bannieres = ligne_matrice.iloc[0]
+    # Nettoyage simple des codes postaux (enlever les espaces et mettre en majuscules)
+    if 'code_postal' in df.columns:
+        df['code_postal'] = df['code_postal'].str.replace(" ", "").str.upper()
+    return df
+
+try:
+    df_magasins = load_data()
+except Exception as e:
+    st.error(f"Erreur lors du chargement du fichier GitHub : {e}")
+    df_magasins = pd.DataFrame()
+
+# Initialisation du géocodeur Geopy (avec un nom d'application unique pour respecter les règles d'utilisation)
+geolocator = Nominatim(user_agent="mon_application_quebec_alimentation_v1")
+
+# 3. Barre latérale pour les critères de recherche
+st.sidebar.header("Critères de recherche")
+
+user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G5Y 1V3)", "").replace(" ", "").upper()
+rayon_km = st.sidebar.slider("Sélectionnez le rayon maximum (km)", min_value=1, max_value=50, value=10, step=1)
+
+# 4. Logique de filtrage et affichage des résultats
+if user_postal:
+    if len(user_postal) >= 3:
+        with st.spinner("Localisation de votre code postal et recherche des commerces..."):
+            try:
+                # Étape A : Trouver les coordonnées GPS du code postal de l'utilisateur
+                # On ajoute ", Québec, Canada" pour s'assurer que Geopy cherche au bon endroit
+                location = geolocator.geocode(f"{user_postal}, Québec, Canada")
                 
-                for colonne in df_matrice_bannieres.columns:
-                    # On ignore les colonnes d'identifiants techniques pour ne scanner que les bannières
-                    if colonne not in ['Code postal', 'code_postal', 'Code_Strict', df_matrice_bannieres.columns[0]]:
-                        valeur = str(donnees_bannieres[colonne]).strip()
-                        if valeur in ["1", "1.0"]:
-                            liste_magasins_trouves.append({
-                                "Bannière": colonne,
-                                "Municipalité / Secteur": nom_municipalite,
-                                "Code Postal": code_zone,
-                                "Distance estimée": distance_zone,
-                                "Site Web / Circulaire": LIENS_BANNIERES.get(colonne, "https://google.com"),
-                                "Itinéraire": f"https://google.com{urllib.parse.quote(f'{nom_municipalite}, {code_zone}, QC')}",
-                                "latitude": zone['Latitude'],
-                                "longitude": zone['Longitude']
-                            })
-        
-        if liste_magasins_trouves:
-            df_resultat_final = pd.DataFrame(liste_magasins_trouves)
-            df_resultat_final = df_resultat_final.sort_values(by='Distance estimée')
-            
-            # --- AFFICHAGE DE LA CARTE ---
-            st.write("### 🗺️ Carte des municipalités desservies à proximité")
-            df_map = df_resultat_final[['latitude', 'longitude']].drop_duplicates()
-            st.map(df_map)
-            
-            st.write("---")
-            st.subheader(f"📋 Épiceries accessibles dans votre rayon de {rayon_max} km ({len(df_resultat_final)} options trouvées)")
-            
-            # Formatage de la distance pour l'affichage textuel
-            df_affichage = df_resultat_final.copy()
-            df_affichage['Distance estimée'] = df_affichage['Distance estimée'].apply(lambda x: f"{x:.1f} km" if x > 0.1 else "Dans votre secteur")
-            
-            st.data_editor(
-                df_affichage[['Bannière', 'Municipalité / Secteur', 'Code Postal', 'Distance estimée', 'Site Web / Circulaire', 'Itinéraire']],
-                column_config={
-                    "Site Web / Circulaire": st.column_config.LinkColumn("Circulaire 🌐", display_text="Ouvrir les rabais"),
-                    "Itinéraire": st.column_config.LinkColumn("Route 🚗", display_text="Calculer l'itinéraire"),
-                },
-                hide_index=True,
-                use_container_width=True
-            )
-        else:
-            st.warning(f"⚠️ Aucun magasin configuré n'a été trouvé dans un rayon de {rayon_max} km autour de votre position.")
+                if location:
+                    user_coords = (location.latitude, location.longitude)
+                    
+                    # Étape B : Trouver les coordonnées de chaque magasin
+                    # Pour éviter de géocoder 9000 adresses à chaque clic (ce qui bloquerait l'application),
+                    # nous allons d'abord filtrer grossièrement par la RMR (Région Métropolitaine) 
+                    # ou calculer les distances si vos lignes contiennent déjà la latitude/longitude.
+                    
+                    # Si votre fichier possède déjà des colonnes 'latitude' et 'longitude' :
+                    if 'latitude' in df_magasins.columns and 'longitude' in df_magasins.columns:
+                        
+                        # Calculer la distance pour chaque ligne
+                        def calculer_distance(row):
+                            if pd.notna(row['latitude']) and pd.notna(row['longitude']):
+                                return geodesic(user_coords, (row['latitude'], row['longitude'])).km
+                            return float('inf')
+                        
+                        df_magasins['distance_km'] = df_magasins.apply(calculer_distance, axis=1)
+                        df_filtre = df_magasins[df_magasins['distance_km'] <= rayon_km].sort_values(by='distance_km')
+                    
+                    # Si votre fichier n'a PAS de coordonnées mais juste les codes postaux des magasins :
+                    else:
+                        # Comme le géocodage à la volée de 9000 lignes prendrait des heures, une astuce efficace
+                        # consiste à filtrer les magasins qui partagent les 3 premières lettres du code postal (la RTA)
+                        rta_utilisateur = user_postal[:3]
+                        df_proche = df_magasins[df_magasins['code_postal'].str.startswith(rta_utilisateur, na=False)].copy()
+                        
+                        # Géocoder uniquement ce petit groupe filtré pour aller très vite
+                        coordonnees_cache = {}
+                        distances = []
+                        
+                        for cp in df_proche['code_postal'].unique():
+                            time.sleep(1) # Pause d'une seconde requise par Geopy pour ne pas être bloqué
+                            loc_mag = geolocator.geocode(f"{cp}, Québec, Canada")
+                            if loc_mag:
+                                coordonnees_cache[cp] = geodesic(user_coords, (loc_mag.latitude, loc_mag.longitude)).km
+                            else:
+                                coordonnees_cache[cp] = float('inf')
+                        
+                        df_proche['distance_km'] = df_proche['code_postal'].map(coordonnees_cache)
+                        df_filtre = df_proche[df_proche['distance_km'] <= rayon_km].sort_values(by='distance_km')
+
+                    # Étape C : Affichage des résultats
+                    if not df_filtre.empty:
+                        st.success(f"🎉 {len(df_filtre)} commerces trouvés dans un rayon de {rayon_km} km !")
+                        
+                        # Formater l'affichage
+                        df_affichage = df_filtre.copy()
+                        df_affichage['distance_km'] = df_affichage['distance_km'].round(2).astype(str) + " km"
+                        
+                        colonnes_affichage = ['nom', 'adresse', 'code_postal', 'distance_km']
+                        st.dataframe(df_affichage[[c for c in colonnes_affichage if c in df_affichage.columns]], use_container_width=True)
+                    else:
+                        st.warning(f"Aucun commerce trouvé dans un rayon de {rayon_km} km pour le code postal {user_postal}.")
+                else:
+                    st.error("Impossible de localiser ce code postal au Québec. Vérifiez l'orthographe.")
+                    
+            except Exception as e:
+                st.error(f"Une erreur est survenue lors de la recherche géographique : {e}")
     else:
-        st.error("❌ Ce code postal n'est pas reconnu dans votre fichier codes_qc.csv.")
+        st.error("Veuillez entrer un code postal valide.")
+else:
+    st.info("💡 Entrez un code postal dans la barre latérale pour commencer la recherche.")

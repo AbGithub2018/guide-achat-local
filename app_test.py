@@ -26,14 +26,25 @@ def charger_tous_les_codes_qc():
         st.error(f"❌ Le fichier '{fichier_csv}' est introuvable dans le dossier.")
         return None
     try:
-        df = pd.read_csv(fichier_csv, low_memory=False)
+        # Tente d'abord de lire avec une virgule, si ça échoue, tente le point-virgule d'Excel
+        try:
+            df = pd.read_csv(fichier_csv, low_memory=False, sep=',')
+            if len(df.columns) <= 1:
+                df = pd.read_csv(fichier_csv, low_memory=False, sep=';')
+        except:
+            df = pd.read_csv(fichier_csv, low_memory=False, sep=';')
+            
         df.columns = df.columns.str.strip()
         
         # Identification automatique des colonnes clés
         col_cp = next((c for c in ['Code postal', 'code_postal', 'CodePostal', 'postal_code'] if c in df.columns), df.columns[0])
         col_ville = next((c for c in ['Ville', 'ville', 'place_name', 'Municipalité'] if c in df.columns), 'Ville')
-        col_lat = next((c for c in ['Latitude', 'latitude'] if c in df.columns), 'Latitude')
-        col_lon = next((c for c in ['Longitude', 'longitude'] if c in df.columns), 'Longitude')
+        col_lat = next((c for c in ['Latitude', 'latitude'] if c in df.columns), None)
+        col_lon = next((c for c in ['Longitude', 'longitude'] if c in df.columns), None)
+        
+        if not col_lat or not col_lon:
+            st.error(f"❌ Impossible de trouver les colonnes de Latitude/Longitude. Colonnes détectées : {list(df.columns)}")
+            return None
         
         # Nettoyage et standardisation
         df['Code_Strict'] = df[col_cp].astype(str).str.replace(" ", "").str.upper()
@@ -56,7 +67,14 @@ def charger_disponibilites_magasins():
         st.error(f"❌ Le fichier '{fichier_csv}' est introuvable.")
         return None
     try:
-        df = pd.read_csv(fichier_csv, low_memory=False)
+        # Même sécurité de séparateur pour le fichier des magasins
+        try:
+            df = pd.read_csv(fichier_csv, low_memory=False, sep=',')
+            if len(df.columns) <= 1:
+                df = pd.read_csv(fichier_csv, low_memory=False, sep=';')
+        except:
+            df = pd.read_csv(fichier_csv, low_memory=False, sep=';')
+            
         df.columns = df.columns.str.strip()
         # On utilise la première colonne pour l'indexation des codes postaux des magasins
         df['Code_Strict'] = df[df.columns[0]].astype(str).str.replace(" ", "").str.upper()
@@ -92,14 +110,13 @@ if saisie_usager and df_codes_global is not None and df_matrice_bannieres is not
     ligne_client = df_codes_global[df_codes_global['Code_Strict'] == code_client_strict]
     
     if not ligne_client.empty:
-        # Correction d'accès aux index avec .iloc[0] au lieu de .iloc
         lat_client = ligne_client.iloc[0]['Latitude']
         lon_client = ligne_client.iloc[0]['Longitude']
         ville_client = ligne_client.iloc[0]['Ville_Propre']
         
         st.success(f"📍 Position identifiée : **{ville_client}** ({saisie_usager})")
         
-        # Étape B : Associer les coordonnées GPS (Latitude / Longitude) à chaque magasin configuré
+        # Étape B : Associer les coordonnées GPS à chaque code postal présent dans votre fichier magasin
         codes_configures = df_matrice_bannieres['Code_Strict'].unique()
         df_magasins_gps = df_codes_global[df_codes_global['Code_Strict'].isin(codes_configures)].copy()
         
@@ -125,7 +142,7 @@ if saisie_usager and df_codes_global is not None and df_matrice_bannieres is not
                 donnees_bannieres = ligne_matrice.iloc[0]
                 
                 for colonne in df_matrice_bannieres.columns:
-                    # On ignore les colonnes d'identifiants techniques pour ne scanner que les colonnes bannières
+                    # On ignore les colonnes d'identifiants techniques pour ne scanner que les bannières
                     if colonne not in ['Code postal', 'code_postal', 'Code_Strict', df_matrice_bannieres.columns[0]]:
                         valeur = str(donnees_bannieres[colonne]).strip()
                         if valeur in ["1", "1.0"]:

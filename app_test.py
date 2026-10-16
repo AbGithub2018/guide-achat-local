@@ -62,7 +62,6 @@ def charger_disponibilites_magasins():
 df_matrice_bannieres = charger_disponibilites_magasins()
 
 # --- 3. BASE DE DONNÉES RÉELLE DES ÉPICERIES DU QUÉBEC ---
-# À terme, cette liste contiendra les vraies adresses et coordonnées GPS de toutes les épiceries.
 @st.cache_data
 def charger_base_epiceries():
     donnees_epiceries = {
@@ -95,13 +94,12 @@ with col_recherche:
     saisie_usager = st.text_input("Saisissez votre code postal complet (ex: G0M 1G0, G5Y 7W9) :").strip().upper()
 
 with col_curseur:
-    rayon_max = st.slider("Agrandir le rayon de recherche en kilomètres (Gaspésie, régions éloignées) :", min_value=0, max_value=100; value=25, step=5)
+    rayon_max = st.slider("Agrandir le rayon de recherche en kilomètres (Gaspésie, régions éloignées) :", min_value=0, max_value=100, value=25, step=5)
 
-# --- 5. ENGIN DE CALCULS ET FILTRAGE CRASSO-SPATIAL ---
+# --- 5. ENGIN DE CALCULS ET FILTRAGE SPATIAL ---
 if saisie_usager:
     infos_client = chercher_coordonnees_csv_strict(saisie_usager)
     
-    # Secours démo pour tests locaux
     code_sans_espace = saisie_usager.replace(" ", "")
     if not infos_client and code_sans_espace == "G0M1G0":
         infos_client = {"Ville": "La Guadeloupe", "Latitude": 45.9652, "Longitude": -70.9395}
@@ -115,21 +113,17 @@ if saisie_usager:
         
         st.success(f"📍 Position identifiée : **{ville_client}** ({saisie_usager})")
         
-        # Étape A : Calcul des distances réelles par rapport au consommateur
         df_analyse = df_epiceries.copy()
         df_analyse['Distance du consommateur'] = calculer_distance(
             lat_client, lon_client, df_analyse['Latitude'], df_analyse['Longitude']
         )
         
-        # Étape B : Filtrage rigoureux selon la distance maximale sélectionnée par le curseur
         df_dans_rayon = df_analyse[df_analyse['Distance du consommateur'] <= rayon_max].copy()
         
-        # Étape C : CROISEMENT AVEC VOTRE ONGLET DE DISPONIBILITÉS GOOGLE SHEETS
         if df_matrice_bannieres is not None:
             ligne_matrice = df_matrice_bannieres[df_matrice_bannieres['Code_Strict'] == code_sans_espace]
             if not ligne_matrice.empty:
                 donnees_zone = ligne_matrice.iloc[0]
-                # Filtrer les magasins du rayon pour ne garder que ceux cochés à "1" dans votre onglet
                 bannieres_valides = [col for col in df_matrice_bannieres.columns if col not in ['Code postal', 'code_postal', 'Code_Strict'] and str(donnees_zone[col]).strip() == "1"]
                 df_dans_rayon = df_dans_rayon[df_dans_rayon['Bannière'].isin(bannieres_valides)]
         
@@ -138,7 +132,6 @@ if saisie_usager:
             df_dans_rayon['Itinéraire GPS'] = df_dans_rayon['Adresse'].apply(
                 lambda addr: f"https://google.com{urllib.parse.quote(addr)}")        
             
-            # Affichage de la carte interactive
             st.write("### 🗺️ Carte des épiceries à proximité")
             df_map = df_dans_rayon[['Latitude', 'Longitude']].rename(columns={'Latitude': 'latitude', 'Longitude': 'longitude'})
             st.map(df_map)

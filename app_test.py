@@ -6,7 +6,7 @@ import os
 
 st.set_page_config(page_title="Moteur de Recherche Alimentaire - Québec", layout="wide")
 st.title("CA Moteur de Recherche - Trouver mon Épicerie")
-st.caption("Moteur géospatiale basé exclusivement sur la matrice officielle des codes postaux et des municipalités du Québec.")
+st.caption("Moteur géospatiale basé sur la localisation précise des épiceries et marchés du Québec.")
 
 # --- FORMULE DE CALCUL DE DISTANCE GPS ---
 def calculer_distance(lat1, lon1, lat2, lon2):
@@ -18,7 +18,7 @@ def calculer_distance(lat1, lon1, lat2, lon2):
     c = 2 * np.arcsin(np.sqrt(a))
     return R * c
 
-# --- 1. CHARGEMENT GLOBAL DE VOTRE LISTE DE CODES POSTAUX ET MUNICIPALITÉS ---
+# --- 1. CHARGEMENT GLOBAL DE VOTRE LISTE DE CODES POSTAUX (POUR SITUER L'UTILISATEUR) ---
 @st.cache_data
 def charger_tous_les_codes_qc():
     fichier_csv = "codes_qc.csv"
@@ -26,17 +26,14 @@ def charger_tous_les_codes_qc():
         st.error(f"❌ Le fichier '{fichier_csv}' est introuvable dans le dossier.")
         return None
     try:
-        # Lecture complète de votre fichier à 5 colonnes
         df = pd.read_csv(fichier_csv, low_memory=False)
         df.columns = df.columns.str.strip()
         
-        # Identification des colonnes clés
         col_cp = next((c for c in ['Code postal', 'code_postal', 'CodePostal', 'postal_code'] if c in df.columns), df.columns[0])
         col_ville = next((c for c in ['Ville', 'ville', 'place_name', 'Municipalité'] if c in df.columns), 'Ville')
         col_lat = next((c for c in ['Latitude', 'latitude'] if c in df.columns), 'Latitude')
         col_lon = next((c for c in ['Longitude', 'longitude'] if c in df.columns), 'Longitude')
         
-        # Nettoyage et standardisation
         df['Code_Strict'] = df[col_cp].astype(str).str.replace(" ", "").str.upper()
         df['Latitude'] = pd.to_numeric(df[col_lat], errors='coerce')
         df['Longitude'] = pd.to_numeric(df[col_lon], errors='coerce')
@@ -49,23 +46,32 @@ def charger_tous_les_codes_qc():
 
 df_codes_global = charger_tous_les_codes_qc()
 
-# --- 2. CHARGEMENT DE VOTRE MATRICE DE DISPONIBILITÉS GOOGLE SHEETS (1-0) ---
+# --- 2. NOUVEAU : CHARGEMENT DE VOTRE LISTE D'ÉPICERIES EXTRAITES AVEC LEURS ADRESSES ---
 @st.cache_data
-def charger_disponibilites_magasins():
-    fichier_csv = "disponibilite_magasins.csv"
+def charger_adresses_epiceries():
+    # Remplacez par le nom exact du nouveau fichier contenant les adresses extraites
+    fichier_csv = "adresses_magasins_qc.csv" 
     if not os.path.exists(fichier_csv):
-        st.error(f"❌ Le fichier '{fichier_csv}' (votre onglet de bannières) est introuvable.")
+        st.error(f"❌ Le fichier '{fichier_csv}' contenant les adresses extraites est introuvable.")
         return None
     try:
         df = pd.read_csv(fichier_csv, low_memory=False)
         df.columns = df.columns.str.strip()
-        df['Code_Strict'] = df[df.columns[0]].astype(str).str.replace(" ", "").str.upper()
+        
+        # Standardisation du code postal de l'épicerie pour la liaison GPS
+        col_cp_magasin = next((c for c in ['code_postal', 'Code postal', 'Code_Postal'] if c in df.columns), None)
+        if col_cp_magasin:
+            df['Code_Strict'] = df[col_cp_magasin].astype(str).str.replace(" ", "").str.upper()
+        else:
+            st.error("❌ Impossible de trouver la colonne du code postal dans le fichier des épiceries.")
+            return None
+            
         return df
     except Exception as e:
-        st.error(f"Erreur lors de la lecture de disponibilite_magasins.csv : {e}")
+        st.error(f"Erreur lors de la lecture du fichier d'épiceries : {e}")
         return None
 
-df_matrice_bannieres = charger_disponibilites_magasins()
+df_epiceries = charger_adresses_epiceries()
 
 # --- CONFIGURATION DES LIENS DE CIRCULAIRES ---
 LIENS_BANNIERES = {
@@ -82,13 +88,13 @@ with col_recherche:
     saisie_usager = st.text_input("Saisissez votre code postal complet (ex: G0M 1G0, G5Y 7W9) :").strip().upper()
 
 with col_curseur:
-    rayon_max = st.slider("Agrandir le rayon de recherche en kilomètres (Ajustable pour les régions éloignées) :", min_value=0, max_value=100, value=25, step=5)
+    rayon_max = st.slider("Agrandir le rayon de recherche en kilomètres :", min_value=0, max_value=100, value=25, step=5)
 
-# --- 4. CALCULS GÉOSPATIAUX DYNAMIQUES ---
-if saisie_usager and df_codes_global is not None and df_matrice_bannieres is not None:
+# --- 4. CALCULS GÉOSPATIAUX ET RECHERCHE ---
+if saisie_usager and df_codes_global is not None and df_epiceries is not None:
     code_client_strict = saisie_usager.replace(" ", "")
     
-    # Trouver la position GPS du consommateur
+    # Étape A : Trouver la position GPS du consommateur
     ligne_client = df_codes_global[df_codes_global['Code_Strict'] == code_client_strict]
     
     if not ligne_client.empty:
@@ -98,74 +104,60 @@ if saisie_usager and df_codes_global is not None and df_matrice_bannieres is not
         
         st.success(f"📍 Position identifiée : **{ville_client}** ({saisie_usager})")
         
-        # ÉTAPE A : Calculer la distance entre le client et TOUTES les municipalités/codes postaux de la matrice de bannières
-        # On ne garde que les codes postaux présents dans votre onglet de configuration
-        codes_configures = df_matrice_bannieres['Code_Strict'].unique()
-        df_zones_dispo = df_codes_global[df_codes_global['Code_Strict'].isin(codes_configures)].copy()
-        
-        df_zones_dispo['Distance'] = calculer_distance(
-            lat_client, lon_client, df_zones_dispo['Latitude'], df_zones_dispo['Longitude']
+        # Étape B : Associer les coordonnées GPS (Latitude/Longitude) à chaque magasin
+        # On fusionne notre liste de magasins avec le référentiel des codes postaux pour avoir les positions GPS des magasins
+        df_magasins_gps = pd.merge(
+            df_epiceries, 
+            df_codes_global[['Code_Strict', 'Latitude', 'Longitude']], 
+            on='Code_Strict', 
+            how='inner'
         )
         
-        # ÉTAPE B : Filtrer selon le rayon de kilomètres choisi
-        df_zones_dans_rayon = df_zones_dispo[df_zones_dispo['Distance'] <= rayon_max].copy()
+        # Étape C : Calculer la distance entre le client et chaque épicerie
+        df_magasins_gps['Distance'] = calculer_distance(
+            lat_client, lon_client, df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
+        )
         
-        # ÉTAPE C : Extraire et compiler les bannières actives (valeur 1) pour toutes les zones du rayon
-        liste_magasins_trouves = []
+        # Étape D : Filtrer selon le rayon de kilomètres choisi
+        df_resultat_filtré = df_magasins_gps[df_magasins_gps['Distance'] <= rayon_max].copy()
+        df_resultat_filtré = df_resultat_filtré.sort_values(by='Distance')
         
-        for index, zone in df_zones_dans_rayon.iterrows():
-            code_zone = zone['Code_Strict']
-            distance_zone = zone['Distance']
-            nom_municipalite = zone['Ville_Propre']
-            
-            # Aller chercher la ligne des 1 et 0 pour ce code postal précis
-            ligne_matrice = df_matrice_bannieres[df_matrice_bannieres['Code_Strict'] == code_zone]
-            
-            if not ligne_matrice.empty:
-                donnees_bannieres = ligne_matrice.iloc[0]
-                
-                # Parcourir les colonnes pour trouver les bannières cochées à 1
-                for colonne in df_matrice_bannieres.columns:
-                    if colonne not in ['Code postal', 'code_postal', 'Code_Strict', df_matrice_bannieres.columns[0]]:
-                        valeur = str(donnees_bannieres[colonne]).strip()
-                        if valeur == "1" or valeur == "1.0":
-                            # Ajouter le magasin trouvé à notre liste finale
-                            liste_magasins_trouves.append({
-                                "Bannière": colonne,
-                                "Municipalité / Secteur": nom_municipalite,
-                                "Distance estimée": distance_zone,
-                                "Site Web / Circulaire": LIENS_BANNIERES.get(colonne, "https://google.com"),
-                                "Itinéraire": f"https://google.com{urllib.parse.quote(f'{nom_municipalite}, QC')}",
-                                "latitude": zone['Latitude'],
-                                "longitude": zone['Longitude']
-                            })
-        
-        if liste_magasins_trouves:
-            df_resultat_final = pd.DataFrame(liste_magasins_trouves)
-            df_resultat_final = df_resultat_final.sort_values(by='Distance estimée')
-            
+        if not df_resultat_filtré.empty:
             # --- AFFICHAGE DE LA CARTE ---
-            st.write("### 🗺️ Carte des municipalités desservies à proximité")
-            df_map = df_resultat_final[['latitude', 'longitude']].drop_duplicates()
+            st.write("### 🗺️ Emplacement des magasins à proximité")
+            # Renommer temporairement pour st.map qui requiert obligatoirement 'latitude' et 'longitude' en minuscules
+            df_map = df_resultat_filtré[['Latitude', 'Longitude']].rename(columns={'Latitude': 'latitude', 'Longitude': 'longitude'}).drop_duplicates()
             st.map(df_map)
             
             st.write("---")
-            st.subheader(f"📋 Épiceries accessibles dans votre rayon de {rayon_max} km ({len(df_resultat_final)} options trouvées)")
+            st.subheader(f"📋 Épiceries trouvées dans votre rayon de {rayon_max} km ({len(df_resultat_filtré)} options)")
             
-            # Formatage de la distance pour un affichage propre
-            df_affichage = df_resultat_final.copy()
-            df_affichage['Distance estimée'] = df_affichage['Distance estimée'].apply(lambda x: f"{x:.1f} km" if x > 0.1 else "Dans votre secteur")
+            # Préparation des données d'affichage
+            df_affichage = pd.DataFrame()
             
+            # Identifier dynamiquement le nom de la bannière (s'il y a une colonne 'Banniere' ou 'nom')
+            col_banniere = next((c for c in ['Bannière', 'banniere', 'Nom', 'nom', 'nom_entreprise'] if c in df_resultat_filtré.columns), df_resultat_filtré.columns[0])
+            col_adresse = next((c for c in ['adresse_complete', 'adresse', 'Adresse'] if c in df_resultat_filtré.columns), df_resultat_filtré.columns[1])
+            
+            df_affichage['Bannière'] = df_resultat_filtré[col_banniere]
+            df_affichage['Adresse complète'] = df_resultat_filtré[col_adresse]
+            df_affichage['Distance estimée'] = df_resultat_filtré['Distance'].apply(lambda x: f"{x:.1f} km" if x > 0.1 else "Dans votre secteur")
+            
+            # Génération des liens dynamiques
+            df_affichage['Site Web / Circulaire'] = df_affichage['Bannière'].apply(lambda x: LIENS_BANNIERES.get(x, "https://google.com"))
+            df_affichage['Itinéraire'] = df_affichage['Adresse complète'].apply(lambda x: f"https://google.com{urllib.parse.quote(x)}")
+            
+            # Rendu du tableau dynamique
             st.data_editor(
-                df_affichage[['Bannière', 'Municipalité / Secteur', 'Distance estimée', 'Site Web / Circulaire', 'Itinéraire']],
+                df_affichage,
                 column_config={
                     "Site Web / Circulaire": st.column_config.LinkColumn("Circulaire 🌐", display_text="Ouvrir les rabais"),
-                    "Itinéraire": st.column_config.LinkColumn("Route 🚗", display_text="Calculer l'itinéraire vers la municipalité"),
+                    "Itinéraire": st.column_config.LinkColumn("Route 🚗", display_text="Calculer l'itinéraire"),
                 },
                 hide_index=True,
                 use_container_width=True
             )
         else:
-            st.warning(f"⚠️ Aucun magasin configuré n'a été trouvé dans un rayon de {rayon_max} km autour de votre position.")
+            st.warning(f"⚠️ Aucun magasin trouvé dans un rayon de {rayon_max} km autour de votre position.")
     else:
         st.error("❌ Ce code postal n'est pas reconnu dans votre fichier codes_qc.csv.")

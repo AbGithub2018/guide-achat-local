@@ -11,8 +11,8 @@ st.title("🍎 Vraie recherche géolocalisée de commerces au Québec")
 def load_data():
     try:
         # Lecture de vos deux fichiers CSV locaux avec leurs noms exacts
-        df_mag = pd.read_csv("disponibilite_magasins.csv")
-        df_gps = pd.read_csv("codes_qc.csv") # Corrigé ici !
+        df_mag = pd.read_csv("disponibilite_magasins.csv", sep=",", encoding="utf-8")
+        df_gps = pd.read_csv("codes_qc.csv")
         
         # Nettoyage indispensable des codes postaux (retrait des espaces et mise en majuscules)
         if 'Code_Postal' in df_mag.columns:

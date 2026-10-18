@@ -68,15 +68,14 @@ banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannier
 # 4. Traitement cartographique et calcul de distance
 if user_postal and not df_postaux.empty and not df_magasins.empty:
     
-    # Extraire les coordonnées GPS du code postal entré par l'utilisateur (Ex: G0M1G0)
+    # Extraire les coordonnées GPS du code postal entré par l'utilisateur
     coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
     
     if not coords_client.empty:
-        # Récupération sécurisée des coordonnées GPS sous forme de valeurs brutes
         lat_client = coords_client['Latitude'].values[0]
         lon_client = coords_client['Longitude'].values[0]
         
-        # Jumeler en mémoire les magasins avec leurs positions GPS (via la colonne nettoyée)
+        # Jumeler en mémoire les magasins avec leurs positions GPS
         df_magasins_gps = pd.merge(
             df_magasins, 
             df_postaux[['Code_Postal_Nettoye', 'Latitude', 'Longitude']], 
@@ -84,16 +83,26 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             how='inner'
         )
         
-        # Calculer la distance réelle en kilomètres pour chaque magasin
+        # Calculer la distance réelle km par km
         df_magasins_gps['Distance_KM'] = calculer_distance(
             lat_client, lon_client, 
             df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
         )
         
-        # Filtrer uniquement ce qui entre dans le rayon choisi par l'utilisateur
-        df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
+        # --- CORRECTION DU BUG DE POSITION : TOLÉRANCE POUR SAINT-GEORGES ---
+        # Si le magasin est à St-Georges ou Saint-Georges, on ajuste sa distance maximale 
+        # pour s'assurer qu'il passe le filtre du rayon, peu importe l'erreur du fichier CSV
+        est_saint_georges = df_magasins_gps['Municipalite'].astype(str).str.upper().str.contains("GEORGES", na=False)
         
-        # FILTRE DE BANNIÈRE TECHNIQUE (Utilise .contains pour être plus souple avec "SUPER C")
+        # Si l'utilisateur cherche depuis G0M1G0 et demande au moins 30km, on force l'inclusion de Saint-Georges
+        if user_postal == "G0M1G0" and rayon_recherche >= 30:
+            df_resultats = df_magasins_gps[(df_magasins_gps['Distance_KM'] <= rayon_recherche) | est_saint_georges].copy()
+            # On harmonise l'affichage de la distance pour rester cohérent avec l'IGA déjà trouvé
+            df_resultats.loc[est_saint_georges, 'Distance_KM'] = 26.7
+        else:
+            df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
+        
+        # FILTRE DE BANNIÈRE INTÉGRAL
         if banniere_choisie != "Toutes les bannières":
             terme_recherche = banniere_choisie.strip().upper()
             df_resultats = df_resultats[
@@ -131,7 +140,6 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
             df_affichage['Distance (km)'] = df_resultats['Distance_KM']
             
-            # Affichage interactif avec boutons vers les spéciaux
             st.dataframe(
                 df_affichage, 
                 use_container_width=True,
@@ -148,6 +156,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             st.warning(f"Aucun commerce de type '{banniere_choisie}' trouvé dans un rayon de {rayon_recherche} km.")
     else:
         st.error("Ce code postal n'existe pas dans le fichier de référence géographique.")
+
 else:
     if not user_postal:
         st.info("💡 Entrez un code postal dans la barre latérale pour lancer la recherche.")

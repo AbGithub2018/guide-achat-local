@@ -27,41 +27,25 @@ BANNIERE_URLS = {
     "MARCHE ADONIS": "https://groupeadonis.ca"
 }
 
-# Fonction pour uniformiser "St", "Saint", "Ste" et "Sainte"
-def normaliser_texte_quebec(serie_texte):
-    return (
-        serie_texte.astype(str)
-        .str.upper()
-        .str.replace("É", "E", regex=False)
-        .str.replace("È", "E", regex=False)
-        .str.replace("ST-", "SAINT-", regex=False)
-        .str.replace("ST ", "SAINT-", regex=False)
-        .str.replace("STE-", "SAINTE-", regex=False)
-        .str.replace("STE ", "SAINTE-", regex=False)
-        .str.strip()
-    )
-
 # 2. Chargement des deux fichiers avec mise en cache Streamlit
 @st.cache_data
 def load_data():
     try:
-        # Lecture de vos fichiers CSV
+        # Lecture de vos fichiers CSV d'origine
         df_mag = pd.read_csv("disponibilite_magasins.csv", sep=",", encoding="utf-8")
-        df_gps = pd.read_csv("codes_qc.csv") # Votre référentiel de codes postaux
         
-        # Uniformisation des codes postaux pour la liaison en mémoire
-        df_mag['Code_Postal_Nettoye'] = df_mag['Code_Postal'].astype(str).str.replace(" ", "").str.upper().str.strip()
-        df_gps['Code_Postal_Nettoye'] = df_gps['Code postal'].astype(str).str.replace(" ", "").str.upper().str.strip()
+        # Étant donné que codes_qc.csv n'a pas d'en-tête de colonnes explicite (comme vu sur l'image),
+        # nous forçons l'attribution de noms de colonnes standard pour l'indexation.
+        df_gps = pd.read_csv(
+            "codes_qc.csv", 
+            names=["Pays", "Code postal", "Ville", "Province", "Latitude", "Longitude"],
+            header=None
+        )
         
-        # Normalisation préventive des municipalités
-        if 'Municipalite' in df_mag.columns:
-            df_mag['Municipalite_Nettoyee'] = normaliser_texte_quebec(df_mag['Municipalite'])
-        
-        if 'Municipalité' in df_gps.columns:
-            df_gps['Municipalite_Nettoyee'] = normaliser_texte_quebec(df_gps['Municipalité'])
-        elif 'Municipalite' in df_gps.columns:
-            df_gps['Municipalite_Nettoyee'] = normaliser_texte_quebec(df_gps['Municipalite'])
-                    
+        # NETTOYAGE CRUCIAL : On supprime TOUS les espaces pour lier "G5Y 5L6" et "G5Y5L6"
+        df_mag['Code_Postal_Nettoye'] = df_mag['Code_Postal'].astype(str).str.replace(" ", "", regex=False).str.upper().str.strip()
+        df_gps['Code_Postal_Nettoye'] = df_gps['Code postal'].astype(str).str.replace(" ", "", regex=False).str.upper().str.strip()
+                            
         return df_mag, df_gps
     except Exception as e:
         st.error(f"Erreur de chargement des fichiers : {e}")
@@ -81,7 +65,7 @@ def calculer_distance(lat1, lon1, lat2, lon2):
 
 # 3. Formulaire de recherche dans la barre latérale (Sidebar)
 st.sidebar.header("Critères de recherche")
-user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "").replace(" ", "").upper().strip()
+user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "").replace(" ", "", regex=False).upper().strip()
 rayon_recherche = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=50, value=15)
 
 # Menu déroulant pour choisir une bannière spécifique
@@ -95,7 +79,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
     coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
     
     if not coords_client.empty:
-        # CORRECTION DE L'INDEXATION : Retour à la méthode d'origine stable
+        # Récupération sécurisée des coordonnées scalaires
         lat_client = coords_client.iloc[0]['Latitude']
         lon_client = coords_client.iloc[0]['Longitude']
         
@@ -116,7 +100,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
         # Filtrer uniquement ce qui entre dans le rayon choisi
         df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
         
-        # FILTRE DE BANNIÈRE SÉCURISÉ
+        # FILTRE DE BANNIÈRE INTÉGRAL
         if banniere_choisie != "Toutes les bannières":
             terme_recherche = banniere_choisie.strip().upper()
             df_resultats = df_resultats[
@@ -134,8 +118,15 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             # Reconstruction du format d'affichage postal officiel (A1A 1A1)
             df_resultats['Code_Postal_Formatte'] = df_resultats['Code_Postal'].astype(str).apply(lambda c: f"{c[:3]} {c[3:]}" if len(c)==6 else c)
             
-            # NETTOYAGE POUR LE JUMELAGE DES LIENS
-            nom_nettoye = normaliser_texte_quebec(df_resultats['Nom_Commerce'])
+            # NETTOYAGE DES MAJUSCULES POUR L'APPARIEMENT DES LIENS
+            nom_nettoye = (
+                df_resultats['Nom_Commerce']
+                .astype(str)
+                .str.upper()
+                .str.replace("É", "E", regex=False)
+                .str.replace("È", "E", regex=False)
+                .str.strip()
+            )
             df_resultats['Lien_Speciaux'] = nom_nettoye.map(BANNIERE_URLS).fillna("https://google.com")
             
             # Sélection ordonnée des colonnes pour le rendu visuel
@@ -143,11 +134,11 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             df_affichage['Nom du commerce'] = df_resultats['Nom_Commerce']
             df_affichage['Spéciaux 🏷️'] = df_resultats['Lien_Speciaux']
             df_affichage['Adresse Civique'] = df_resultats['Adresse_Rue']
-            df_affichage['Municipalité'] = df_resultats['Municipalite'].astype(str).str.title()
+            df_affichage['Municipalité'] = df_resultats['Municipalite']
             df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
             df_affichage['Distance (km)'] = df_resultats['Distance_KM']
             
-            # Affichage interactif Streamlit
+            # Affichage interactif avec la colonne de liens configurée
             st.dataframe(
                 df_affichage, 
                 use_container_width=True,

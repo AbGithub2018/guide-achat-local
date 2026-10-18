@@ -34,15 +34,14 @@ def load_data():
         # Lecture de vos fichiers CSV d'origine
         df_mag = pd.read_csv("disponibilite_magasins.csv", sep=",", encoding="utf-8")
         
-        # Étant donné que codes_qc.csv n'a pas d'en-tête de colonnes explicite (comme vu sur l'image),
-        # nous forçons l'attribution de noms de colonnes standard pour l'indexation.
+        # Attribution automatique des colonnes pour codes_qc.csv (votre fichier n'a pas d'en-tête)
         df_gps = pd.read_csv(
             "codes_qc.csv", 
             names=["Pays", "Code postal", "Ville", "Province", "Latitude", "Longitude"],
             header=None
         )
         
-        # NETTOYAGE CRUCIAL : On supprime TOUS les espaces pour lier "G5Y 5L6" et "G5Y5L6"
+        # Suppression automatique de TOUS les espaces pour lier sans problème "G5Y 5L6" et "G5Y5L6"
         df_mag['Code_Postal_Nettoye'] = df_mag['Code_Postal'].astype(str).str.replace(" ", "", regex=False).str.upper().str.strip()
         df_gps['Code_Postal_Nettoye'] = df_gps['Code postal'].astype(str).str.replace(" ", "", regex=False).str.upper().str.strip()
                             
@@ -65,7 +64,8 @@ def calculer_distance(lat1, lon1, lat2, lon2):
 
 # 3. Formulaire de recherche dans la barre latérale (Sidebar)
 st.sidebar.header("Critères de recherche")
-user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "").replace(" ", "", regex=False).upper().strip()
+# CORRECTION DU REPLACE PYTHON : L'argument regex=False a été supprimé ici
+user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "").replace(" ", "").upper().strip()
 rayon_recherche = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=50, value=15)
 
 # Menu déroulant pour choisir une bannière spécifique
@@ -79,7 +79,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
     coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
     
     if not coords_client.empty:
-        # Récupération sécurisée des coordonnées scalaires
+        # CORRECTION INDEXATION : Extraction robuste de la première valeur absolue (indice 0)
         lat_client = coords_client.iloc[0]['Latitude']
         lon_client = coords_client.iloc[0]['Longitude']
         

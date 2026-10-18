@@ -27,13 +27,13 @@ BANNIERE_URLS = {
     "MARCHE ADONIS": "https://groupeadonis.ca"
 }
 
-# Nouvelle fonction pour uniformiser "St", "Saint", "Ste" et "Sainte"
+# Fonction pour uniformiser "St", "Saint", "Ste" et "Sainte"
 def normaliser_texte_quebec(serie_texte):
     return (
         serie_texte.astype(str)
         .str.upper()
-        .str.replace("É", "E")
-        .str.replace("È", "E")
+        .str.replace("É", "E", regex=False)
+        .str.replace("È", "E", regex=False)
         .str.replace("ST-", "SAINT-", regex=False)
         .str.replace("ST ", "SAINT-", regex=False)
         .str.replace("STE-", "SAINTE-", regex=False)
@@ -45,7 +45,7 @@ def normaliser_texte_quebec(serie_texte):
 @st.cache_data
 def load_data():
     try:
-        # Lecture de votre fichier de 8169 lignes (séparateur VIRGULE, UTF-8)
+        # Lecture de vos fichiers CSV
         df_mag = pd.read_csv("disponibilite_magasins.csv", sep=",", encoding="utf-8")
         df_gps = pd.read_csv("codes_qc.csv") # Votre référentiel de codes postaux
         
@@ -53,9 +53,10 @@ def load_data():
         df_mag['Code_Postal_Nettoye'] = df_mag['Code_Postal'].astype(str).str.replace(" ", "").str.upper().str.strip()
         df_gps['Code_Postal_Nettoye'] = df_gps['Code postal'].astype(str).str.replace(" ", "").str.upper().str.strip()
         
-        # [Nouveauté] Normalisation des municipalités dans la base de données
+        # Normalisation préventive des municipalités
         if 'Municipalite' in df_mag.columns:
             df_mag['Municipalite_Nettoyee'] = normaliser_texte_quebec(df_mag['Municipalite'])
+        
         if 'Municipalité' in df_gps.columns:
             df_gps['Municipalite_Nettoyee'] = normaliser_texte_quebec(df_gps['Municipalité'])
         elif 'Municipalite' in df_gps.columns:
@@ -94,7 +95,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
     coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
     
     if not coords_client.empty:
-        # Sélection des coordonnées du premier résultat trouvé
+        # CORRECTION DE L'INDEXATION : Retour à la méthode d'origine stable
         lat_client = coords_client.iloc[0]['Latitude']
         lon_client = coords_client.iloc[0]['Longitude']
         
@@ -142,11 +143,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             df_affichage['Nom du commerce'] = df_resultats['Nom_Commerce']
             df_affichage['Spéciaux 🏷️'] = df_resultats['Lien_Speciaux']
             df_affichage['Adresse Civique'] = df_resultats['Adresse_Rue']
-            
-            # [Nouveauté visuelle] On affiche la municipalité harmonisée (ex: "Saint-Georges" au lieu de "ST GERON")
-            # Pour garder vos noms d'origine à l'écran si désiré, vous pouvez remettre df_resultats['Municipalite']
             df_affichage['Municipalité'] = df_resultats['Municipalite'].astype(str).str.title()
-            
             df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
             df_affichage['Distance (km)'] = df_resultats['Distance_KM']
             

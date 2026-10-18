@@ -7,7 +7,6 @@ st.set_page_config(page_title="Recherche Commerces Réelle", layout="wide")
 st.title("🍎 Recherche géolocalisée de commerces au Québec")
 
 # Dictionnaire de correspondance officiel basé sur votre fichier CSV.
-# Les clés sont nettoyées (MAJUSCULES) pour un appariement infaillible.
 BANNIERE_URLS = {
     "IGA": "https://iga.net",
     "IGA EXTRA": "https://iga.net",
@@ -28,6 +27,20 @@ BANNIERE_URLS = {
     "MARCHE ADONIS": "https://groupeadonis.ca"
 }
 
+# Nouvelle fonction pour uniformiser "St", "Saint", "Ste" et "Sainte"
+def normaliser_texte_quebec(serie_texte):
+    return (
+        serie_texte.astype(str)
+        .str.upper()
+        .str.replace("É", "E")
+        .str.replace("È", "E")
+        .str.replace("ST-", "SAINT-", regex=False)
+        .str.replace("ST ", "SAINT-", regex=False)
+        .str.replace("STE-", "SAINTE-", regex=False)
+        .str.replace("STE ", "SAINTE-", regex=False)
+        .str.strip()
+    )
+
 # 2. Chargement des deux fichiers avec mise en cache Streamlit
 @st.cache_data
 def load_data():
@@ -39,6 +52,14 @@ def load_data():
         # Uniformisation des codes postaux pour la liaison en mémoire
         df_mag['Code_Postal_Nettoye'] = df_mag['Code_Postal'].astype(str).str.replace(" ", "").str.upper().str.strip()
         df_gps['Code_Postal_Nettoye'] = df_gps['Code postal'].astype(str).str.replace(" ", "").str.upper().str.strip()
+        
+        # [Nouveauté] Normalisation des municipalités dans la base de données
+        if 'Municipalite' in df_mag.columns:
+            df_mag['Municipalite_Nettoyee'] = normaliser_texte_quebec(df_mag['Municipalite'])
+        if 'Municipalité' in df_gps.columns:
+            df_gps['Municipalite_Nettoyee'] = normaliser_texte_quebec(df_gps['Municipalité'])
+        elif 'Municipalite' in df_gps.columns:
+            df_gps['Municipalite_Nettoyee'] = normaliser_texte_quebec(df_gps['Municipalite'])
                     
         return df_mag, df_gps
     except Exception as e:
@@ -94,7 +115,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
         # Filtrer uniquement ce qui entre dans le rayon choisi
         df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
         
-        # FILTRE DE BANNIÈRE SÉCURISÉ (Régle le problème de SUPER C)
+        # FILTRE DE BANNIÈRE SÉCURISÉ
         if banniere_choisie != "Toutes les bannières":
             terme_recherche = banniere_choisie.strip().upper()
             df_resultats = df_resultats[
@@ -112,16 +133,8 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             # Reconstruction du format d'affichage postal officiel (A1A 1A1)
             df_resultats['Code_Postal_Formatte'] = df_resultats['Code_Postal'].astype(str).apply(lambda c: f"{c[:3]} {c[3:]}" if len(c)==6 else c)
             
-            # NETTOYAGE POUR LE JUMELAGE DES LIENS (Gère les minuscules et les accents du CSV)
-            nom_nettoye = (
-                df_resultats['Nom_Commerce']
-                .astype(str)
-                .str.upper()
-                .str.replace("É", "E")
-                .str.replace("È", "E")
-                .str.strip()
-            )
-            
+            # NETTOYAGE POUR LE JUMELAGE DES LIENS
+            nom_nettoye = normaliser_texte_quebec(df_resultats['Nom_Commerce'])
             df_resultats['Lien_Speciaux'] = nom_nettoye.map(BANNIERE_URLS).fillna("https://google.com")
             
             # Sélection ordonnée des colonnes pour le rendu visuel
@@ -129,11 +142,15 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             df_affichage['Nom du commerce'] = df_resultats['Nom_Commerce']
             df_affichage['Spéciaux 🏷️'] = df_resultats['Lien_Speciaux']
             df_affichage['Adresse Civique'] = df_resultats['Adresse_Rue']
-            df_affichage['Municipalité'] = df_resultats['Municipalite']
+            
+            # [Nouveauté visuelle] On affiche la municipalité harmonisée (ex: "Saint-Georges" au lieu de "ST GERON")
+            # Pour garder vos noms d'origine à l'écran si désiré, vous pouvez remettre df_resultats['Municipalite']
+            df_affichage['Municipalité'] = df_resultats['Municipalite'].astype(str).str.title()
+            
             df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
             df_affichage['Distance (km)'] = df_resultats['Distance_KM']
             
-            # Affichage interactif Streamlit avec boutons de redirection
+            # Affichage interactif Streamlit
             st.dataframe(
                 df_affichage, 
                 use_container_width=True,

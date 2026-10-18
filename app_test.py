@@ -16,7 +16,7 @@ BANNIERE_URLS = {
     "METRO": "https://metro.ca",
     "MAXI": "https://maxi.ca",
     "PROVIGO": "https://provigo.ca",
-    "DOLLARAMA": "https://dollarama.com",
+    "DOLLARAMA": "https://www.dollarama.com/fr-ca/",
     "MARCHE AMI": "https://marcheami.ca",
     "TIGRE GEANT": "https://gianttiger.com",
     "WALMART": "https://walmart.ca",

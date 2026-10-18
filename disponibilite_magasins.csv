@@ -57,8 +57,8 @@ DOLLARAMA,396 boul. Jessop,Rimouski,G5L1N1
 DOLLARAMA,5010B-419 boul. Jessop,Rimouski,G5L7Y5
 DOLLARAMA,298 boul. Theriault,Rivière-du-Loup,G5R4C2
 DOLLARAMA,101 boul. Taché,Montmagny,G5V3T8
-DOLLARAMA,8585 boul. Lacroix Local 060,Saint-Georges,G5Y5L6
-DOLLARAMA,11400 1e Avenue,Saint-Georges,G5Y5S4
+DOLLARAMA,8585 boul. Lacroix Local 060,St-Georges,G5Y5L6
+DOLLARAMA,11400 1e Avenue,St-Georges,G5Y5S4
 DOLLARAMA,5325 rue Papineau,Lac-Mégantic,G6B0C8
 DOLLARAMA,1116 boul. Vachon N,Sainte-Marie,G6E1N7
 DOLLARAMA,224 boul. Frontenac O,Thetford Mines,G6G6N7
@@ -285,9 +285,9 @@ IGA,295A boul. Armand-Thériault,Rivière-du-Loup,G5R5H3
 IGA,254 BOUL. de l'Hôtel-de-Ville O,Rivière-du-Loup,G5R5L7
 IGA,101 boul. Taché O,Montmagny,G5V3T8
 IGA,630D boul. Renault,Beauceville,G5X1M6
-IGA,911 150e Rue,Saint-Georges,G5Y0J1
-IGA,1950 Bd Dionne,Saint-Georges,G5Y3W8
-IGA,8980 Bd Lacroix,Saint-Georges,G5Y5E2
+IGA,911 150e Rue,St-Georges,G5Y0J1
+IGA,1950 Bd Dionne,St-Georges,G5Y3W8
+IGA,8980 Bd Lacroix,St-Georges,G5Y5E2
 IGA,1000 Bd Vachon N,Sainte-Marie,G6E1M2
 IGA,365 boul. Frontenac O,Thetford Mines,G6G6K2
 IGA,174 rue Notre-Dame E,Victoriaville,G6P4A1
@@ -894,7 +894,7 @@ METRO,465 boul. Saint-Germain,Rimouski,G5L3P2
 METRO,92 2e Rue O,Rimouski,G5L8B3
 METRO,395 montée Industrielle-et-Commerciale,Rimouski,G5M1Y1
 METRO,298 boul. Armand-Thériault,Rivière-du-Loup,G5R4C2
-METRO,8585 boul. Lacroix,Saint-Georges,G5Y5L6
+METRO,8585 boul. Lacroix,St-Georges,G5Y5L6
 METRO,1116 boul. Vachon N,Sainte-Marie,G6E1N7
 METRO,240 boul. Frontenac E,Thetford Mines,G6G1N4
 METRO,3774 boul. Frontenac O,Thetford Mines,G6H2J8
@@ -1175,7 +1175,7 @@ SUPER C,1760 boul. Benoît-Gaboury,Mont-Joli,G5H3S7
 SUPER C,465 boul. Saint-Germain,Rimouski,G5L3P2
 SUPER C,395 montée Industrielle-et-Commerciale,Rimouski,G5M1Y1
 SUPER C,298 boul. Armand-Thériault,Rivière-du-Loup,G5R4C2
-SUPER C,8585 boul. Lacroix,Saint-Georges,G5Y5L6
+SUPER C,8585 boul. Lacroix,St-Georges,G5Y5L6
 SUPER C,1116 boul. Vachon N,Sainte-Marie,G6E1N7
 SUPER C,240 boul. Frontenac E,Thetford Mines,G6G1N4
 SUPER C,3774 boul. Frontenac O,Thetford Mines,G6H2J8
@@ -1290,7 +1290,7 @@ TIGRE GÉANT,1254 boulevard Louis XIV,Québec,G2L1M2
 TIGRE GÉANT,511 route 138,Donnacona,G3M1C7
 TIGRE GÉANT,1011 av. du Phare O,Matane,G4W3M6
 TIGRE GÉANT,298 boul. Armand-Thériault,Rivière-du-Loup,G5R4C2
-TIGRE GÉANT,11400 av. 1re,Saint-Georges,G5Y5S4
+TIGRE GÉANT,11400 av. 1re,St-Georges,G5Y5S4
 TIGRE GÉANT,100 rue 1re O,Thetford Mines,G6G4Y2
 TIGRE GÉANT,635 boulevard Jutras E,Victoriaville,G6P7H4
 TIGRE GÉANT,15-7777 boul. Guillaume-Couture,Lévis,G6V6Z1
@@ -1356,7 +1356,7 @@ WALMART,150 rue Piuze,Matane,G4W4T2
 WALMART,630 boul. Laflèche,Baie-Comeau,G5C2Y3
 WALMART,415 montée Industrielle-et-Commerciale,Rimouski,G5M1Y1
 WALMART,100 rue des Cerisiers,Rivière-du-Loup,G5R6E8
-WALMART,750 107e Rue,Saint-Georges,G5Y0A1
+WALMART,750 107e Rue,St-Georges,G5Y0A1
 WALMART,3130 rue Laval,Lac-Mégantic,G6B1A4
 WALMART,1025 boul. Frontenac E,Thetford Mines,G6G6S7
 WALMART,110 boulevard Arthabaska Ouest,Victoriaville,G6S0P2

@@ -66,23 +66,7 @@ rayon_recherche = st.sidebar.slider("Rayon maximum de recherche (km)", min_value
 liste_bannieres = ["Toutes les bannières", "IGA", "IGA EXTRA", "IGA EXPRESS", "SUPER C", "METRO", "MAXI", "PROVIGO", "DOLLARAMA", "MARCHE AMI", "TIGRE GEANT", "WALMART", "COSTCO", "MARCHE TRADITION", "MARCHE BONICHOIX", "MARCHE RICHELIEU", "MARCHE ADONIS"]
 banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannieres)
 
-# 4. Traitement cartographique et calcul de distance
-if user_postal and not df_postaux.empty and not df_magasins.empty:
-    
-    # Extraire les coordonnées GPS du code postal entré par l'utilisateur
-    coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
-    
-    if not coords_client.empty:
-        lat_client = coords_client.iloc[0]['Latitude']
-        lon_client = coords_client.iloc[0]['Longitude']
-        
-        # Jumeler en mémoire les magasins avec leurs positions GPS
-        df_magasins_gps = pd.merge(
-            df_magasins, 
-            df_postaux[['Code_Postal_Nettoye', 'Latitude', 'Longitude']], 
-            on='Code_Postal_Nettoye', 
-            how='inner'
-        )
+        # --- REPRENDRE JUSTE APRÈS LA LIGNE 85 DE VOTRE IMAGE ---
         
         # Calculer la distance réelle km par km
         df_magasins_gps['Distance_KM'] = calculer_distance(
@@ -93,9 +77,13 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
         # Filtrer uniquement ce qui entre dans le rayon choisi
         df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
         
-        # Application du filtre de bannière si l'utilisateur en choisit une
+        # CORRECTION DU FILTRE DE BANNIÈRE :
         if banniere_choisie != "Toutes les bannières":
-            df_resultats = df_resultats[df_resultats['Nom_Commerce'].astype(str).str.upper().str.contains(banniere_choisie)]
+            terme_recherche = banniere_choisie.strip().upper()
+            # Nettoyage strict pour éviter que les espaces ou la casse bloquent "SUPER C"
+            df_resultats = df_resultats[
+                df_resultats['Nom_Commerce'].astype(str).str.upper().str.strip() == terme_recherche
+            ]
         
         # Tri du plus proche au plus lointain
         df_resultats = df_resultats.sort_values(by='Distance_KM')
@@ -108,9 +96,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             # Reconstruction du format d'affichage postal officiel (A1A 1A1)
             df_resultats['Code_Postal_Formatte'] = df_resultats['Code_Postal'].astype(str).apply(lambda c: f"{c[:3]} {c[3:]}" if len(c)==6 else c)
             
-            # --- NETTOYAGE SÉCURISÉ POUR LE JUMELAGE ---
-            # 1. On remplace les caractères accentués courants pour la comparaison
-            # 2. On transforme en majuscules pour que "Marché Ami" ou "MARCHÉ AMI" matchent "MARCHE AMI"
+            # NETTOYAGE POUR LE JUMELAGE DES LIENS DES SITES/CIRCULAIRES
             nom_nettoye = (
                 df_resultats['Nom_Commerce']
                 .astype(str)
@@ -120,19 +106,18 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
                 .str.strip()
             )
             
-            # On applique la correspondance URL, si absent on renvoie vers Google
             df_resultats['Lien_Speciaux'] = nom_nettoye.map(BANNIERE_URLS).fillna("https://google.com")
             
             # Sélection ordonnée des colonnes pour le rendu visuel
             df_affichage = pd.DataFrame()
             df_affichage['Nom du commerce'] = df_resultats['Nom_Commerce']
-            df_affichage['Spéciaux 🏷️'] = df_resultats['Lien_Speciaux']  # Nouvelle colonne injectée
+            df_affichage['Spéciaux 🏷️'] = df_resultats['Lien_Speciaux']
             df_affichage['Adresse Civique'] = df_resultats['Adresse_Rue']
             df_affichage['Municipalité'] = df_resultats['Municipalite']
             df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
             df_affichage['Distance (km)'] = df_resultats['Distance_KM']
             
-            # Affichage interactif avec le LinkColumn
+            # Affichage dans l'application avec la colonne de liens cliquables
             st.dataframe(
                 df_affichage, 
                 use_container_width=True,
@@ -141,7 +126,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
                     "Spéciaux 🏷️": st.column_config.LinkColumn(
                         "Spéciaux 🏷️",
                         help="Cliquez pour ouvrir la circulaire officielle de ce commerce",
-                        display_text="Voir les rabais"  # Le lien brut est masqué par ce bouton texte propre
+                        display_text="Voir les rabais"
                     )
                 }
             )

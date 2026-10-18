@@ -34,8 +34,16 @@ def load_data():
         # Lecture de votre fichier de magasins
         df_mag = pd.read_csv("disponibilite_magasins.csv", sep=",", encoding="utf-8")
         
-        # RECTIFICATION : Lecture naturelle de l'en-tête présent dans votre fichier codes_qc.csv
-        df_gps = pd.read_csv("codes_qc.csv", sep=",", encoding="utf-8")
+        # SOLUTION BLINDÉE : On ignore la première ligne d'en-tête problématique (skiprows=1)
+        # et on définit manuellement les 7 colonnes exactes de votre structure.
+        df_gps = pd.read_csv(
+            "codes_qc.csv", 
+            sep=",", 
+            encoding="utf-8",
+            names=["Pays", "Code postal", "Ville", "Province", "Code Province", "Latitude", "Longitude"],
+            skiprows=1,
+            header=None
+        )
         
         # Suppression automatique de TOUS les espaces pour lier sans problème "G5Y 5L6" et "G5Y5L6"
         df_mag['Code_Postal_Nettoye'] = df_mag['Code_Postal'].astype(str).str.replace(" ", "", regex=False).str.upper().str.strip()
@@ -74,7 +82,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
     coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
     
     if not coords_client.empty:
-        # Extraction sécurisée des coordonnées GPS
+        # Extraction sécurisée des coordonnées GPS (via l'index de colonne)
         lat_client = coords_client.iloc[0]['Latitude']
         lon_client = coords_client.iloc[0]['Longitude']
         

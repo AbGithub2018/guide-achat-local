@@ -66,7 +66,24 @@ rayon_recherche = st.sidebar.slider("Rayon maximum de recherche (km)", min_value
 liste_bannieres = ["Toutes les bannières", "IGA", "IGA EXTRA", "IGA EXPRESS", "SUPER C", "METRO", "MAXI", "PROVIGO", "DOLLARAMA", "MARCHE AMI", "TIGRE GEANT", "WALMART", "COSTCO", "MARCHE TRADITION", "MARCHE BONICHOIX", "MARCHE RICHELIEU", "MARCHE ADONIS"]
 banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannieres)
 
-        # --- REPRENDRE JUSTE APRÈS LA LIGNE 85 DE VOTRE IMAGE ---
+# 4. Traitement cartographique et calcul de distance
+if user_postal and not df_postaux.empty and not df_magasins.empty:
+    
+    # Extraire les coordonnées GPS du code postal entré par l'utilisateur
+    coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
+    
+    if not coords_client.empty:
+        # Sélection des coordonnées du premier résultat trouvé
+        lat_client = coords_client.iloc[0]['Latitude']
+        lon_client = coords_client.iloc[0]['Longitude']
+        
+        # Jumeler en mémoire les magasins avec leurs positions GPS
+        df_magasins_gps = pd.merge(
+            df_magasins, 
+            df_postaux[['Code_Postal_Nettoye', 'Latitude', 'Longitude']], 
+            on='Code_Postal_Nettoye', 
+            how='inner'
+        )
         
         # Calculer la distance réelle km par km
         df_magasins_gps['Distance_KM'] = calculer_distance(
@@ -77,10 +94,9 @@ banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannier
         # Filtrer uniquement ce qui entre dans le rayon choisi
         df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
         
-        # CORRECTION DU FILTRE DE BANNIÈRE :
+        # FILTRE DE BANNIÈRE SÉCURISÉ (Régle le problème de SUPER C)
         if banniere_choisie != "Toutes les bannières":
             terme_recherche = banniere_choisie.strip().upper()
-            # Nettoyage strict pour éviter que les espaces ou la casse bloquent "SUPER C"
             df_resultats = df_resultats[
                 df_resultats['Nom_Commerce'].astype(str).str.upper().str.strip() == terme_recherche
             ]
@@ -96,7 +112,7 @@ banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannier
             # Reconstruction du format d'affichage postal officiel (A1A 1A1)
             df_resultats['Code_Postal_Formatte'] = df_resultats['Code_Postal'].astype(str).apply(lambda c: f"{c[:3]} {c[3:]}" if len(c)==6 else c)
             
-            # NETTOYAGE POUR LE JUMELAGE DES LIENS DES SITES/CIRCULAIRES
+            # NETTOYAGE POUR LE JUMELAGE DES LIENS (Gère les minuscules et les accents du CSV)
             nom_nettoye = (
                 df_resultats['Nom_Commerce']
                 .astype(str)
@@ -117,7 +133,7 @@ banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannier
             df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
             df_affichage['Distance (km)'] = df_resultats['Distance_KM']
             
-            # Affichage dans l'application avec la colonne de liens cliquables
+            # Affichage interactif Streamlit avec boutons de redirection
             st.dataframe(
                 df_affichage, 
                 use_container_width=True,

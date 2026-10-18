@@ -36,13 +36,10 @@ COSTCO,22400 CH. Dumberry,Vaudreuil-Dorion,J7V0M8
 COSTCO,1000 boul. Saint-Bruno,Saint-Bruno,J3V6J6
 COSTCO,3800 boul. de Monseigneur-Fortier,Sherbrooke,J1L0C8
 COSTCO,425 BOUL. Arthur-Buies E,Rimouski,G5M0Y8
-SUPER C,584 rue Principale O,Farnham,J2N1K9
-SUPER C,3-840 boul. de l'Ange-Gradien N,L'Assomption,J5W1P6
-SUPER C,275 rue Saint-Antoine N,Lavaltrie,J5T2G8
+SUPER C,34 chemin Lavaltrie,Lavaltrie,J5T 2H1
+SUPER C,2975 Boul. Des Récollets,Trois-Rivières,G9A 6M1
 SUPER C,505 av. Bethany,Lachute,J8H4A6
-SUPER C,2395 boulevard des Récollets,Trois-Rivières,G8Z4G1
 SUPER C,56A-155 RUE Notre-Dame,Repentigny,J6A5L3
-SUPER C,5081 boul. Saint-Jean-Baptiste,Montréal,H1B5V3
 SUPER C,750 boul. du Saint-Maurice,Trois-Rivières,G9A3P6
 SUPER C,565 boul. Saint-Joseph,Drummondville,J2C2B6
 SUPER C,600 rue Pierre-Caisse,Saint-Jean-sur-Richelieu,J3A1M1
@@ -60,9 +57,12 @@ SUPER C,601 boul. Jutras E,Victoriaville,G6P7H4
 SUPER C,580 boul. Arthur-Sauvé,Saint-Eustache,J7R5A8
 SUPER C,720 boul. Maloney O,Gatineau,J8T8K7
 SUPER C,2125 boul. Roland-Therrien,Longueuil,J4N1P4
+SUPER C,4400 Boul. De La Concorde,Laval,H7C 2R4
+SUPER C,2050 Boulevard Pie IX,Montréal,H1V 2C9
 SUPER C,8330 boul. Taschereau,Brossard,J4X1C2
 SUPER C,1395 boul. Moody,Terrebonne,J6X4C8
-SUPER C,61 2e Rang E,Saint-Jean-Port-Joli,G0R3G0
+SUPER C,971 boulevard Monseigneur-de-Laval,Baie-St-Paul,G3Z 2W3
+SUPER C,10516-101 boul. Ste-Anne,Ste-Anne-de-Beaupré,G0A3C0
 SUPER C,5012 boul. Taschereau,Longueuil,J4V2J2
 SUPER C,2901 ch. de Chambly,Longueuil,J4L1M7
 SUPER C,120 rue Saint-Jude N,Granby,J2J2L5
@@ -73,12 +73,12 @@ SUPER C,350 rue Belvédère S,Sherbrooke,J1H4B5
 SUPER C,3850 boul. Dagenais O,Laval,H7P1W1
 SUPER C,1480 av. Jules-Verne,Québec,G2G2R5
 SUPER C,600 boul. Sir-Wilfrid-Laurier,Beloeil,J3G4J2
+SUPER C,1000 rue Daniel-Johnson Ouest,St-Hyacinthe,J2S 8W7
 SUPER C,147 av. Atwater,Montréal,H3J2J4
 SUPER C,1775 rue du Sud,Cowansville,J2K3G8
 SUPER C,395 montée Industrielle-et-Commerciale,Rimouski,G5M1Y1
 SUPER C,1775 rue King E,Sherbrooke,J1G5G7
 SUPER C,635 av. Newton,Québec,G1P4C4
-SUPER C,11555 boul. Maurice-Duplessis,Montréal,H1C2A1
 SUPER C,1110 aut. Chomedey,Laval,H7X4C9
 SUPER C,575 ch. de Touraine,Boucherville,J4B5E4
 SUPER C,544 Desserte Route 132,Saint-Constant,J5A2S6
@@ -89,13 +89,12 @@ SUPER C,2050 boul. Pie-IX,Montréal,H1V2C8
 SUPER C,1400 boul. Alphonse-Desjardins,Lévis,G6V9X7
 SUPER C,4545 boul. de l'Auvergne,Québec,G2C1H7
 SUPER C,12695 rue Sherbrooke E,Montréal,H1A3V9
-SUPER C,370 rue Métivier,Québec,G1M2V3
+SUPER C,6000 Boul. Henri-Bourassa Est,Montréal-Nord,H1G 2T6
 SUPER C,981 av. Nordique,Québec,G1C0C7
 SUPER C,1000 boul. des Laurentides,Laval,H7G2W1
 SUPER C,59 rue de l'Aqueduc,Varennes,J3X2J3
 SUPER C,420 route 117,Mont-Tremblant,J8E2X5
 SUPER C,2828 av. Champfleury,Québec,G1J5G4
-SUPER C,3785 rue François-Bricault,Montréal,H1B0A2
 SUPER C,7800 boul. Champlain,Montréal,H8P1B3
 SUPER C,8115 boul. Maurice-Duplessis,Montréal,H1E2S6
 SUPER C,2200 boul. du Faubourg,Boisbriand,J7H1S3
@@ -104,8 +103,8 @@ SUPER C,1473 Route 201,Ormstown,J0S1K0
 SUPER C,1116 boul. Vachon N,Sainte-Marie,G6E1N7
 SUPER C,820 av. Taniata,Lévis,G6Z2E2
 SUPER C,3283 boul. Royal,Shawinigan,G9N8K7
-SUPER C,5910 boul. Cousineau,Longueuil,J3Y7R9
-SUPER C,1005 rue Saint-Isidore,Saint-Lin--Laurentides,J5M2V5
+SUPER C,5910 boul. Cousineau,Brossard,J3Y7R9
+SUPER C,1005 rue Saint-Isidore,St-Lin-des-Laurentides,J5M2V5
 SUPER C,14000 boul. Henri-Bourassa,Québec,G1G3Y8
 SUPER C,2315 boul. Louis-Fréchette,Nicolet,J3T1M9
 SUPER C,770 boul. Laure,Sept-Îles,G4R1Y5
@@ -114,16 +113,13 @@ SUPER C,2150 boul. Guillaume-Couture,Lévis,G6W2S6
 SUPER C,1818 3e Avenue,Val-d'Or,J9P7A9
 SUPER C,1515 BOUL. Marcel-Laurin,St-Laurent,H4R0B7
 SUPER C,393 BOUL. du Séminaire N,Saint-Jean-sur-Richelieu,J3B8C5
-SUPER C,110-5333 boul. Laurier,Terrebonne,J7M1W1
+SUPER C,110-5333 boul. Laurier,Laplaine,J7M1W1
 SUPER C,320 rue de la Visitation,Saint-Charles-Borromée,J6E4N7
-SUPER C,11701 boul. Albert-Hudon,Montréal,H1G3K6
-SUPER C,101-10516 BOUL. Ste-Anne,Ste-Anne-de-Beaupré,G5W1A3
+SUPER C,101 BOUL. Ste-Anne-10516,Ste-Anne-de-Beaupré,G0A3C0
 SUPER C,2801 boul. des Promenades,Sainte-Marthe-sur-le-Lac,J0N1P0
 SUPER C,475 rue Soumande,Québec,G1M2X6
 SUPER C,240 boul. Frontenac E,Thetford Mines,G6G1N4
 SUPER C,700 rang Saint-Paul,Saint-Rémi,J0L2L0
-SUPER C,1180 av. Bernard,Montréal,H2V1V3
-SUPER C,1280 AVE Greene,Westmount,H3Z2A4
 SUPER C,250 boul. Fiset,Sorel-Tracy,J3P3P7
 SUPER C,327 BOUL. de York S,Gaspé,G4X2L2
 SUPER C,13910 rue Saint-Simon,Mirabel,J7N1P3
@@ -150,35 +146,27 @@ SUPER C,171 rue Principale,Gatineau,J9H3N2
 SUPER C,1575 Route 277,Lac-Etchemin,G0R1S0
 SUPER C,3774 boul. Frontenac O,Thetford Mines,G6H2J8
 SUPER C,8355 rue Notre-Dame E,Montréal,H1L3L2
-SUPER C,1400 boul. Saint-Jean-Baptiste,Montréal,H1B4A5
-SUPER C,10655 boul. Henri-Bourassa O,Montréal,H4S1A1
-SUPER C,1600 MONTEE Masson,Laval,H7C0K3
 SUPER C,1760 boul. Benoît-Gaboury,Mont-Joli,G5H3S7
-SUPER C,6155 boul. Arthur-Sauvé,Laval,H7R3X8
-SUPER C,1050 rue Principale,Sainte-Agathe-des-Monts,J8C1L6
-SUPER C,400 RUE Edmour-Daoust,Beauharnois,J6N0V1
-SUPER C,617 rue Duvernay,Verchères,J0L2R0
+SUPER C,400 RUE Edmour-Daoust,Beauharnois,J6N2R4
 SUPER C,22 RTE de la Pinière,Pont-Rouge,G3H0M6
 SUPER C,471 RTE 273,Saint-Apollinaire,G0S2E0
 SUPER C,165 boul. Bégin,Sainte-Claire,G0R2V0
 SUPER C,466 ch. de la Grande-Ligne,Rigaud,J0P1P0
 SUPER C,85 rue Wellington,Coaticook,J1A2H6
-SUPER C,155 av. Lépine,Gatineau,J8L3Z6
-SUPER C,105 boul. Roland-Godard,Saint-Jérôme,J7Y0J3
+SUPER C,155 av. Lépine,Gatineau,J8L2Z6
+SUPER C,105 Bd Roland-Godard,Saint-Jérôme,J5L1Y2
 SUPER C,870 rue Principale,Saint-Donat,J0T2C0
 SUPER C,230 rue Notre-Dame,Berthierville,J0K1A0
-SUPER C,440 rte Marie-Victorin,Lévis,G7A2N5
+SUPER C,1400 Boulevard Alphonse-Desjardins,Lévis,G6V9X7
 SUPER C,5300 rue Saint-Hubert,Montréal,H2J2Y5
 SUPER C,465 boul. Saint-Germain,Rimouski,G5L3P2
 SUPER C,499 boul. Gréber,Gatineau,J8T0B3
-SUPER C,6645 av. Somerled,Montréal,H4V1T3
-SUPER C,1295 av. De Lorimier,Montréal,H2K0G1
+SUPER C,1295 Av. De Lorimier,Montréal,H2K3V9
 SUPER C,101-3291 ch. Sainte-Foy,Québec,G1X3V2
 SUPER C,1840 RUE Belvédère S,Sherbrooke,J1H6G7
 SUPER C,2035 rue Atateken,Montréal,H2L3L9
-SUPER C,1000 rue Daniel-Johnson O,Saint-Hyacinthe,J2S0K9
-SUPER C,1233 boul. De Périgny,Chambly,J3L1W7
-SUPER C,107 boul. Cardinal-Léger,Pincourt,J7W3Y3
+SUPER C,1000 rue Daniel-Johnson O,Saint-Hyacinthe,J2S8W7
+SUPER C,107 Boul. Léger,Pincourt,J7W3Y3
 SUPER C,300 Desserte Route 132,Saint-Constant,J5A1M2
 SUPER C,5767 BOUL. BOURQUE,SHERBROOKE,J1N1G8
 SUPER C,100-633 RUE COMMERCIALE N,TEMISCOUATA-SUR-LE-LAC,G0L1E0
@@ -186,27 +174,11 @@ SUPER C,4280 BOUL. ST-JOSEPH,DRUMMONDVILLE,J2B8C9
 SUPER C,1700 rue Sherbrooke,Magog,J1X5B4
 SUPER C,34 ch. de Lavaltrie,Lavaltrie,J5T2H1
 SUPER C,288 RUE Angus S,East-Angus,J0B1R0
-SUPER C,194 av. Saint-Sacrement,Québec,G1N3X6
-SUPER C,51 Route 111 E,La Sarre,J9Z1R9
-SUPER C,166 BOUL. LASALLE,BAIE-COMEAU,G4Z1S5
-SUPER C,2600 boul. Monseigneur-Langlois,Salaberry-de-Valleyfield,J6S5G6
-SUPER C,1900 rue Léon-Harmel,Québec,G1N4K3
-SUPER C,1655 rue Louis-Marchand,Beloeil,J3G6S4
 SUPER C,116 rue Maclaren E,Gatineau,J8L1K1
-SUPER C,1205 rue de Neuville,Gatineau,J8M2E7
-SUPER C,1206 boul. Saint-Luc,Saint-Jean-sur-Richelieu,J2Y1A5
-SUPER C,750 boul. Crémazie O,Montréal,H3N1A2
-SUPER C,220 rue Sainte-Thérèse,Cowansville,J2K1R6
-SUPER C,6300 rue Saint-Jacques,Montréal,H4B1T6
-SUPER C,965 rue Choquette,Saint-Jean-sur-Richelieu,J3A1V6
-SUPER C,565 boul. de Mortagne,Boucherville,J4B1B7
-SUPER C,398 RUE des Saguenéens,Saguenay,G7H5S5
-SUPER C,1100 rue Vincent-Massey,Québec,G1N1N1
+SUPER C,155 avenue Lépine,Gatineau,J8L2Z6
+SUPER C,299 Rue Des Saguenéens,Saguenay,G7H 3A5
 SUPER C,101-20 montée Robert,Saint-Basile-le-Grand,J3N1L7
-SUPER C,1035 rue Rivard,Québec,G1M3G8
 SUPER C,780 rue Casavant,McMasterville,J3G1J8
-SUPER C,41 rue Loranger,Saint-Paul,J0K3E0
-SUPER C,91 rue Principale,Saint-Michel-de-Bellechasse,G0R3S0
 Marché Bonichoix,15 rue Principale Est,Adstock,G0N1S0
 Marché Bonichoix,102 du Moulin,Courcelles,G0M1C0
 Marché Bonichoix,181 rue Principale,Saint-Lazare-de-Bellechasse,G0R3J0
@@ -1020,6 +992,7 @@ IGA,1700 boul. Mercure,Drummondville,J2B3N4
 IGA,7 1ere Avenue,Forestville,G0T1E0
 IGA,1600 boul. Bécancour,Bécancour,G9H3T9
 IGA,920 boul. Saint-Joseph,Gatineau,J8Z1S9
+IGA,350 14e Avenue,La Guadeloupe,G0M1G0
 IGA,255 3e Rue E,La Sarre,J9Z3N7
 IGA,222 2e Avenue,Lac-Etchemin,G0R1S0
 IGA,569 rue Principale,Lachute,J8H1Y6
@@ -1226,7 +1199,6 @@ DOLLARAMA,900-10516 boul. Ste-Anne,Sainte-Anne-de-Beaupré,G0A3C0
 DOLLARAMA,4 15e Rue,Rouyn-Noranda,J9X2J8
 DOLLARAMA,1532 41e Rue,Shawinigan,G9N7Y9
 DOLLARAMA,11400 1e Avenue,Saint-Georges,G5Y5S4
-DOLLARAMA,645 14e Avenue,La Guadeloupe,G0M 1G0
 DOLLARAMA,0167-2700 boul. Laurier,Québec,G1V2L8
 DOLLARAMA,1372 boul. Talbot,Saguenay,G7H4B7
 DOLLARAMA,167 rue de la Reine,Gaspé,G4X2W6

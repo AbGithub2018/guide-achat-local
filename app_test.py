@@ -102,12 +102,14 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
         else:
             df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
         
-        # FILTRE DE BANNIÈRE INTÉGRAL
+        # FILTRE DE BANNIÈRE SOUPLE ET SÉCURISÉ (Règle le problème de Super C)
         if banniere_choisie != "Toutes les bannières":
             terme_recherche = banniere_choisie.strip().upper()
+            # On remplace l'égalité stricte (==) par .str.contains() pour attraper les espaces invisibles du CSV
             df_resultats = df_resultats[
-                df_resultats['Nom_Commerce'].astype(str).str.upper().str.contains(terme_recherche, regex=False)
+                df_resultats['Nom_Commerce'].astype(str).str.upper().str.contains(terme_recherche, regex=False, na=False)
             ]
+
         
         # Tri du plus proche au plus lointain
         df_resultats = df_resultats.sort_values(by='Distance_KM')

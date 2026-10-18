@@ -31,15 +31,11 @@ BANNIERE_URLS = {
 @st.cache_data
 def load_data():
     try:
-        # Lecture de vos fichiers CSV d'origine
+        # Lecture de votre fichier de magasins
         df_mag = pd.read_csv("disponibilite_magasins.csv", sep=",", encoding="utf-8")
         
-        # Attribution automatique des colonnes pour codes_qc.csv (votre fichier n'a pas d'en-tête)
-        df_gps = pd.read_csv(
-            "codes_qc.csv", 
-            names=["Pays", "Code postal", "Ville", "Province", "Latitude", "Longitude"],
-            header=None
-        )
+        # RECTIFICATION : Lecture naturelle de l'en-tête présent dans votre fichier codes_qc.csv
+        df_gps = pd.read_csv("codes_qc.csv", sep=",", encoding="utf-8")
         
         # Suppression automatique de TOUS les espaces pour lier sans problème "G5Y 5L6" et "G5Y5L6"
         df_mag['Code_Postal_Nettoye'] = df_mag['Code_Postal'].astype(str).str.replace(" ", "", regex=False).str.upper().str.strip()
@@ -64,7 +60,6 @@ def calculer_distance(lat1, lon1, lat2, lon2):
 
 # 3. Formulaire de recherche dans la barre latérale (Sidebar)
 st.sidebar.header("Critères de recherche")
-# CORRECTION DU REPLACE PYTHON : L'argument regex=False a été supprimé ici
 user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "").replace(" ", "").upper().strip()
 rayon_recherche = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=50, value=15)
 
@@ -79,7 +74,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
     coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
     
     if not coords_client.empty:
-        # CORRECTION INDEXATION : Extraction robuste de la première valeur absolue (indice 0)
+        # Extraction sécurisée des coordonnées GPS
         lat_client = coords_client.iloc[0]['Latitude']
         lon_client = coords_client.iloc[0]['Longitude']
         
@@ -138,7 +133,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
             df_affichage['Distance (km)'] = df_resultats['Distance_KM']
             
-            # Affichage interactif avec la colonne de liens configurée
+            # Affichage interactif
             st.dataframe(
                 df_affichage, 
                 use_container_width=True,

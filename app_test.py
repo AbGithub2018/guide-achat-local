@@ -6,6 +6,28 @@ import numpy as np
 st.set_page_config(page_title="Recherche Commerces Réelle", layout="wide")
 st.title("🍎 Recherche géolocalisée de commerces au Québec")
 
+# Dictionnaire de correspondance officiel basé sur votre fichier CSV.
+# Les clés sont nettoyées (MAJUSCULES) pour un appariement infaillible.
+BANNIERE_URLS = {
+    "IGA": "https://iga.net",
+    "IGA EXTRA": "https://iga.net",
+    "IGA EXPRESS": "https://iga.net",
+    "IGA COOP": "https://iga.net",
+    "SUPER C": "https://superc.ca",
+    "METRO": "https://metro.ca",
+    "MAXI": "https://maxi.ca",
+    "PROVIGO": "https://provigo.ca",
+    "DOLLARAMA": "https://dollarama.com",
+    "MARCHE AMI": "https://marcheami.ca",
+    "TIGRE GEANT": "https://gianttiger.com",
+    "WALMART": "https://walmart.ca",
+    "COSTCO": "https://costco.ca",
+    "MARCHE TRADITION": "https://marchetradition.com",
+    "MARCHE BONICHOIX": "https://bonichoix.com",
+    "MARCHE RICHELIEU": "https://marcherichelieu.com",
+    "MARCHE ADONIS": "https://groupeadonis.ca"
+}
+
 # 2. Chargement des deux fichiers avec mise en cache Streamlit
 @st.cache_data
 def load_data():
@@ -40,8 +62,8 @@ st.sidebar.header("Critères de recherche")
 user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "").replace(" ", "").upper().strip()
 rayon_recherche = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=50, value=15)
 
-# NOUVEAUTÉ : Menu déroulant pour choisir une bannière spécifique
-liste_bannieres = ["Toutes les bannières", "IGA", "IGA EXTRA", "IGA EXPRESS", "SUPER C", "METRO", "MAXI", "PROVIGO", "DOLLARAMA", "MARCHE AMI", "TIGRE GEANT", "WALMART", "COSTCO", "MARCHE TRADITION", "MARCHE BONICHOIX", "MARCHE RICHELIEU", "IGA EXPRESS", "IGA EXTRA", "MARCHE ADONIS"]
+# Menu déroulant pour choisir une bannière spécifique
+liste_bannieres = ["Toutes les bannières", "IGA", "IGA EXTRA", "IGA EXPRESS", "SUPER C", "METRO", "MAXI", "PROVIGO", "DOLLARAMA", "MARCHE AMI", "TIGRE GEANT", "WALMART", "COSTCO", "MARCHE TRADITION", "MARCHE BONICHOIX", "MARCHE RICHELIEU", "MARCHE ADONIS"]
 banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannieres)
 
 # 4. Traitement cartographique et calcul de distance
@@ -71,7 +93,7 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
         # Filtrer uniquement ce qui entre dans le rayon choisi
         df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
         
-        # NOUVEAUTÉ : Application du filtre de bannière si l'utilisateur en choisit une
+        # Application du filtre de bannière si l'utilisateur en choisit une
         if banniere_choisie != "Toutes les bannières":
             df_resultats = df_resultats[df_resultats['Nom_Commerce'].astype(str).str.upper().str.contains(banniere_choisie)]
         
@@ -86,15 +108,43 @@ if user_postal and not df_postaux.empty and not df_magasins.empty:
             # Reconstruction du format d'affichage postal officiel (A1A 1A1)
             df_resultats['Code_Postal_Formatte'] = df_resultats['Code_Postal'].astype(str).apply(lambda c: f"{c[:3]} {c[3:]}" if len(c)==6 else c)
             
+            # --- NETTOYAGE SÉCURISÉ POUR LE JUMELAGE ---
+            # 1. On remplace les caractères accentués courants pour la comparaison
+            # 2. On transforme en majuscules pour que "Marché Ami" ou "MARCHÉ AMI" matchent "MARCHE AMI"
+            nom_nettoye = (
+                df_resultats['Nom_Commerce']
+                .astype(str)
+                .str.upper()
+                .str.replace("É", "E")
+                .str.replace("È", "E")
+                .str.strip()
+            )
+            
+            # On applique la correspondance URL, si absent on renvoie vers Google
+            df_resultats['Lien_Speciaux'] = nom_nettoye.map(BANNIERE_URLS).fillna("https://google.com")
+            
             # Sélection ordonnée des colonnes pour le rendu visuel
             df_affichage = pd.DataFrame()
             df_affichage['Nom du commerce'] = df_resultats['Nom_Commerce']
+            df_affichage['Spéciaux 🏷️'] = df_resultats['Lien_Speciaux']  # Nouvelle colonne injectée
             df_affichage['Adresse Civique'] = df_resultats['Adresse_Rue']
             df_affichage['Municipalité'] = df_resultats['Municipalite']
             df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
             df_affichage['Distance (km)'] = df_resultats['Distance_KM']
             
-            st.dataframe(df_affichage, use_container_width=True)
+            # Affichage interactif avec le LinkColumn
+            st.dataframe(
+                df_affichage, 
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Spéciaux 🏷️": st.column_config.LinkColumn(
+                        "Spéciaux 🏷️",
+                        help="Cliquez pour ouvrir la circulaire officielle de ce commerce",
+                        display_text="Voir les rabais"  # Le lien brut est masqué par ce bouton texte propre
+                    )
+                }
+            )
         else:
             st.warning(f"Aucun commerce de type '{banniere_choisie}' trouvé dans un rayon de {rayon_recherche} km.")
     else:

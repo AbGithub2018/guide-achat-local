@@ -4,16 +4,15 @@ import numpy as np
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(
-    page_title="Recherche géolocalisée de commerces au Québec",
+    page_title="Recherche géolocalisée et Budget Épicerie",
     page_icon="🍎",
     layout="wide"
 )
 
-# --- INITIALISATION DE LA MEMOIRE DE SESSION ---
-if "liste_epicerie" not in st.session_state:
-    st.session_state["liste_epicerie"] = []  # Liste des magasins planifiés
-if "produits_magasins" not in st.session_state:
-    st.session_state["produits_magasins"] = {}  # Dictionnaire pour stocker les produits par magasin
+# --- INITIALISATION DE LA MÉMOIRE DE SESSION ---
+# Liste globale des articles : chaque article est un dictionnaire {'magasin': ..., 'produit': ..., 'prix': ...}
+if "panier_achats" not in st.session_state:
+    st.session_state["panier_achats"] = []
 
 # --- DICTIONNAIRE DE CORRESPONDANCE DES URLS ---
 BANNIERE_URLS = {
@@ -78,54 +77,72 @@ rayon_max = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, ma
 bannieres_disponibles = ["Toutes les bannières"] + sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
 banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", bannieres_disponibles)
 
-# --- BARRE LATÉRALE : AFFICHAGE DE LA LISTE DE COURSES DYNAMIQUE ---
+
+# --- BARRE LATÉRALE : CRÉATION DE LA LISTE D'ÉPICERIE AVANCÉE ---
 st.sidebar.write("---")
 st.sidebar.header("📝 Ma liste d'épicerie")
 
-if st.session_state["liste_epicerie"]:
-    for magasin in st.session_state["liste_epicerie"]:
+# Formulaire d'ajout rapide d'un article trouvé dans une circulaire
+st.sidebar.subheader("🛒 Ajouter un spécial")
+liste_bannieres_quebec = sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
+magasin_choisi = st.sidebar.selectbox("Choisir le magasin :", [""] + liste_bannieres_quebec, key="select_magasin_form")
+nom_produit = st.sidebar.text_input("Nom de l'article :", placeholder="Ex: Poitrines de poulet")
+prix_produit = st.sidebar.number_input("Prix en spécial ($) :", min_value=0.00, value=0.00, step=0.05, format="%.2f")
+
+if st.sidebar.button("➕ Ajouter à la liste", use_container_width=True):
+    if magasin_choisi == "":
+        st.sidebar.error("Veuillez sélectionner un magasin.")
+    elif nom_produit.strip() == "":
+        st.sidebar.error("Veuillez entrer le nom d'un produit.")
+    elif prix_produit <= 0:
+        st.sidebar.error("Veuillez entrer un prix supérieur à 0 $.")
+    else:
+        # Enregistrement dans la mémoire de session
+        nouvel_achat = {
+            "magasin": magasin_choisi,
+            "produit": nom_produit.strip(),
+            "prix": prix_produit
+        }
+        st.session_state["panier_achats"].append(nouvel_achat)
+        st.toast(f"✅ {nom_produit} ajouté pour {magasin_choisi} !", icon="🛒")
+        st.rerun()
+
+st.sidebar.write("---")
+
+# Affichage du Panier et calcul du Total général
+if st.session_state["panier_achats"]:
+    st.sidebar.subheader("🛍️ Mes achats planifiés")
+    
+    # Organiser les produits par magasin pour l'affichage
+    df_panier = pd.DataFrame(st.session_state["panier_achats"])
+    total_facture = df_panier["prix"].sum()
+    
+    for magasin, groupe in df_panier.groupby("magasin"):
         st.sidebar.markdown(f"🔹 **{magasin}**")
-        
-        # 1. Affichage des produits déjà enregistrés pour ce magasin
-        if magasin in st.session_state["produits_magasins"] and st.session_state["produits_magasins"][magasin]:
-            for produit in st.session_state["produits_magasins"][magasin]:
-                st.sidebar.write(f"&nbsp;&nbsp;&nbsp;&nbsp;• {produit}")
-        else:
-            st.sidebar.caption("&nbsp;&nbsp;&nbsp;&nbsp;Aucun produit ajouté")
+        for idx, row in groupe.iterrows():
+            st.sidebar.write(f"&nbsp;&nbsp;&nbsp;&nbsp;• {row['produit']} — **{row['prix']:.2f} $**")
             
-        # 2. Case de saisie pour ajouter un nouvel article
-        cle_input_produit = f"input_prod_{magasin}"
-        nouveau_produit = st.sidebar.text_input("Ajouter un article :", key=cle_input_produit, label_visibility="collapsed", placeholder="Ex: Lait, Côtes de porc...")
-        
-        if nouveau_produit:
-            if magasin not in st.session_state["produits_magasins"]:
-                st.session_state["produits_magasins"][magasin] = []
-            if nouveau_produit not in st.session_state["produits_magasins"][magasin]:
-                st.session_state["produits_magasins"][magasin].append(nouveau_produit)
-                st.rerun()
-                
-        st.sidebar.write("")
-        
-    st.sidebar.write("---")
+    st.sidebar.write("")
+    st.sidebar.markdown(f"### 💰 Total estimé : **{total_facture:.2f} $**")
+    
+    # Bouton pour tout vider
     if st.sidebar.button("🗑️ Vider la liste", use_container_width=True):
-        st.session_state["liste_epicerie"] = []
-        st.session_state["produits_magasins"] = {}
+        st.session_state["panier_achats"] = []
         st.rerun()
 else:
-    st.sidebar.caption("Votre liste est vide. Cliquez sur ➕ sous un commerce pour commencer à planifier vos articles.")
+    st.sidebar.caption("Votre liste d'épicerie est vide. Feuilletez les circulaires à droite, notez les meilleurs rabais ici et suivez votre budget !")
 
 
-# --- ZONE PRINCIPALE ---
+# --- ZONE PRINCIPALE : RÉSULTATS DE RECHERCHE ---
 st.title("🍎 Recherche géolocalisée de commerces au Québec")
 
 if code_recherche:
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        # CORRECTION SÉCURISÉE ICI : Extraction par position numérique avec l'index [0]
-        lat_centre = float(point_origine.iloc[0]['Latitude'])
-        lon_centre = float(point_origine.iloc[0]['Longitude'])
-        ville_centre = point_origine.iloc[0]['Ville']
+        lat_centre = float(point_origine.iloc['Latitude'])
+        lon_centre = float(point_origine.iloc['Longitude'])
+        ville_centre = point_origine.iloc['Ville']
         
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
@@ -163,24 +180,12 @@ if code_recherche:
                     with col2:
                         st.write("")
                         
-                        # Bouton 1 : Lien de la circulaire
+                        # Bouton pour ouvrir le lien vers la circulaire
                         cle_banniere = str(nom_magasin).strip().upper()
                         if cle_banniere in BANNIERE_URLS:
-                            st.link_button(f"🔗 Circulaire {nom_magasin}", BANNIERE_URLS[cle_banniere], use_container_width=True)
+                            st.link_button(f"🔗 Ouvrir la circulaire {nom_magasin}", BANNIERE_URLS[cle_banniere], use_container_width=True)
                         else:
                             st.caption("Aucun lien disponible")
-                        
-                        # Bouton 2 : Ajouter le magasin à la liste
-                        identifiant_bouton = f"btn_liste_{index}"
-                        texte_magasin = f"{nom_magasin} ({municipalite})"
-                        
-                        if st.button(f"➕ Planifier ce magasin", key=identifiant_bouton, use_container_width=True):
-                            if texte_magasin not in st.session_state["liste_epicerie"]:
-                                st.session_state["liste_epicerie"].append(texte_magasin)
-                                st.toast(f"✅ {nom_magasin} ajouté à votre sélection !", icon="🛒")
-                                st.rerun()
-                            else:
-                                st.toast("💡 Ce commerce est déjà dans votre liste !", icon="ℹ️")
                                 
                     st.divider()
         else:

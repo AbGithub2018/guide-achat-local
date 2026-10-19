@@ -83,10 +83,10 @@ if banniere_selectionnee != "Toutes les bannières":
 # --- ZONE PRINCIPALE ---
 st.title("🍎 Planificateur de Budget Épicerie")
 
-# 🚀 REDIRECTION CORRIGÉE VERS VOTRE APPLICATION OFFICIELLE PRINCIPALE
+# Redirection vers votre application officielle
 st.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner un Code-Barres / Pays d'Origine)", 
-    "https://achatquebec.streamlit.app",
+    "https://streamlit.app",
     type="primary",
     use_container_width=True
 )
@@ -141,9 +141,8 @@ with col_gauche:
                 with col_item_text:
                     st.write(f"• {row['produit']} — **{row['prix']:.2f} $**")
                 with col_item_check:
-                    # Redirection vers la recherche de votre application officielle corrigée
                     nom_nettoye_url = urllib.parse.quote(row['produit'])
-                    st.link_button("🧐 Vérifier l'origine", f"https://streamlit.app{nom_nettoye_url}", use_container_width=True)
+                    st.link_button("🧐 Vérifier l'origine", f"https://streamlit.app?recherche={nom_nettoye_url}", use_container_width=True)
             st.write("")
                 
         st.markdown(f"### 💰 Total estimé de ma facture : **{total_facture:.2f} $**")
@@ -160,9 +159,10 @@ with col_gauche:
         point_origine = df_coords[df_coords['Code postal'] == code_recherche]
         
         if not point_origine.empty:
-            lat_centre = float(point_origine.iloc['Latitude'])
-            lon_centre = float(point_origine.iloc['Longitude'])
-            ville_centre = point_origine.iloc['Ville']
+            # CORRECTION APPLIQUÉE ICI : Ajout du [0] pour indexer correctement la ligne avec .iloc
+            lat_centre = float(point_origine.iloc[0]['Latitude'])
+            lon_centre = float(point_origine.iloc[0]['Longitude'])
+            ville_centre = point_origine.iloc[0]['Ville']
             
             st.caption(f"Position : {ville_centre} ({saisie_utilisateur.upper()})")
             

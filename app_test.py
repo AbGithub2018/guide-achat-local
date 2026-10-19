@@ -11,20 +11,20 @@ st.set_page_config(
 
 # --- DICTIONNAIRE DE CORRESPONDANCE DES URLS (CORRIGÉ AVEC ACCENTS) ---
 BANNIERE_URLS = {
-    "IGA": "https://iga.net",
-    "SUPER C": "https://superc.ca",
-    "METRO": "https://metro.ca",
-    "MAXI": "https://maxi.ca",
-    "PROVIGO": "https://provigo.ca",
+    "IGA": "https://www.iga.ca/fr/circulaire",
+    "SUPER C": "https://www.superc.ca/circulaire",
+    "METRO": "https://www.metro.ca/circulaire",
+    "MAXI": "https://www.maxi.ca/fr/print-flyer?navid=flyout-L2-Flyer",
+    "PROVIGO": "https://www.provigo.ca/fr/print-flyer?navid=flyout-L2-Flyer",
     "DOLLARAMA": "https://www.dollarama.com/fr-ca/",
-    "MARCHE AMI": "https://marcheami.ca",
-    "TIGRE GEANT": "https://www.gianttiger.com/fr",
-    "WALMART": "https://www.walmart.ca/fr",
-    "COSTCO": "https://www.costco.ca/?langId=-25",
-    "MARCHÉ TRADITION": "https://marchetradition.com",
-    "MARCHE BONICHOIX": "https://bonichoix.com",
-    "MARCHE RICHELIEU": "https://marcherichelieu.com",
-    "MARCHE ADONIS": "https://groupeadonis.ca"
+    "MARCHE AMI": "https://www.marcheami.ca/circulaire",
+    "TIGRE GEANT": "https://www.gianttiger.com/fr/collections/flyers-and-deals?view=flyers",
+    "WALMART": "https://www.walmart.ca/fr/shop/articles-en-vedette-dans-la-circulaire/6000196190101?catId=10019&icid=dept_flyout_grocery_weekly_flyer_45867_LFSXIX7P22",
+    "COSTCO": "https://www.costco.ca/grocery-household.html?langId=-25",
+    "MARCHÉ TRADITION": "https://www.marchestradition.com/fr/circulaire/",
+    "MARCHE BONICHOIX": "https://www.bonichoix.com/fr/notre-circulaire/",
+    "MARCHE RICHELIEU": "https://www.marcherichelieu.ca/circulaire",
+    "MARCHE ADONIS": "https://groupeadonis.ca/circulaire"
 }
 
 

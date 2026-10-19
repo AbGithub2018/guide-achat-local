@@ -31,7 +31,7 @@ BANNIERE_URLS = {
     "MARCHE RICHELIEU": "https://www.marcherichelieu.ca/circulaire",
     "MARCHÉ RICHELIEU": "https://www.marcherichelieu.ca/circulaire",
     "MARCHE ADONIS": "https://groupeadonis.ca/circulaire"
-    "MARCHÉ ADONIS": "https://groupeadonis.ca/circulaire"
+    
 }
 
 

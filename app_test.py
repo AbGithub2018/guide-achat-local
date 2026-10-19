@@ -83,33 +83,30 @@ st.sidebar.write("---")
 st.sidebar.header("📝 Ma liste d'épicerie")
 
 if st.session_state["liste_epicerie"]:
-    # On boucle à travers chaque magasin ajouté par l'utilisateur
     for magasin in st.session_state["liste_epicerie"]:
         st.sidebar.markdown(f"🔹 **{magasin}**")
         
-        # 1. On affiche la liste des produits déjà saisis pour ce magasin s'il y en a
+        # 1. Affichage des produits déjà enregistrés pour ce magasin
         if magasin in st.session_state["produits_magasins"] and st.session_state["produits_magasins"][magasin]:
             for produit in st.session_state["produits_magasins"][magasin]:
                 st.sidebar.write(f"&nbsp;&nbsp;&nbsp;&nbsp;• {produit}")
         else:
             st.sidebar.caption("&nbsp;&nbsp;&nbsp;&nbsp;Aucun produit ajouté")
             
-        # 2. Petit champ de texte dans la barre latérale pour écrire un nouvel ingrédient
+        # 2. Case de saisie pour ajouter un nouvel article
         cle_input_produit = f"input_prod_{magasin}"
         nouveau_produit = st.sidebar.text_input("Ajouter un article :", key=cle_input_produit, label_visibility="collapsed", placeholder="Ex: Lait, Côtes de porc...")
         
-        # Si l'utilisateur tape sur 'Entrée' ou valide du texte, on l'enregistre
         if nouveau_produit:
             if magasin not in st.session_state["produits_magasins"]:
                 st.session_state["produits_magasins"][magasin] = []
             if nouveau_produit not in st.session_state["produits_magasins"][magasin]:
                 st.session_state["produits_magasins"][magasin].append(nouveau_produit)
-                st.rerun()  # Rafraîchit l'écran pour l'afficher instantanément
+                st.rerun()
                 
-        st.sidebar.write("") # Espace visuel
+        st.sidebar.write("")
         
     st.sidebar.write("---")
-    # Bouton de nettoyage complet
     if st.sidebar.button("🗑️ Vider la liste", use_container_width=True):
         st.session_state["liste_epicerie"] = []
         st.session_state["produits_magasins"] = {}
@@ -125,9 +122,10 @@ if code_recherche:
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc['Latitude'])
-        lon_centre = float(point_origine.iloc['Longitude'])
-        ville_centre = point_origine.iloc['Ville']
+        # CORRECTION SÉCURISÉE ICI : Extraction par position numérique avec l'index [0]
+        lat_centre = float(point_origine.iloc[0]['Latitude'])
+        lon_centre = float(point_origine.iloc[0]['Longitude'])
+        ville_centre = point_origine.iloc[0]['Ville']
         
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         

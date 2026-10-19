@@ -9,9 +9,6 @@ st.title("🍎 Recherche géolocalisée de commerces au Québec")
 # Dictionnaire de correspondance officiel basé sur votre fichier CSV.
 BANNIERE_URLS = {
     "IGA": "https://iga.net",
-    "IGA EXTRA": "https://iga.net",
-    "IGA EXPRESS": "https://iga.net",
-    "IGA COOP": "https://iga.net",
     "SUPER C": "https://superc.ca",
     "METRO": "https://metro.ca",
     "MAXI": "https://maxi.ca",

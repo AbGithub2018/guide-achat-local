@@ -410,7 +410,7 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
 st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
-st.link_button("🛒 Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://achatquebec-circulaires.streamlit.app", use_container_width=True)
+st.link_button("🛒 Cliquer pour Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://achatquebec-circulaires.streamlit.app", use_container_width=True)
 st.html("<div style='text-align: center; margin-top: 15px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>👇 Poursuivez plus bas pour chercher l'origine d'un produit ou collaborer à notre liste de +10,500 articles !</p></div>")
 st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
 c_iga, c_maxi = st.columns(2)

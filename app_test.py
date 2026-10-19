@@ -86,7 +86,7 @@ st.title("🍎 Planificateur de Budget Épicerie")
 # Redirection vers votre application officielle
 st.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner un Code-Barres / Pays d'Origine)", 
-    "https://streamlit.app",
+    "https://achatquebec.streamlit.app",
     type="primary",
     use_container_width=True
 )

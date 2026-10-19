@@ -9,9 +9,11 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- INITIALISATION DE LA LISTE D'ÉPICERIE (MÉMOIRE SESSION) ---
+# --- INITIALISATION DE LA MEMOIRE DE SESSION ---
 if "liste_epicerie" not in st.session_state:
-    st.session_state["liste_epicerie"] = []
+    st.session_state["liste_epicerie"] = []  # Liste des magasins planifiés
+if "produits_magasins" not in st.session_state:
+    st.session_state["produits_magasins"] = {}  # Dictionnaire pour stocker les produits par magasin
 
 # --- DICTIONNAIRE DE CORRESPONDANCE DES URLS ---
 BANNIERE_URLS = {
@@ -67,7 +69,7 @@ df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
 
-# --- BARRE LATÉRALE : CRITÈRES ET RECHERCHE ---
+# --- BARRE LATÉRALE : CRITÈRES DE RECHERCHE ---
 st.sidebar.header("Critères de recherche")
 saisie_utilisateur = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "G0M1G0")
 code_recherche = saisie_utilisateur.replace(" ", "").upper()
@@ -76,23 +78,44 @@ rayon_max = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, ma
 bannieres_disponibles = ["Toutes les bannières"] + sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
 banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", bannieres_disponibles)
 
-# --- BARRE LATÉRALE : AFFICHAGE DE LA LISTE D'ÉPICERIE ---
+# --- BARRE LATÉRALE : AFFICHAGE DE LA LISTE DE COURSES DYNAMIQUE ---
 st.sidebar.write("---")
-st.sidebar.header("📝 Ma liste de magasins")
+st.sidebar.header("📝 Ma liste d'épicerie")
 
 if st.session_state["liste_epicerie"]:
-    # Zone de texte optionnelle pour ajouter une note (ex: des articles à acheter)
-    st.sidebar.caption("Magasins sélectionnés pour votre tournée :")
-    for item_ajoute in st.session_state["liste_epicerie"]:
-        st.sidebar.write(f"- {item_ajoute}")
+    # On boucle à travers chaque magasin ajouté par l'utilisateur
+    for magasin in st.session_state["liste_epicerie"]:
+        st.sidebar.markdown(f"🔹 **{magasin}**")
         
-    st.sidebar.write("")
-    # Bouton pour vider le panier
+        # 1. On affiche la liste des produits déjà saisis pour ce magasin s'il y en a
+        if magasin in st.session_state["produits_magasins"] and st.session_state["produits_magasins"][magasin]:
+            for produit in st.session_state["produits_magasins"][magasin]:
+                st.sidebar.write(f"&nbsp;&nbsp;&nbsp;&nbsp;• {produit}")
+        else:
+            st.sidebar.caption("&nbsp;&nbsp;&nbsp;&nbsp;Aucun produit ajouté")
+            
+        # 2. Petit champ de texte dans la barre latérale pour écrire un nouvel ingrédient
+        cle_input_produit = f"input_prod_{magasin}"
+        nouveau_produit = st.sidebar.text_input("Ajouter un article :", key=cle_input_produit, label_visibility="collapsed", placeholder="Ex: Lait, Côtes de porc...")
+        
+        # Si l'utilisateur tape sur 'Entrée' ou valide du texte, on l'enregistre
+        if nouveau_produit:
+            if magasin not in st.session_state["produits_magasins"]:
+                st.session_state["produits_magasins"][magasin] = []
+            if nouveau_produit not in st.session_state["produits_magasins"][magasin]:
+                st.session_state["produits_magasins"][magasin].append(nouveau_produit)
+                st.rerun()  # Rafraîchit l'écran pour l'afficher instantanément
+                
+        st.sidebar.write("") # Espace visuel
+        
+    st.sidebar.write("---")
+    # Bouton de nettoyage complet
     if st.sidebar.button("🗑️ Vider la liste", use_container_width=True):
         st.session_state["liste_epicerie"] = []
+        st.session_state["produits_magasins"] = {}
         st.rerun()
 else:
-    st.sidebar.caption("Votre liste est vide. Utilisez le bouton ➕ sous les commerces trouvés pour planifier votre épicerie.")
+    st.sidebar.caption("Votre liste est vide. Cliquez sur ➕ sous un commerce pour commencer à planifier vos articles.")
 
 
 # --- ZONE PRINCIPALE ---
@@ -102,17 +125,14 @@ if code_recherche:
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc[0]['Latitude'])
-        lon_centre = float(point_origine.iloc[0]['Longitude'])
-        ville_centre = point_origine.iloc[0]['Ville']
+        lat_centre = float(point_origine.iloc['Latitude'])
+        lon_centre = float(point_origine.iloc['Longitude'])
+        ville_centre = point_origine.iloc['Ville']
         
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
         df_magasins_gps = pd.merge(df_magasins, df_coords, on='Code postal', how='inner', suffixes=('', '_Ref'))
-        df_magasins_gps['Distance_KM'] = calculer_distance(
-            lat_centre, lon_centre, 
-            df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
-        )
+        df_magasins_gps['Distance_KM'] = calculer_distance(lat_centre, lon_centre, df_magasins_gps['Latitude'], df_magasins_gps['Longitude'])
         
         resultats_filtres = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_max]
         if banniere_selectionnee != "Toutes les bannières":
@@ -138,7 +158,7 @@ if code_recherche:
                 distance = rangee['Distance_KM']
                 
                 with st.container():
-                    col1, col2 = st.columns(2)  # Définition propre des colonnes
+                    col1, col2 = st.columns(2)
                     with col1:
                         st.markdown(f"### **{nom_magasin}**")
                         st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")
@@ -152,15 +172,15 @@ if code_recherche:
                         else:
                             st.caption("Aucun lien disponible")
                         
-                        # Bouton 2 : Ajouter à la liste d'épicerie
+                        # Bouton 2 : Ajouter le magasin à la liste
                         identifiant_bouton = f"btn_liste_{index}"
-                        texte_magasin = f"**{nom_magasin}** - {municipalite}"
+                        texte_magasin = f"{nom_magasin} ({municipalite})"
                         
                         if st.button(f"➕ Planifier ce magasin", key=identifiant_bouton, use_container_width=True):
                             if texte_magasin not in st.session_state["liste_epicerie"]:
                                 st.session_state["liste_epicerie"].append(texte_magasin)
                                 st.toast(f"✅ {nom_magasin} ajouté à votre sélection !", icon="🛒")
-                                st.rerun()  # Force la mise à jour immédiate de la barre latérale
+                                st.rerun()
                             else:
                                 st.toast("💡 Ce commerce est déjà dans votre liste !", icon="ℹ️")
                                 

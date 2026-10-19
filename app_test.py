@@ -75,9 +75,9 @@ if code_recherche:
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc[0]['Latitude'])
-        lon_centre = float(point_origine.iloc[0]['Longitude'])
-        ville_centre = point_origine.iloc[0]['Ville']
+        lat_centre = float(point_origine.iloc['Latitude'])
+        lon_centre = float(point_origine.iloc['Longitude'])
+        ville_centre = point_origine.iloc['Ville']
         
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
@@ -93,23 +93,17 @@ if code_recherche:
         if not resultats_filtres.empty:
             st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
             
-            # --- PRÉPARATION DES LIENS ET TEXTES POUR PYDECK ---
+            # --- PRÉPARATION DES TEXTES POUR L'INFOBULLE ---
             resultats_filtres['Distance_Texte'] = resultats_filtres['Distance_KM'].round(1).astype(str) + " km"
             
-            def associer_url(nom):
-                cle = str(nom).strip().upper()
-                return BANNIERE_URLS.get(cle, "https://google.com")
-            resultats_filtres['url_circulaire'] = resultats_filtres['Nom_Commerce'].apply(associer_url)
-            
-            # --- CONFIGURATION DE LA CARTE PYDECK ---
+            # --- CONFIGURATION DE LA CARTE PYDECK SÉCURISÉE ---
             couche_points = pdk.Layer(
                 "ScatterplotLayer",
                 data=resultats_filtres,
                 get_position=["Longitude", "Latitude"],
-                get_color=[255, 75, 75, 200],
+                get_color=,  # Points rouges
                 get_radius=180,
-                pickable=True,
-                on_click_url="{url_circulaire}"
+                pickable=True
             )
             
             vue_initiale = pdk.ViewState(
@@ -123,9 +117,9 @@ if code_recherche:
                 pdk.Deck(
                     layers=[couche_points],
                     initial_view_state=vue_initiale,
-                    map_style="dark",  # Chaîne de caractères universelle et stable
+                    map_style="dark",
                     tooltip={
-                        "html": "<b>{Nom_Commerce}</b><br/>{Adresse_Rue}, {Municipalite}<br/><i>Distance : {Distance_Texte}</i><br/><span style='color:#FF4B4B;'>👉 Cliquer pour ouvrir la circulaire</span>",
+                        "html": "<b>{Nom_Commerce}</b><br/>{Adresse_Rue}, {Municipalite}<br/><i>Distance : {Distance_Texte}</i>",
                         "style": {
                             "backgroundColor": "#1E1E1E",
                             "color": "white",
@@ -139,7 +133,7 @@ if code_recherche:
             
             st.write("---")
             
-            # Grille visuelle sous la carte
+            # Grille visuelle sous la carte avec les boutons fonctionnels
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee['Nom_Commerce']
                 adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
@@ -147,7 +141,7 @@ if code_recherche:
                 distance = rangee['Distance_KM']
                 
                 with st.container():
-                    col1, col2 = st.columns([3, 1])
+                    col1, col2 = st.columns()
                     with col1:
                         st.markdown(f"### **{nom_magasin}**")
                         st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")

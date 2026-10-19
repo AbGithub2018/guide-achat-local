@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pydeck as pdk
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(
@@ -30,15 +29,20 @@ BANNIERE_URLS = {
 
 # --- FONCTION DE CALCUL DE DISTANCE (HAVERSINE) ---
 def calculer_distance(lat1, lon1, lat2, lon2):
-    R = 6371.0
+    """Calcule la distance en kilomètres entre deux points géographiques."""
+    R = 6371.0  # Rayon de la Terre en kilomètres
+    
     lat1_rad = np.radians(lat1)
     lon1_rad = np.radians(lon1)
     lat2_rad = np.radians(lat2)
     lon2_rad = np.radians(lon2)
+    
     dlon = lon2_rad - lon1_rad
-    dlat = lat2_rad - dlat
+    dlat = lat2_rad - lat1_rad
+    
     a = np.sin(dlat / 2)**2 + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2)**2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+    
     return R * c
 
 # --- CHARGEMENT SÉCURISÉ DES DONNÉES ---
@@ -47,8 +51,10 @@ def charger_donnees():
     try:
         df_coords = pd.read_csv('codes_qc.csv', sep=';')
         df_magasins = pd.read_csv('disponibilite_magasins.csv')
+        
         df_coords['Code postal'] = df_coords['Code postal'].astype(str).str.replace(" ", "").str.upper()
         df_magasins['Code postal'] = df_magasins['Code postal'].astype(str).str.replace(" ", "").str.upper()
+        
         return df_coords, df_magasins
     except Exception as e:
         st.error(f"Erreur lors de la lecture des fichiers : {e}")
@@ -82,7 +88,10 @@ if code_recherche:
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
         df_magasins_gps = pd.merge(df_magasins, df_coords, on='Code postal', how='inner', suffixes=('', '_Ref'))
-        df_magasins_gps['Distance_KM'] = calculer_distance(lat_centre, lon_centre, df_magasins_gps['Latitude'], df_magasins_gps['Longitude'])
+        df_magasins_gps['Distance_KM'] = calculer_distance(
+            lat_centre, lon_centre, 
+            df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
+        )
         
         resultats_filtres = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_max]
         if banniere_selectionnee != "Toutes les bannières":
@@ -93,47 +102,14 @@ if code_recherche:
         if not resultats_filtres.empty:
             st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
             
-            # --- PRÉPARATION DES TEXTES POUR L'INFOBULLE ---
-            resultats_filtres['Distance_Texte'] = resultats_filtres['Distance_KM'].round(1).astype(str) + " km"
-            
-            # --- CONFIGURATION DE LA CARTE PYDECK ---
-            couche_points = pdk.Layer(
-                "ScatterplotLayer",
-                data=resultats_filtres,
-                get_position=["Longitude", "Latitude"],
-                get_color=[255, 75, 75, 200],  # Rouge (RGBA)
-                get_radius=180,
-                pickable=True
-            )
-            
-            vue_initiale = pdk.ViewState(
-                latitude=lat_centre,
-                longitude=lon_centre,
-                zoom=12,
-                pitch=0
-            )
-            
-            st.pydeck_chart(
-                pdk.Deck(
-                    layers=[couche_points],
-                    initial_view_state=vue_initiale,
-                    map_style="dark",
-                    tooltip={
-                        "html": "<b>{Nom_Commerce}</b><br/>{Adresse_Rue}, {Municipalite}<br/><i>Distance : {Distance_Texte}</i>",
-                        "style": {
-                            "backgroundColor": "#1E1E1E",
-                            "color": "white",
-                            "fontFamily": "Helvetica, Arial, sans-serif",
-                            "fontSize": "12px",
-                            "zIndex": "10000"
-                        }
-                    }
-                )
-            )
+            # --- CARTE SIMPLIFIÉE ET ULTRA-STABLE ---
+            df_carte = resultats_filtres[['Latitude', 'Longitude']].copy()
+            df_carte.columns = ['latitude', 'longitude']
+            st.map(df_carte, size=20, color="#FF0000")
             
             st.write("---")
             
-            # Grille visuelle sous la carte avec les boutons
+            # Grille visuelle sous la carte avec les boutons de circulaires
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee['Nom_Commerce']
                 adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
@@ -141,8 +117,7 @@ if code_recherche:
                 distance = rangee['Distance_KM']
                 
                 with st.container():
-                    # CORRECTION ICI : Ajout du paramètre [3, 1] pour définir la proportion des 2 colonnes
-                    col1, col2 = st.columns([3, 1])
+                    col1, col2 = st.columns([3, 1])  # Utilise des proportions fixes pour les colonnes
                     with col1:
                         st.markdown(f"### **{nom_magasin}**")
                         st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")

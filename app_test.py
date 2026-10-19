@@ -10,7 +10,6 @@ st.set_page_config(
 )
 
 # --- INITIALISATION DE LA MÉMOIRE DE SESSION ---
-# Liste globale des articles : chaque article est un dictionnaire {'magasin': ..., 'produit': ..., 'prix': ...}
 if "panier_achats" not in st.session_state:
     st.session_state["panier_achats"] = []
 
@@ -82,7 +81,6 @@ banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", banniere
 st.sidebar.write("---")
 st.sidebar.header("📝 Ma liste d'épicerie")
 
-# Formulaire d'ajout rapide d'un article trouvé dans une circulaire
 st.sidebar.subheader("🛒 Ajouter un spécial")
 liste_bannieres_quebec = sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
 magasin_choisi = st.sidebar.selectbox("Choisir le magasin :", [""] + liste_bannieres_quebec, key="select_magasin_form")
@@ -97,7 +95,6 @@ if st.sidebar.button("➕ Ajouter à la liste", use_container_width=True):
     elif prix_produit <= 0:
         st.sidebar.error("Veuillez entrer un prix supérieur à 0 $.")
     else:
-        # Enregistrement dans la mémoire de session
         nouvel_achat = {
             "magasin": magasin_choisi,
             "produit": nom_produit.strip(),
@@ -109,11 +106,9 @@ if st.sidebar.button("➕ Ajouter à la liste", use_container_width=True):
 
 st.sidebar.write("---")
 
-# Affichage du Panier et calcul du Total général
 if st.session_state["panier_achats"]:
     st.sidebar.subheader("🛍️ Mes achats planifiés")
     
-    # Organiser les produits par magasin pour l'affichage
     df_panier = pd.DataFrame(st.session_state["panier_achats"])
     total_facture = df_panier["prix"].sum()
     
@@ -125,12 +120,11 @@ if st.session_state["panier_achats"]:
     st.sidebar.write("")
     st.sidebar.markdown(f"### 💰 Total estimé : **{total_facture:.2f} $**")
     
-    # Bouton pour tout vider
     if st.sidebar.button("🗑️ Vider la liste", use_container_width=True):
         st.session_state["panier_achats"] = []
         st.rerun()
 else:
-    st.sidebar.caption("Votre liste d'épicerie est vide. Feuilletez les circulaires à droite, notez les meilleurs rabais ici et suivez votre budget !")
+    st.sidebar.caption("Votre liste d'épicerie est vide. Feuilletez les circulaires à droite, notez les rabais à gauche et suivez votre budget !")
 
 
 # --- ZONE PRINCIPALE : RÉSULTATS DE RECHERCHE ---
@@ -140,9 +134,10 @@ if code_recherche:
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc['Latitude'])
-        lon_centre = float(point_origine.iloc['Longitude'])
-        ville_centre = point_origine.iloc['Ville']
+        # CORRECTION HISTORIQUE DÉFINITIVE ICI (.iloc[0])
+        lat_centre = float(point_origine.iloc[0]['Latitude'])
+        lon_centre = float(point_origine.iloc[0]['Longitude'])
+        ville_centre = point_origine.iloc[0]['Ville']
         
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
@@ -157,15 +152,9 @@ if code_recherche:
         
         if not resultats_filtres.empty:
             st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
-            
-            # --- CARTE SIMPLIFIÉE STABLE ---
-            df_carte = resultats_filtres[['Latitude', 'Longitude']].copy()
-            df_carte.columns = ['latitude', 'longitude']
-            st.map(df_carte, size=20, color="#FF0000")
-            
             st.write("---")
             
-            # Grille visuelle sous la carte
+            # Grille visuelle sous forme de liste épurée (sans la carte)
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee['Nom_Commerce']
                 adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
@@ -179,8 +168,6 @@ if code_recherche:
                         st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")
                     with col2:
                         st.write("")
-                        
-                        # Bouton pour ouvrir le lien vers la circulaire
                         cle_banniere = str(nom_magasin).strip().upper()
                         if cle_banniere in BANNIERE_URLS:
                             st.link_button(f"🔗 Ouvrir la circulaire {nom_magasin}", BANNIERE_URLS[cle_banniere], use_container_width=True)

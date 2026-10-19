@@ -9,23 +9,24 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- DICTIONNAIRE DE CORRESPONDANCE DES URLS ---
+# --- DICTIONNAIRE DE CORRESPONDANCE DES URLS (CORRIGÉ AVEC ACCENTS) ---
 BANNIERE_URLS = {
     "IGA": "https://iga.net",
     "SUPER C": "https://superc.ca",
     "METRO": "https://metro.ca",
     "MAXI": "https://maxi.ca",
     "PROVIGO": "https://provigo.ca",
-    "DOLLARAMA": "https://dollarama.com",
+    "DOLLARAMA": "https://www.dollarama.com/fr-ca/",
     "MARCHE AMI": "https://marcheami.ca",
-    "TIGRE GEANT": "https://gianttiger.com",
-    "WALMART": "https://walmart.ca",
-    "COSTCO": "https://costco.ca",
-    "MARCHE TRADITION": "https://marchetradition.com",
+    "TIGRE GEANT": "https://www.gianttiger.com/fr",
+    "WALMART": "https://www.walmart.ca/fr",
+    "COSTCO": "https://www.costco.ca/?langId=-25",
+    "MARCHÉ TRADITION": "https://marchetradition.com",
     "MARCHE BONICHOIX": "https://bonichoix.com",
     "MARCHE RICHELIEU": "https://marcherichelieu.com",
     "MARCHE ADONIS": "https://groupeadonis.ca"
 }
+
 
 # --- FONCTION DE CALCUL DE DISTANCE (HAVERSINE) ---
 def calculer_distance(lat1, lon1, lat2, lon2):

@@ -47,6 +47,21 @@ st.html("""
     
     .stRadio label p { font-size: 26px !important; font-weight: bold !important; color: #111111 !important; }
     div[data-testid="stRadioHorizontal"] { gap: 40px !important; }
+    /* Forcer le bouton de redirection en rouge vif */
+    .stLinkButton button, .stLinkButton a {
+        background-color: #ff3b30 !important;
+        color: white !important;
+        border-radius: 8px !important;
+        border: none !important;
+        font-weight: bold !important;
+        font-size: 18px !important;
+        padding: 10px 20px !important;
+    }
+    /* Effet au survol de la souris */
+    .stLinkButton button:hover, .stLinkButton a:hover {
+        background-color: #e0241b !important;
+        color: white !important;
+    }
     
     div[data-testid="stColumns"] {
         display: flex !important;

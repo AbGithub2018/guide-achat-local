@@ -59,7 +59,7 @@ user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", ""
 rayon_recherche = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=50, value=25)
 
 # Menu déroulant pour choisir une bannière spécifique
-liste_bannieres = ["Toutes les bannières", "IGA", "IGA EXTRA", "IGA EXPRESS", "SUPER C", "METRO", "MAXI", "PROVIGO", "DOLLARAMA", "MARCHE AMI", "TIGRE GEANT", "WALMART", "COSTCO", "MARCHE TRADITION", "MARCHE BONICHOIX", "MARCHE RICHELIEU", "MARCHE ADONIS"]
+liste_bannieres = ["Toutes les bannières", "IGA", "SUPER C", "METRO", "MAXI", "PROVIGO", "DOLLARAMA", "MARCHE AMI", "TIGRE GEANT", "WALMART", "COSTCO", "MARCHE TRADITION", "MARCHE BONICHOIX", "MARCHE RICHELIEU", "MARCHE ADONIS"]
 banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannieres)
 
 # 4. Traitement cartographique et calcul de distance

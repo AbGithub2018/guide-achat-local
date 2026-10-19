@@ -96,12 +96,12 @@ if code_recherche:
             # --- PRÉPARATION DES TEXTES POUR L'INFOBULLE ---
             resultats_filtres['Distance_Texte'] = resultats_filtres['Distance_KM'].round(1).astype(str) + " km"
             
-            # --- CONFIGURATION DE LA CARTE PYDECK SÉCURISÉE ---
+            # --- CONFIGURATION DE LA CARTE PYDECK CORRIGÉE ---
             couche_points = pdk.Layer(
                 "ScatterplotLayer",
                 data=resultats_filtres,
                 get_position=["Longitude", "Latitude"],
-                get_color=,  # Points rouges
+                get_color=[255, 0, 0, 160],  # Rouge (RGBA)
                 get_radius=180,
                 pickable=True
             )
@@ -133,7 +133,7 @@ if code_recherche:
             
             st.write("---")
             
-            # Grille visuelle sous la carte avec les boutons fonctionnels
+            # Grille visuelle sous la carte avec les boutons
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee['Nom_Commerce']
                 adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')

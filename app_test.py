@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import pydeck as pdk  # Importation pour la carte avancée
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(
@@ -49,12 +50,9 @@ def calculer_distance(lat1, lon1, lat2, lon2):
 @st.cache_data
 def charger_donnees():
     try:
-        # Fichier 1 : Chargement des coordonnées géographiques (Séparateur ;)
         df_coords = pd.read_csv('codes_qc.csv', sep=';')
-        # Fichier 2 : Chargement des magasins disponibles (Séparateur ,)
         df_magasins = pd.read_csv('disponibilite_magasins.csv')
         
-        # Nettoyage préventif des codes postaux (MAJUSCULES et SANS ESPACES)
         df_coords['Code postal'] = df_coords['Code postal'].astype(str).str.replace(" ", "").str.upper()
         df_magasins['Code postal'] = df_magasins['Code postal'].astype(str).str.replace(" ", "").str.upper()
         
@@ -71,14 +69,11 @@ if df_coords is None or df_magasins is None:
 # --- BARRE LATÉRALE : CRITÈRES DE RECHERCHE ---
 st.sidebar.header("Critères de recherche")
 
-# Saisie du code postal
 saisie_utilisateur = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "G0M1G0")
 code_recherche = saisie_utilisateur.replace(" ", "").upper()
 
-# Curseur de rayon
 rayon_max = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=100, value=25, step=5)
 
-# Filtre par bannière
 bannieres_disponibles = ["Toutes les bannières"] + sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
 banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", bannieres_disponibles)
 
@@ -87,49 +82,72 @@ banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", banniere
 st.title("🍎 Recherche géolocalisée de commerces au Québec")
 
 if code_recherche:
-    # 1. Trouver les coordonnées GPS du code postal recherché
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        # On s'assure d'extraire des valeurs numériques simples pour éviter les erreurs de type
         lat_centre = float(point_origine.iloc[0]['Latitude'])
         lon_centre = float(point_origine.iloc[0]['Longitude'])
         ville_centre = point_origine.iloc[0]['Ville']
         
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
-        # 2. Associer chaque magasin à ses coordonnées GPS via son code postal
         df_magasins_gps = pd.merge(df_magasins, df_coords, on='Code postal', how='inner', suffixes=('', '_Ref'))
         
-        # 3. Calculer la distance pour chaque magasin trouvé
         df_magasins_gps['Distance_KM'] = calculer_distance(
             lat_centre, lon_centre, 
             df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
         )
         
-        # 4. Filtrer les résultats selon le rayon et la bannière
         resultats_filtres = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_max]
         
         if banniere_selectionnee != "Toutes les bannières":
             resultats_filtres = resultats_filtres[resultats_filtres['Nom_Commerce'] == banniere_selectionnee]
             
-        # Trier du plus proche au plus lointain
         resultats_filtres = resultats_filtres.sort_values(by='Distance_KM')
         
-        # 5. Affichage des résultats et de la carte
         if not resultats_filtres.empty:
             st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
             
-            # --- AJOUT DE LA CARTE INTERACTIVE ---
-            # Streamlit requiert que les colonnes soient nommées exactement 'latitude' et 'longitude'
-            df_carte = resultats_filtres[['Latitude', 'Longitude']].copy()
-            df_carte.columns = ['latitude', 'longitude']
+            # --- CRÉATION DE LA CARTE AVANCÉE PYDECK ---
+            # Configuration de la couche des points (magasins)
+            couche_points = pdk.Layer(
+                "ScatterplotLayer",
+                data=resultats_filtres,
+                get_position=["Longitude", "Latitude"],
+                get_color=[230, 50, 50, 200],  # Rouge semi-transparent
+                get_radius=200,                # Taille des points en mètres
+                pickable=True,                 # Rend les points interactifs (cliquables/survolables)
+            )
             
-            # On affiche la carte en haut des résultats
-            st.map(df_carte, size=20, color="#FF0000")
-            st.write("---") # Ligne séparatrice
+            # Configuration du zoom initial centré sur l'utilisateur
+            vue_initiale = pdk.ViewState(
+                latitude=lat_centre,
+                longitude=lon_centre,
+                zoom=11,
+                pitch=0
+            )
             
-            # Grille visuelle pour la liste des commerces
+            # Affichage de la carte avec l'infobulle (tooltip) au survol
+            st.pydeck_chart(
+                pdk.Deck(
+                    layers=[couche_points],
+                    initial_view_state=vue_initiale,
+                    tooltip={
+                        "html": "<b>{Nom_Commerce}</b><br/>{Adresse_Rue}, {Municipalite}<br/><i>Distance : {Distance_KM:.1f} km</i>",
+                        "style": {
+                            "backgroundColor": "#1E1E1E",
+                            "color": "white",
+                            "fontFamily": "Helvetica, Arial, sans-serif",
+                            "fontSize": "12px",
+                            "zIndex": "10000"
+                        }
+                    }
+                )
+            )
+            
+            st.write("---")
+            
+            # Grille visuelle pour la liste des commerces sous la carte
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee['Nom_Commerce']
                 adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
@@ -137,14 +155,14 @@ if code_recherche:
                 distance = rangee['Distance_KM']
                 
                 with st.container():
-                    col1, col2 = st.columns([3, 1]) # La colonne 1 prend plus de place
+                    col1, col2 = st.columns([3, 1])
                     
                     with col1:
                         st.markdown(f"### **{nom_magasin}**")
                         st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")
                     
                     with col2:
-                        st.write("") # Petit espace pour centrer verticalement le bouton
+                        st.write("")
                         st.write("")
                         cle_banniere = str(nom_magasin).strip().upper()
                         if cle_banniere in BANNIERE_URLS:

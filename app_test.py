@@ -36,7 +36,7 @@ def calculer_distance(lat1, lon1, lat2, lon2):
     lat2_rad = np.radians(lat2)
     lon2_rad = np.radians(lon2)
     dlon = lon2_rad - lon1_rad
-    dlat = lat2_rad - lat1_rad
+    dlat = lat2_rad - dlat
     a = np.sin(dlat / 2)**2 + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2)**2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     return R * c
@@ -75,7 +75,6 @@ if code_recherche:
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        # CORRECTION ICI : Extraction propre de la première ligne trouvée avec .iloc[0]
         lat_centre = float(point_origine.iloc[0]['Latitude'])
         lon_centre = float(point_origine.iloc[0]['Longitude'])
         ville_centre = point_origine.iloc[0]['Ville']
@@ -142,7 +141,8 @@ if code_recherche:
                 distance = rangee['Distance_KM']
                 
                 with st.container():
-                    col1, col2 = st.columns()
+                    # CORRECTION ICI : Ajout du paramètre [3, 1] pour définir la proportion des 2 colonnes
+                    col1, col2 = st.columns([3, 1])
                     with col1:
                         st.markdown(f"### **{nom_magasin}**")
                         st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")

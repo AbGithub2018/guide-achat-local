@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import urllib.parse
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(
@@ -79,6 +80,18 @@ banniere_active = "MAXI"  # Par défaut à l'ouverture
 if banniere_selectionnee != "Toutes les bannières":
     banniere_active = banniere_selectionnee
 
+# --- ZONE PRINCIPALE ---
+st.title("🍎 Planificateur de Budget Épicerie")
+
+# 🚀 REDIRECTION CORRIGÉE VERS VOTRE APPLICATION OFFICIELLE PRINCIPALE
+st.link_button(
+    "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner un Code-Barres / Pays d'Origine)", 
+    "https://achatquebec.streamlit.app",
+    type="primary",
+    use_container_width=True
+)
+st.write("---")
+
 # --- DIVISION DE L'ÉCRAN PRINCIPAL EN DEUX MOITIÉS (50% / 50%) ---
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
@@ -124,7 +137,13 @@ with col_gauche:
         for magasin, groupe in df_panier.groupby("magasin"):
             st.markdown(f"🔹 **{magasin}**")
             for idx, row in groupe.iterrows():
-                st.write(f"&nbsp;&nbsp;&nbsp;&nbsp;• {row['produit']} — **{row['prix']:.2f} $**")
+                col_item_text, col_item_check = st.columns([0.6, 0.4])
+                with col_item_text:
+                    st.write(f"• {row['produit']} — **{row['prix']:.2f} $**")
+                with col_item_check:
+                    # Redirection vers la recherche de votre application officielle corrigée
+                    nom_nettoye_url = urllib.parse.quote(row['produit'])
+                    st.link_button("🧐 Vérifier l'origine", f"https://streamlit.app{nom_nettoye_url}", use_container_width=True)
             st.write("")
                 
         st.markdown(f"### 💰 Total estimé de ma facture : **{total_facture:.2f} $**")
@@ -141,10 +160,9 @@ with col_gauche:
         point_origine = df_coords[df_coords['Code postal'] == code_recherche]
         
         if not point_origine.empty:
-            # SYNTAXE CORRIGÉE DÉFINITIVE ICI : .iloc[0]['Colonne']
-            lat_centre = float(point_origine.iloc[0]['Latitude'])
-            lon_centre = float(point_origine.iloc[0]['Longitude'])
-            ville_centre = point_origine.iloc[0]['Ville']
+            lat_centre = float(point_origine.iloc['Latitude'])
+            lon_centre = float(point_origine.iloc['Longitude'])
+            ville_centre = point_origine.iloc['Ville']
             
             st.caption(f"Position : {ville_centre} ({saisie_utilisateur.upper()})")
             
@@ -187,5 +205,4 @@ with col_droite:
     cle_recherche_flipp = str(banniere_active).strip().upper()
     url_embed_flipp = FLIPP_EMBED_URLS.get(cle_recherche_flipp, "https://flipp.com")
     
-    # Intégration de la liseuse iframe stable
     st.iframe(url_embed_flipp, height=800)

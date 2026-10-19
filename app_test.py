@@ -29,7 +29,7 @@ BANNIERE_URLS = {
 
 # --- FONCTION DE CALCUL DE DISTANCE (HAVERSINE) ---
 def calculer_distance(lat1, lon1, lat2, lon2):
-    """Calcule la distance en kilomètres entre deux points de coordonnées géographiques."""
+    """Calcule la distance en kilomètres entre deux points géographiques."""
     R = 6371.0  # Rayon de la Terre en kilomètres
     
     lat1_rad = np.radians(lat1)
@@ -51,10 +51,10 @@ def charger_donnees():
     try:
         # Fichier 1 : Chargement des coordonnées géographiques (Séparateur ;)
         df_coords = pd.read_csv('codes_qc.csv', sep=';')
-        # Fichier 2 : Chargement des magasins disponibles (Séparateur , par défaut)
+        # Fichier 2 : Chargement des magasins disponibles (Séparateur ,)
         df_magasins = pd.read_csv('disponibilite_magasins.csv')
         
-        # Nettoyage préventif des colonnes de codes postaux (MAJUSCULES et SANS ESPACES)
+        # Nettoyage préventif des codes postaux (MAJUSCULES et SANS ESPACES)
         df_coords['Code postal'] = df_coords['Code postal'].astype(str).str.replace(" ", "").str.upper()
         df_magasins['Code postal'] = df_magasins['Code postal'].astype(str).str.replace(" ", "").str.upper()
         
@@ -65,7 +65,6 @@ def charger_donnees():
 
 df_coords, df_magasins = charger_donnees()
 
-# Si les fichiers n'ont pas pu charger, on arrête le script proprement
 if df_coords is None or df_magasins is None:
     st.stop()
 
@@ -74,10 +73,9 @@ st.sidebar.header("Critères de recherche")
 
 # Saisie du code postal
 saisie_utilisateur = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "G0M1G0")
-# Nettoyage immédiat de la saisie utilisateur
 code_recherche = saisie_utilisateur.replace(" ", "").upper()
 
-# Curseur de rayon de recherche
+# Curseur de rayon
 rayon_max = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=100, value=25, step=5)
 
 # Filtre par bannière
@@ -93,15 +91,14 @@ if code_recherche:
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        # Extraction de la latitude et longitude d'origine
-        lat_centre = point_origine.iloc[0]['Latitude']
-        lon_centre = point_origine.iloc[0]['Longitude']
+        # On s'assure d'extraire des valeurs numériques simples pour éviter les erreurs de type
+        lat_centre = float(point_origine.iloc[0]['Latitude'])
+        lon_centre = float(point_origine.iloc[0]['Longitude'])
         ville_centre = point_origine.iloc[0]['Ville']
         
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
         # 2. Associer chaque magasin à ses coordonnées GPS via son code postal
-        # On fusionne temporairement les magasins avec le référentiel des coordonnées géographiques
         df_magasins_gps = pd.merge(df_magasins, df_coords, on='Code postal', how='inner', suffixes=('', '_Ref'))
         
         # 3. Calculer la distance pour chaque magasin trouvé
@@ -110,7 +107,7 @@ if code_recherche:
             df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
         )
         
-        # 4. Filtrer les résultats selon les choix de l'utilisateur (Rayon et Bannière)
+        # 4. Filtrer les résultats selon le rayon et la bannière
         resultats_filtres = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_max]
         
         if banniere_selectionnee != "Toutes les bannières":
@@ -119,27 +116,36 @@ if code_recherche:
         # Trier du plus proche au plus lointain
         resultats_filtres = resultats_filtres.sort_values(by='Distance_KM')
         
-        # 5. Affichage des résultats
+        # 5. Affichage des résultats et de la carte
         if not resultats_filtres.empty:
             st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
             
-            # Grille visuelle propre pour afficher les commerces
+            # --- AJOUT DE LA CARTE INTERACTIVE ---
+            # Streamlit requiert que les colonnes soient nommées exactement 'latitude' et 'longitude'
+            df_carte = resultats_filtres[['Latitude', 'Longitude']].copy()
+            df_carte.columns = ['latitude', 'longitude']
+            
+            # On affiche la carte en haut des résultats
+            st.map(df_carte, size=20, color="#FF0000")
+            st.write("---") # Ligne séparatrice
+            
+            # Grille visuelle pour la liste des commerces
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee['Nom_Commerce']
                 adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
                 municipalite = rangee.get('Municipalite', '')
                 distance = rangee['Distance_KM']
                 
-                # Bloc visuel pour un magasin
                 with st.container():
-                    col1, col2 = st.columns([3, 1])
+                    col1, col2 = st.columns([3, 1]) # La colonne 1 prend plus de place
                     
                     with col1:
                         st.markdown(f"### **{nom_magasin}**")
                         st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")
                     
                     with col2:
-                        # Logique d'affichage dynamique du lien vers les spéciaux
+                        st.write("") # Petit espace pour centrer verticalement le bouton
+                        st.write("")
                         cle_banniere = str(nom_magasin).strip().upper()
                         if cle_banniere in BANNIERE_URLS:
                             url_circulaire = BANNIERE_URLS[cle_banniere]
@@ -147,7 +153,7 @@ if code_recherche:
                         else:
                             st.caption("Aucun lien disponible")
                             
-                    st.divider() # Ligne de séparation entre les commerces
+                    st.divider()
         else:
             st.warning(f"Aucun commerce ne correspond à vos critères dans un rayon de {rayon_max} km.")
             

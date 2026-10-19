@@ -2,18 +2,21 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# 1. Configuration de l'interface graphique
-st.set_page_config(page_title="Recherche Commerces Réelle", layout="wide")
-st.title("🍎 Recherche géolocalisée de commerces au Québec")
+# --- CONFIGURATION DE LA PAGE ---
+st.set_page_config(
+    page_title="Recherche géolocalisée de commerces au Québec",
+    page_icon="🍎",
+    layout="wide"
+)
 
-# Dictionnaire de correspondance officiel basé sur votre fichier CSV.
+# --- DICTIONNAIRE DE CORRESPONDANCE DES URLS ---
 BANNIERE_URLS = {
     "IGA": "https://iga.net",
     "SUPER C": "https://superc.ca",
     "METRO": "https://metro.ca",
     "MAXI": "https://maxi.ca",
     "PROVIGO": "https://provigo.ca",
-    "DOLLARAMA": "https://www.dollarama.com/fr-ca/",
+    "DOLLARAMA": "https://dollarama.com",
     "MARCHE AMI": "https://marcheami.ca",
     "TIGRE GEANT": "https://gianttiger.com",
     "WALMART": "https://walmart.ca",
@@ -24,138 +27,129 @@ BANNIERE_URLS = {
     "MARCHE ADONIS": "https://groupeadonis.ca"
 }
 
-# 2. Chargement des deux fichiers avec mise en cache Streamlit
-@st.cache_data
-def load_data():
-    try:
-        # Lecture sécurisée de vos fichiers CSV d'origine
-        df_mag = pd.read_csv("disponibilite_magasins.csv", sep=",", encoding="utf-8")
-        df_gps = pd.read_csv("codes_qc.csv", sep=",", encoding="utf-8")
-        
-        # NETTOYAGE CRUCIAL : Suppression de TOUS les espaces pour lier sans problème "G5Y 5L6" et "G5Y5L6"
-        df_mag['Code_Postal_Nettoye'] = df_mag['Code_Postal'].astype(str).str.replace(" ", "", regex=False).str.upper().str.strip()
-        df_gps['Code_Postal_Nettoye'] = df_gps['Code postal'].astype(str).str.replace(" ", "", regex=False).str.upper().str.strip()
-                            
-        return df_mag, df_gps
-    except Exception as e:
-        st.error(f"Erreur de chargement des fichiers : {e}")
-        return pd.DataFrame(), pd.DataFrame()
-
-df_magasins, df_postaux = load_data()
-
-# Fonction mathématique de Haversine pour calculer la distance réelle sur la Terre
+# --- FONCTION DE CALCUL DE DISTANCE (HAVERSINE) ---
 def calculer_distance(lat1, lon1, lat2, lon2):
-    R = 6371.0 # Rayon moyen de la Terre en kilomètres
-    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
-    c = 2 * np.arcsin(np.sqrt(a))
+    """Calcule la distance en kilomètres entre deux points de coordonnées géographiques."""
+    R = 6371.0  # Rayon de la Terre en kilomètres
+    
+    lat1_rad = np.radians(lat1)
+    lon1_rad = np.radians(lon1)
+    lat2_rad = np.radians(lat2)
+    lon2_rad = np.radians(lon2)
+    
+    dlon = lon2_rad - lon1_rad
+    dlat = lat2_rad - lat1_rad
+    
+    a = np.sin(dlat / 2)**2 + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2)**2
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+    
     return R * c
 
-# 3. Formulaire de recherche dans la barre latérale (Sidebar)
+# --- CHARGEMENT SÉCURISÉ DES DONNÉES ---
+@st.cache_data
+def charger_donnees():
+    try:
+        # Fichier 1 : Chargement des coordonnées géographiques (Séparateur ;)
+        df_coords = pd.read_csv('codes_qc.csv', sep=';')
+        # Fichier 2 : Chargement des magasins disponibles (Séparateur , par défaut)
+        df_magasins = pd.read_csv('disponibilite_magasins.csv')
+        
+        # Nettoyage préventif des colonnes de codes postaux (MAJUSCULES et SANS ESPACES)
+        df_coords['Code postal'] = df_coords['Code postal'].astype(str).str.replace(" ", "").str.upper()
+        df_magasins['Code postal'] = df_magasins['Code postal'].astype(str).str.replace(" ", "").str.upper()
+        
+        return df_coords, df_magasins
+    except Exception as e:
+        st.error(f"Erreur lors de la lecture des fichiers : {e}")
+        return None, None
+
+df_coords, df_magasins = charger_donnees()
+
+# Si les fichiers n'ont pas pu charger, on arrête le script proprement
+if df_coords is None or df_magasins is None:
+    st.stop()
+
+# --- BARRE LATÉRALE : CRITÈRES DE RECHERCHE ---
 st.sidebar.header("Critères de recherche")
-user_postal = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "").replace(" ", "").upper().strip()
-rayon_recherche = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=50, value=25)
 
-# Menu déroulant pour choisir une bannière spécifique
-liste_bannieres = ["Toutes les bannières", "IGA", "SUPER C", "METRO", "MAXI", "PROVIGO", "DOLLARAMA", "MARCHE AMI", "TIGRE GEANT", "WALMART", "COSTCO", "MARCHE TRADITION", "MARCHE BONICHOIX", "MARCHE RICHELIEU", "MARCHE ADONIS"]
-banniere_choisie = st.sidebar.selectbox("Filtrer par bannière :", liste_bannieres)
+# Saisie du code postal
+saisie_utilisateur = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "G0M1G0")
+# Nettoyage immédiat de la saisie utilisateur
+code_recherche = saisie_utilisateur.replace(" ", "").upper()
 
-# 4. Traitement cartographique et calcul de distance
-if user_postal and not df_postaux.empty and not df_magasins.empty:
+# Curseur de rayon de recherche
+rayon_max = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=100, value=25, step=5)
+
+# Filtre par bannière
+bannieres_disponibles = ["Toutes les bannières"] + sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
+banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", bannieres_disponibles)
+
+
+# --- ZONE PRINCIPALE : RÉSULTATS ---
+st.title("🍎 Recherche géolocalisée de commerces au Québec")
+
+if code_recherche:
+    # 1. Trouver les coordonnées GPS du code postal recherché
+    point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
-    # Extraire les coordonnées GPS du code postal entré par l'utilisateur
-    coords_client = df_postaux[df_postaux['Code_Postal_Nettoye'] == user_postal]
-    
-    if not coords_client.empty:
-        lat_client = coords_client['Latitude'].values[0]
-        lon_client = coords_client['Longitude'].values[0]
+    if not point_origine.empty:
+        # Extraction de la latitude et longitude d'origine
+        lat_centre = point_origine.iloc[0]['Latitude']
+        lon_centre = point_origine.iloc[0]['Longitude']
+        ville_centre = point_origine.iloc[0]['Ville']
         
-        # Jumeler en mémoire les magasins avec leurs positions GPS
-        df_magasins_gps = pd.merge(
-            df_magasins, 
-            df_postaux[['Code_Postal_Nettoye', 'Latitude', 'Longitude']], 
-            on='Code_Postal_Nettoye', 
-            how='inner'
-        )
+        st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
-        # Calculer la distance réelle km par km
+        # 2. Associer chaque magasin à ses coordonnées GPS via son code postal
+        # On fusionne temporairement les magasins avec le référentiel des coordonnées géographiques
+        df_magasins_gps = pd.merge(df_magasins, df_coords, on='Code postal', how='inner', suffixes=('', '_Ref'))
+        
+        # 3. Calculer la distance pour chaque magasin trouvé
         df_magasins_gps['Distance_KM'] = calculer_distance(
-            lat_client, lon_client, 
+            lat_centre, lon_centre, 
             df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
         )
         
-        # --- CORRECTION DU BUG DE POSITION : TOLÉRANCE POUR SAINT-GEORGES ---
-        # Si le magasin est à St-Georges ou Saint-Georges, on ajuste sa distance maximale 
-        # pour s'assurer qu'il passe le filtre du rayon, peu importe l'erreur du fichier CSV
-        est_saint_georges = df_magasins_gps['Municipalite'].astype(str).str.upper().str.contains("GEORGES", na=False)
+        # 4. Filtrer les résultats selon les choix de l'utilisateur (Rayon et Bannière)
+        resultats_filtres = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_max]
         
-        # Si l'utilisateur cherche depuis G0M1G0 et demande au moins 30km, on force l'inclusion de Saint-Georges
-        if user_postal == "G0M1G0" and rayon_recherche >= 30:
-            df_resultats = df_magasins_gps[(df_magasins_gps['Distance_KM'] <= rayon_recherche) | est_saint_georges].copy()
-            # On harmonise l'affichage de la distance pour rester cohérent avec l'IGA déjà trouvé
-            df_resultats.loc[est_saint_georges, 'Distance_KM'] = 26.7
+        if banniere_selectionnee != "Toutes les bannières":
+            resultats_filtres = resultats_filtres[resultats_filtres['Nom_Commerce'] == banniere_selectionnee]
+            
+        # Trier du plus proche au plus lointain
+        resultats_filtres = resultats_filtres.sort_values(by='Distance_KM')
+        
+        # 5. Affichage des résultats
+        if not resultats_filtres.empty:
+            st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
+            
+            # Grille visuelle propre pour afficher les commerces
+            for index, rangee in resultats_filtres.iterrows():
+                nom_magasin = rangee['Nom_Commerce']
+                adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
+                municipalite = rangee.get('Municipalite', '')
+                distance = rangee['Distance_KM']
+                
+                # Bloc visuel pour un magasin
+                with st.container():
+                    col1, col2 = st.columns([3, 1])
+                    
+                    with col1:
+                        st.markdown(f"### **{nom_magasin}**")
+                        st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")
+                    
+                    with col2:
+                        # Logique d'affichage dynamique du lien vers les spéciaux
+                        cle_banniere = str(nom_magasin).strip().upper()
+                        if cle_banniere in BANNIERE_URLS:
+                            url_circulaire = BANNIERE_URLS[cle_banniere]
+                            st.link_button(f"🔗 Circulaire {nom_magasin}", url_circulaire, use_container_width=True)
+                        else:
+                            st.caption("Aucun lien disponible")
+                            
+                    st.divider() # Ligne de séparation entre les commerces
         else:
-            df_resultats = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_recherche].copy()
-        
-        # FILTRE DE BANNIÈRE SOUPLE ET SÉCURISÉ (Règle le problème de Super C)
-        if banniere_choisie != "Toutes les bannières":
-            terme_recherche = banniere_choisie.strip().upper()
-            # On remplace l'égalité stricte (==) par .str.contains() pour attraper les espaces invisibles du CSV
-            df_resultats = df_resultats[
-                df_resultats['Nom_Commerce'].astype(str).str.upper().str.contains(terme_recherche, regex=False, na=False)
-            ]
-
-        
-        # Tri du plus proche au plus lointain
-        df_resultats = df_resultats.sort_values(by='Distance_KM')
-        
-        # 5. Affichage final à l'écran
-        if not df_resultats.empty:
-            st.success(f"🎉 {len(df_resultats)} commerce(s) trouvé(s) dans un rayon de {rayon_recherche} km autour de {user_postal} !")
-            df_resultats['Distance_KM'] = df_resultats['Distance_KM'].round(1)
+            st.warning(f"Aucun commerce ne correspond à vos critères dans un rayon de {rayon_max} km.")
             
-            # Reconstruction du format d'affichage postal officiel (A1A 1A1)
-            df_resultats['Code_Postal_Formatte'] = df_resultats['Code_Postal'].astype(str).apply(lambda c: f"{c[:3]} {c[3:]}" if len(c)==6 else c)
-            
-            # NETTOYAGE DES MAJUSCULES POUR L'APPARIEMENT DES LIENS
-            nom_nettoye = (
-                df_resultats['Nom_Commerce']
-                .astype(str)
-                .str.upper()
-                .str.replace("É", "E", regex=False)
-                .str.replace("È", "E", regex=False)
-                .str.strip()
-            )
-            df_resultats['Lien_Speciaux'] = nom_nettoye.map(BANNIERE_URLS).fillna("https://google.com")
-            
-            # Sélection ordonnée des colonnes pour le rendu visuel
-            df_affichage = pd.DataFrame()
-            df_affichage['Nom du commerce'] = df_resultats['Nom_Commerce']
-            df_affichage['Spéciaux 🏷️'] = df_resultats['Lien_Speciaux']
-            df_affichage['Adresse Civique'] = df_resultats['Adresse_Rue']
-            df_affichage['Municipalité'] = df_resultats['Municipalite']
-            df_affichage['Code Postal'] = df_resultats['Code_Postal_Formatte']
-            df_affichage['Distance (km)'] = df_resultats['Distance_KM']
-            
-            st.dataframe(
-                df_affichage, 
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Spéciaux 🏷️": st.column_config.LinkColumn(
-                        "Spéciaux 🏷️",
-                        help="Cliquez pour ouvrir la circulaire officielle de ce commerce",
-                        display_text="Voir les rabais"
-                    )
-                }
-            )
-        else:
-            st.warning(f"Aucun commerce de type '{banniere_choisie}' trouvé dans un rayon de {rayon_recherche} km.")
     else:
-        st.error("Ce code postal n'existe pas dans le fichier de référence géographique.")
-
-else:
-    if not user_postal:
-        st.info("💡 Entrez un code postal dans la barre latérale pour lancer la recherche.")
+        st.error("❌ Code postal introuvable ou invalide dans la base de données du Québec.")

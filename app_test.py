@@ -142,8 +142,7 @@ with col_gauche:
                     st.write(f"• {row['produit']} — **{row['prix']:.2f} $**")
                 with col_item_check:
                     nom_nettoye_url = urllib.parse.quote(row['produit'])
-                    st.link_button("🧐 Vérifier l'origine", f"https://streamlit.app?recherche={nom_nettoye_url}", use_container_width=True)
-            st.write("")
+                    st.link_button("🧐 Vérifier l'origine", f"https://achatquebec.streamlit.app/?cup={nom_nettoye_url}", use_container_width=True)
                 
         st.markdown(f"### 💰 Total estimé de ma facture : **{total_facture:.2f} $**")
         

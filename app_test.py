@@ -94,10 +94,8 @@ if code_recherche:
             st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
             
             # --- PRÉPARATION DES LIENS ET TEXTES POUR PYDECK ---
-            # Arrondir la distance à 1 décimale dans une nouvelle colonne textuelle pour l'infobulle
             resultats_filtres['Distance_Texte'] = resultats_filtres['Distance_KM'].round(1).astype(str) + " km"
             
-            # Ajouter le lien URL directement dans les données de la carte pour la rendre cliquable
             def associer_url(nom):
                 cle = str(nom).strip().upper()
                 return BANNIERE_URLS.get(cle, "https://google.com")
@@ -108,10 +106,9 @@ if code_recherche:
                 "ScatterplotLayer",
                 data=resultats_filtres,
                 get_position=["Longitude", "Latitude"],
-                get_color=[255, 0, 0, 200],
+                get_color=[255, 75, 75, 200],
                 get_radius=180,
                 pickable=True,
-                # Cette ligne magique ouvre l'URL du commerce lorsque l'on clique sur le point !
                 on_click_url="{url_circulaire}"
             )
             
@@ -126,8 +123,7 @@ if code_recherche:
                 pdk.Deck(
                     layers=[couche_points],
                     initial_view_state=vue_initiale,
-                    # CARTO_DARK_MATTER affiche les routes et fonds de carte gratuitement sans clé API !
-                    map_style=pdk.map_styles.CARTO_DARK_MATTER,
+                    map_style="dark",  # Chaîne de caractères universelle et stable
                     tooltip={
                         "html": "<b>{Nom_Commerce}</b><br/>{Adresse_Rue}, {Municipalite}<br/><i>Distance : {Distance_Texte}</i><br/><span style='color:#FF4B4B;'>👉 Cliquer pour ouvrir la circulaire</span>",
                         "style": {

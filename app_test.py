@@ -14,7 +14,6 @@ if "panier_achats" not in st.session_state:
     st.session_state["panier_achats"] = []
 
 # --- DICTIONNAIRE DES LIENS D'INTÉGRATION FLIPP (REEBEE) ---
-# Ces liens permettent d'afficher la liseuse interactive directement dans l'écran Streamlit
 FLIPP_EMBED_URLS = {
     "IGA": "https://flipp.com",
     "SUPER C": "https://flipp.com",
@@ -75,15 +74,12 @@ rayon_max = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, ma
 bannieres_disponibles = ["Toutes les bannières"] + sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
 banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", bannieres_disponibles)
 
-
 # --- RECHERCHE DE LA BANNIÈRE À AFFICHER DANS LA LISEUSE ---
-# Détecter quelle bannière l'utilisateur consulte pour charger sa circulaire
 banniere_active = "MAXI"  # Par défaut à l'ouverture
 if banniere_selectionnee != "Toutes les bannières":
     banniere_active = banniere_selectionnee
 
-
-# --- DIVISION DE L'ÉCRAN PRINCIPAL EN DEUX MOITIÉS EXACTES (50% / 50%) ---
+# --- DIVISION DE L'ÉCRAN PRINCIPAL EN DEUX MOITIÉS (50% / 50%) ---
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
 # =========================================================================
@@ -99,7 +95,6 @@ with col_gauche:
         nom_produit = st.text_input("Nom de l'article :", placeholder="Ex: Poitrines de poulet, Beurre...")
         prix_produit = st.number_input("Prix en spécial ($) :", min_value=0.00, value=0.00, step=0.05, format="%.2f")
         
-        # Si un magasin est sélectionné dans le formulaire, on force la liseuse de droite à afficher ce magasin !
         if magasin_choisi != "":
             banniere_active = magasin_choisi
             
@@ -146,9 +141,10 @@ with col_gauche:
         point_origine = df_coords[df_coords['Code postal'] == code_recherche]
         
         if not point_origine.empty:
-            lat_centre = float(point_origine.iloc['Latitude'])
-            lon_centre = float(point_origine.iloc['Longitude'])
-            ville_centre = point_origine.iloc['Ville']
+            # SYNTAXE CORRIGÉE DÉFINITIVE ICI : .iloc[0]['Colonne']
+            lat_centre = float(point_origine.iloc[0]['Latitude'])
+            lon_centre = float(point_origine.iloc[0]['Longitude'])
+            ville_centre = point_origine.iloc[0]['Ville']
             
             st.caption(f"Position : {ville_centre} ({saisie_utilisateur.upper()})")
             
@@ -167,12 +163,10 @@ with col_gauche:
                     adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
                     distance = rangee['Distance_KM']
                     
-                    # Bouton radio ou sélecteur pour changer manuellement de circulaire
-                    col_info, col_action = st.columns([2, 1])
+                    col_info, col_action = st.columns(2)
                     with col_info:
                         st.markdown(f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{adresse}</small>", unsafe_allow_html=True)
                     with col_action:
-                        # Bouton pour forcer le chargement de la circulaire de ce commerce à droite
                         if st.button("📖 Consulter", key=f"voir_{index}", use_container_width=True):
                             st.session_state["banniere_manuelle"] = nom_magasin
                             st.rerun()
@@ -185,16 +179,13 @@ with col_gauche:
 # COLONNE DE DROITE : LA CIRCULAIRE INTERACTIVE FLIPP / REEBEE DIRECTE
 # =========================================================================
 with col_droite:
-    # Récupérer le choix du bouton "Consulter" s'il existe
     if "banniere_manuelle" in st.session_state:
         banniere_active = st.session_state["banniere_manuelle"]
 
     st.subheader(f"📖 Circulaire en direct : {banniere_active}")
     
-    # Récupération de l'URL Flipp correspondante
     cle_recherche_flipp = str(banniere_active).strip().upper()
-    url_embed_flipp = FLIPP_EMBED_URLS.get(cle_recherche_flipp, "https://app.flipp.com/fr/")
+    url_embed_flipp = FLIPP_EMBED_URLS.get(cle_recherche_flipp, "https://flipp.com")
     
-    # Intégration de la liseuse à l'aide d'un composant iframe natif stable
-    # Hauteur fixée à 800 pixels pour un maximum de confort visuel
-    st.iframe(url_embed_flipp, height=800, alt=f"Circulaire numérique de {banniere_active}")
+    # Intégration de la liseuse iframe stable
+    st.iframe(url_embed_flipp, height=800)

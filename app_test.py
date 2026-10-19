@@ -75,9 +75,10 @@ if code_recherche:
     point_origine = df_coords[df_coords['Code postal'] == code_recherche]
     
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc['Latitude'])
-        lon_centre = float(point_origine.iloc['Longitude'])
-        ville_centre = point_origine.iloc['Ville']
+        # CORRECTION ICI : Extraction propre de la première ligne trouvée avec .iloc[0]
+        lat_centre = float(point_origine.iloc[0]['Latitude'])
+        lon_centre = float(point_origine.iloc[0]['Longitude'])
+        ville_centre = point_origine.iloc[0]['Ville']
         
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
@@ -96,12 +97,12 @@ if code_recherche:
             # --- PRÉPARATION DES TEXTES POUR L'INFOBULLE ---
             resultats_filtres['Distance_Texte'] = resultats_filtres['Distance_KM'].round(1).astype(str) + " km"
             
-            # --- CONFIGURATION DE LA CARTE PYDECK CORRIGÉE ---
+            # --- CONFIGURATION DE LA CARTE PYDECK ---
             couche_points = pdk.Layer(
                 "ScatterplotLayer",
                 data=resultats_filtres,
                 get_position=["Longitude", "Latitude"],
-                get_color=[255, 0, 0, 160],  # Rouge (RGBA)
+                get_color=[255, 75, 75, 200],  # Rouge (RGBA)
                 get_radius=180,
                 pickable=True
             )

@@ -13,27 +13,26 @@ st.set_page_config(
 if "panier_achats" not in st.session_state:
     st.session_state["panier_achats"] = []
 
-# --- DICTIONNAIRE DE CORRESPONDANCE DES URLS ---
-BANNIERE_URLS = {
-    "IGA": "https://www.iga.ca/fr/circulaire",
-    "SUPER C": "https://www.superc.ca/circulaire",
-    "METRO": "https://www.metro.ca/circulaire",
-    "MAXI": "https://maxi.ca",
-    "PROVIGO": "https://provigo.ca",
-    "DOLLARAMA": "https://www.dollarama.com/fr-ca/",
-    "MARCHE AMI": "https://www.marcheami.ca/circulaire",
-    "MARCHÉ AMI": "https://www.marcheami.ca/circulaire",
-    "TIGRE GEANT": "https://gianttiger.com",
-    "TIGRE GÉANT": "https://gianttiger.com",
-    "WALMART": "https://walmart.ca",
-    "COSTCO": "https://www.costco.ca/grocery-household.html?langId=-25",
-    "MARCHE TRADITION": "https://marchetradition.com",
-    "MARCHÉ TRADITION": "https://marchetradition.com",
-    "MARCHE BONICHOIX": "https://www.bonichoix.com/fr/notre-circulaire/",
-    "MARCHÉ BONICHOIX": "https://www.bonichoix.com/fr/notre-circulaire/",
-    "MARCHE RICHELIEU": "https://www.marcherichelieu.ca/circulaire",
-    "MARCHÉ RICHELIEU": "https://www.marcherichelieu.ca/circulaire",
-    "MARCHE ADONIS": "https://groupeadonis.ca/circulaire"
+# --- DICTIONNAIRE DES LIENS D'INTÉGRATION FLIPP (REEBEE) ---
+# Ces liens permettent d'afficher la liseuse interactive directement dans l'écran Streamlit
+FLIPP_EMBED_URLS = {
+    "IGA": "https://flipp.com",
+    "SUPER C": "https://flipp.com",
+    "METRO": "https://flipp.com",
+    "MAXI": "https://flipp.com",
+    "PROVIGO": "https://flipp.com",
+    "DOLLARAMA": "https://flipp.com",
+    "TIGRE GEANT": "https://flipp.com",
+    "TIGRE GÉANT": "https://flipp.com",
+    "WALMART": "https://flipp.com",
+    "COSTCO": "https://flipp.com",
+    "MARCHE TRADITION": "https://flipp.com",
+    "MARCHÉ TRADITION": "https://flipp.com",
+    "MARCHE BONICHOIX": "https://flipp.com",
+    "MARCHÉ BONICHOIX": "https://flipp.com",
+    "MARCHE RICHELIEU": "https://flipp.com",
+    "MARCHÉ RICHELIEU": "https://flipp.com",
+    "MARCHE ADONIS": "https://flipp.com"
 }
 
 # --- FONCTION DE CALCUL DE DISTANCE (HAVERSINE) ---
@@ -67,7 +66,7 @@ df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
 
-# --- BARRE LATÉRALE : CRITÈRES DE RECHERCHE ---
+# --- BARRE LATÉRALE : FILTRES ---
 st.sidebar.header("Critères de recherche")
 saisie_utilisateur = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "G0M1G0")
 code_recherche = saisie_utilisateur.replace(" ", "").upper()
@@ -77,105 +76,125 @@ bannieres_disponibles = ["Toutes les bannières"] + sorted(list(df_magasins['Nom
 banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", bannieres_disponibles)
 
 
-# --- BARRE LATÉRALE : CRÉATION DE LA LISTE D'ÉPICERIE AVANCÉE ---
-st.sidebar.write("---")
-st.sidebar.header("📝 Ma liste d'épicerie")
+# --- RECHERCHE DE LA BANNIÈRE À AFFICHER DANS LA LISEUSE ---
+# Détecter quelle bannière l'utilisateur consulte pour charger sa circulaire
+banniere_active = "MAXI"  # Par défaut à l'ouverture
+if banniere_selectionnee != "Toutes les bannières":
+    banniere_active = banniere_selectionnee
 
-st.sidebar.subheader("🛒 Ajouter un spécial")
-liste_bannieres_quebec = sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
-magasin_choisi = st.sidebar.selectbox("Choisir le magasin :", [""] + liste_bannieres_quebec, key="select_magasin_form")
-nom_produit = st.sidebar.text_input("Nom de l'article :", placeholder="Ex: Poitrines de poulet")
-prix_produit = st.sidebar.number_input("Prix en spécial ($) :", min_value=0.00, value=0.00, step=0.05, format="%.2f")
 
-if st.sidebar.button("➕ Ajouter à la liste", use_container_width=True):
-    if magasin_choisi == "":
-        st.sidebar.error("Veuillez sélectionner un magasin.")
-    elif nom_produit.strip() == "":
-        st.sidebar.error("Veuillez entrer le nom d'un produit.")
-    elif prix_produit <= 0:
-        st.sidebar.error("Veuillez entrer un prix supérieur à 0 $.")
-    else:
-        nouvel_achat = {
-            "magasin": magasin_choisi,
-            "produit": nom_produit.strip(),
-            "prix": prix_produit
-        }
-        st.session_state["panier_achats"].append(nouvel_achat)
-        st.toast(f"✅ {nom_produit} ajouté pour {magasin_choisi} !", icon="🛒")
-        st.rerun()
+# --- DIVISION DE L'ÉCRAN PRINCIPAL EN DEUX MOITIÉS EXACTES (50% / 50%) ---
+col_gauche, col_droite = st.columns([1.0, 1.0])
 
-st.sidebar.write("---")
-
-if st.session_state["panier_achats"]:
-    st.sidebar.subheader("🛍️ Mes achats planifiés")
+# =========================================================================
+# COLONNE DE GAUCHE : RECHERCHE GÉOLOCALISÉE ET FORMULAIRE DE LISTE
+# =========================================================================
+with col_gauche:
+    st.subheader("🔍 Étape 1 : Saisie de ma liste d'épicerie")
     
-    df_panier = pd.DataFrame(st.session_state["panier_achats"])
-    total_facture = df_panier["prix"].sum()
-    
-    for magasin, groupe in df_panier.groupby("magasin"):
-        st.sidebar.markdown(f"🔹 **{magasin}**")
-        for idx, row in groupe.iterrows():
-            st.sidebar.write(f"&nbsp;&nbsp;&nbsp;&nbsp;• {row['produit']} — **{row['prix']:.2f} $**")
+    # Formulaire d'ajout rapide d'un article
+    with st.expander("➕ Ajouter un rabais trouvé à ma liste", expanded=True):
+        liste_bannieres_quebec = sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
+        magasin_choisi = st.selectbox("Sélectionner le magasin :", [""] + liste_bannieres_quebec)
+        nom_produit = st.text_input("Nom de l'article :", placeholder="Ex: Poitrines de poulet, Beurre...")
+        prix_produit = st.number_input("Prix en spécial ($) :", min_value=0.00, value=0.00, step=0.05, format="%.2f")
+        
+        # Si un magasin est sélectionné dans le formulaire, on force la liseuse de droite à afficher ce magasin !
+        if magasin_choisi != "":
+            banniere_active = magasin_choisi
             
-    st.sidebar.write("")
-    st.sidebar.markdown(f"### 💰 Total estimé : **{total_facture:.2f} $**")
-    
-    if st.sidebar.button("🗑️ Vider la liste", use_container_width=True):
-        st.session_state["panier_achats"] = []
-        st.rerun()
-else:
-    st.sidebar.caption("Votre liste d'épicerie est vide. Feuilletez les circulaires à droite, notez les rabais à gauche et suivez votre budget !")
+        if st.button("Enregistrer l'article", use_container_width=True):
+            if magasin_choisi == "":
+                st.error("Veuillez sélectionner un magasin.")
+            elif nom_produit.strip() == "":
+                st.error("Veuillez entrer le nom d'un produit.")
+            elif prix_produit <= 0:
+                st.error("Veuillez entrer un prix valide.")
+            else:
+                nouvel_achat = {
+                    "magasin": magasin_choisi,
+                    "produit": nom_produit.strip(),
+                    "prix": prix_produit
+                }
+                st.session_state["panier_achats"].append(nouvel_achat)
+                st.toast(f"✅ {nom_produit} enregistré !", icon="🛒")
+                st.rerun()
 
-
-# --- ZONE PRINCIPALE : RÉSULTATS DE RECHERCHE ---
-st.title("🍎 Recherche géolocalisée de commerces au Québec")
-
-if code_recherche:
-    point_origine = df_coords[df_coords['Code postal'] == code_recherche]
-    
-    if not point_origine.empty:
-        # CORRECTION HISTORIQUE DÉFINITIVE ICI (.iloc[0])
-        lat_centre = float(point_origine.iloc[0]['Latitude'])
-        lon_centre = float(point_origine.iloc[0]['Longitude'])
-        ville_centre = point_origine.iloc[0]['Ville']
+    # Zone d'affichage dynamique de la liste de courses et de la facture
+    if st.session_state["panier_achats"]:
+        st.write("### 🛍️ Mon panier de la semaine")
+        df_panier = pd.DataFrame(st.session_state["panier_achats"])
+        total_facture = df_panier["prix"].sum()
         
-        st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
-        
-        df_magasins_gps = pd.merge(df_magasins, df_coords, on='Code postal', how='inner', suffixes=('', '_Ref'))
-        df_magasins_gps['Distance_KM'] = calculer_distance(lat_centre, lon_centre, df_magasins_gps['Latitude'], df_magasins_gps['Longitude'])
-        
-        resultats_filtres = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_max]
-        if banniere_selectionnee != "Toutes les bannières":
-            resultats_filtres = resultats_filtres[resultats_filtres['Nom_Commerce'] == banniere_selectionnee]
-            
-        resultats_filtres = resultats_filtres.sort_values(by='Distance_KM')
-        
-        if not resultats_filtres.empty:
-            st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
-            st.write("---")
-            
-            # Grille visuelle sous forme de liste épurée (sans la carte)
-            for index, rangee in resultats_filtres.iterrows():
-                nom_magasin = rangee['Nom_Commerce']
-                adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
-                municipalite = rangee.get('Municipalite', '')
-                distance = rangee['Distance_KM']
+        for magasin, groupe in df_panier.groupby("magasin"):
+            st.markdown(f"🔹 **{magasin}**")
+            for idx, row in groupe.iterrows():
+                st.write(f"&nbsp;&nbsp;&nbsp;&nbsp;• {row['produit']} — **{row['prix']:.2f} $**")
+            st.write("")
                 
-                with st.container():
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown(f"### **{nom_magasin}**")
-                        st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")
-                    with col2:
-                        st.write("")
-                        cle_banniere = str(nom_magasin).strip().upper()
-                        if cle_banniere in BANNIERE_URLS:
-                            st.link_button(f"🔗 Ouvrir la circulaire {nom_magasin}", BANNIERE_URLS[cle_banniere], use_container_width=True)
-                        else:
-                            st.caption("Aucun lien disponible")
-                                
-                    st.divider()
+        st.markdown(f"### 💰 Total estimé de ma facture : **{total_facture:.2f} $**")
+        
+        if st.button("🗑️ Vider ma liste d'épicerie", use_container_width=True):
+            st.session_state["panier_achats"] = []
+            st.rerun()
+
+    st.write("---")
+    
+    # Affichage des commerces triés géographiquement
+    st.subheader("📍 Commerces les plus proches")
+    if code_recherche:
+        point_origine = df_coords[df_coords['Code postal'] == code_recherche]
+        
+        if not point_origine.empty:
+            lat_centre = float(point_origine.iloc['Latitude'])
+            lon_centre = float(point_origine.iloc['Longitude'])
+            ville_centre = point_origine.iloc['Ville']
+            
+            st.caption(f"Position : {ville_centre} ({saisie_utilisateur.upper()})")
+            
+            df_magasins_gps = pd.merge(df_magasins, df_coords, on='Code postal', how='inner', suffixes=('', '_Ref'))
+            df_magasins_gps['Distance_KM'] = calculer_distance(lat_centre, lon_centre, df_magasins_gps['Latitude'], df_magasins_gps['Longitude'])
+            
+            resultats_filtres = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_max]
+            if banniere_selectionnee != "Toutes les bannières":
+                resultats_filtres = resultats_filtres[resultats_filtres['Nom_Commerce'] == banniere_selectionnee]
+                
+            resultats_filtres = resultats_filtres.sort_values(by='Distance_KM')
+            
+            if not resultats_filtres.empty:
+                for index, rangee in resultats_filtres.iterrows():
+                    nom_magasin = rangee['Nom_Commerce']
+                    adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
+                    distance = rangee['Distance_KM']
+                    
+                    # Bouton radio ou sélecteur pour changer manuellement de circulaire
+                    col_info, col_action = st.columns([2, 1])
+                    with col_info:
+                        st.markdown(f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{adresse}</small>", unsafe_allow_html=True)
+                    with col_action:
+                        # Bouton pour forcer le chargement de la circulaire de ce commerce à droite
+                        if st.button("📖 Consulter", key=f"voir_{index}", use_container_width=True):
+                            st.session_state["banniere_manuelle"] = nom_magasin
+                            st.rerun()
+            else:
+                st.warning("Aucun commerce trouvé dans ce rayon.")
         else:
-            st.warning(f"Aucun commerce ne correspond à vos critères dans un rayon de {rayon_max} km.")
-    else:
-        st.error("❌ Code postal introuvable ou invalide dans la base de données du Québec.")
+            st.error("Code postal introuvable.")
+
+# =========================================================================
+# COLONNE DE DROITE : LA CIRCULAIRE INTERACTIVE FLIPP / REEBEE DIRECTE
+# =========================================================================
+with col_droite:
+    # Récupérer le choix du bouton "Consulter" s'il existe
+    if "banniere_manuelle" in st.session_state:
+        banniere_active = st.session_state["banniere_manuelle"]
+
+    st.subheader(f"📖 Circulaire en direct : {banniere_active}")
+    
+    # Récupération de l'URL Flipp correspondante
+    cle_recherche_flipp = str(banniere_active).strip().upper()
+    url_embed_flipp = FLIPP_EMBED_URLS.get(cle_recherche_flipp, "https://app.flipp.com/fr/")
+    
+    # Intégration de la liseuse à l'aide d'un composant iframe natif stable
+    # Hauteur fixée à 800 pixels pour un maximum de confort visuel
+    st.iframe(url_embed_flipp, height=800, alt=f"Circulaire numérique de {banniere_active}")

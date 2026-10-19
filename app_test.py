@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pydeck as pdk  # Importation pour la carte avancée
+import pydeck as pdk
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(
@@ -30,20 +30,15 @@ BANNIERE_URLS = {
 
 # --- FONCTION DE CALCUL DE DISTANCE (HAVERSINE) ---
 def calculer_distance(lat1, lon1, lat2, lon2):
-    """Calcule la distance en kilomètres entre deux points géographiques."""
-    R = 6371.0  # Rayon de la Terre en kilomètres
-    
+    R = 6371.0
     lat1_rad = np.radians(lat1)
     lon1_rad = np.radians(lon1)
     lat2_rad = np.radians(lat2)
     lon2_rad = np.radians(lon2)
-    
     dlon = lon2_rad - lon1_rad
     dlat = lat2_rad - lat1_rad
-    
     a = np.sin(dlat / 2)**2 + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2)**2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-    
     return R * c
 
 # --- CHARGEMENT SÉCURISÉ DES DONNÉES ---
@@ -52,10 +47,8 @@ def charger_donnees():
     try:
         df_coords = pd.read_csv('codes_qc.csv', sep=';')
         df_magasins = pd.read_csv('disponibilite_magasins.csv')
-        
         df_coords['Code postal'] = df_coords['Code postal'].astype(str).str.replace(" ", "").str.upper()
         df_magasins['Code postal'] = df_magasins['Code postal'].astype(str).str.replace(" ", "").str.upper()
-        
         return df_coords, df_magasins
     except Exception as e:
         st.error(f"Erreur lors de la lecture des fichiers : {e}")
@@ -66,19 +59,16 @@ df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
 
-# --- BARRE LATÉRALE : CRITÈRES DE RECHERCHE ---
+# --- BARRE LATÉRALE ---
 st.sidebar.header("Critères de recherche")
-
 saisie_utilisateur = st.sidebar.text_input("Entrez votre code postal (ex: G0M 1G0)", "G0M1G0")
 code_recherche = saisie_utilisateur.replace(" ", "").upper()
-
 rayon_max = st.sidebar.slider("Rayon maximum de recherche (km)", min_value=5, max_value=100, value=25, step=5)
 
 bannieres_disponibles = ["Toutes les bannières"] + sorted(list(df_magasins['Nom_Commerce'].dropna().unique()))
 banniere_selectionnee = st.sidebar.selectbox("Filtrer par bannière :", bannieres_disponibles)
 
-
-# --- ZONE PRINCIPALE : RÉSULTATS ---
+# --- ZONE PRINCIPALE ---
 st.title("🍎 Recherche géolocalisée de commerces au Québec")
 
 if code_recherche:
@@ -92,14 +82,9 @@ if code_recherche:
         st.info(f"📍 Position détectée : **{ville_centre}** ({saisie_utilisateur.upper()})")
         
         df_magasins_gps = pd.merge(df_magasins, df_coords, on='Code postal', how='inner', suffixes=('', '_Ref'))
-        
-        df_magasins_gps['Distance_KM'] = calculer_distance(
-            lat_centre, lon_centre, 
-            df_magasins_gps['Latitude'], df_magasins_gps['Longitude']
-        )
+        df_magasins_gps['Distance_KM'] = calculer_distance(lat_centre, lon_centre, df_magasins_gps['Latitude'], df_magasins_gps['Longitude'])
         
         resultats_filtres = df_magasins_gps[df_magasins_gps['Distance_KM'] <= rayon_max]
-        
         if banniere_selectionnee != "Toutes les bannières":
             resultats_filtres = resultats_filtres[resultats_filtres['Nom_Commerce'] == banniere_selectionnee]
             
@@ -108,32 +93,43 @@ if code_recherche:
         if not resultats_filtres.empty:
             st.success(f"🎉 {len(resultats_filtres)} commerce(s) trouvé(s) dans un rayon de {rayon_max} km.")
             
-            # --- CRÉATION DE LA CARTE AVANCÉE PYDECK ---
-            # Configuration de la couche des points (magasins)
+            # --- PRÉPARATION DES LIENS ET TEXTES POUR PYDECK ---
+            # Arrondir la distance à 1 décimale dans une nouvelle colonne textuelle pour l'infobulle
+            resultats_filtres['Distance_Texte'] = resultats_filtres['Distance_KM'].round(1).astype(str) + " km"
+            
+            # Ajouter le lien URL directement dans les données de la carte pour la rendre cliquable
+            def associer_url(nom):
+                cle = str(nom).strip().upper()
+                return BANNIERE_URLS.get(cle, "https://google.com")
+            resultats_filtres['url_circulaire'] = resultats_filtres['Nom_Commerce'].apply(associer_url)
+            
+            # --- CONFIGURATION DE LA CARTE PYDECK ---
             couche_points = pdk.Layer(
                 "ScatterplotLayer",
                 data=resultats_filtres,
                 get_position=["Longitude", "Latitude"],
-                get_color=[230, 50, 50, 200],  # Rouge semi-transparent
-                get_radius=200,                # Taille des points en mètres
-                pickable=True,                 # Rend les points interactifs (cliquables/survolables)
+                get_color=[255, 0, 0, 200],
+                get_radius=180,
+                pickable=True,
+                # Cette ligne magique ouvre l'URL du commerce lorsque l'on clique sur le point !
+                on_click_url="{url_circulaire}"
             )
             
-            # Configuration du zoom initial centré sur l'utilisateur
             vue_initiale = pdk.ViewState(
                 latitude=lat_centre,
                 longitude=lon_centre,
-                zoom=11,
+                zoom=12,
                 pitch=0
             )
             
-            # Affichage de la carte avec l'infobulle (tooltip) au survol
             st.pydeck_chart(
                 pdk.Deck(
                     layers=[couche_points],
                     initial_view_state=vue_initiale,
+                    # CARTO_DARK_MATTER affiche les routes et fonds de carte gratuitement sans clé API !
+                    map_style=pdk.map_styles.CARTO_DARK_MATTER,
                     tooltip={
-                        "html": "<b>{Nom_Commerce}</b><br/>{Adresse_Rue}, {Municipalite}<br/><i>Distance : {Distance_KM:.1f} km</i>",
+                        "html": "<b>{Nom_Commerce}</b><br/>{Adresse_Rue}, {Municipalite}<br/><i>Distance : {Distance_Texte}</i><br/><span style='color:#FF4B4B;'>👉 Cliquer pour ouvrir la circulaire</span>",
                         "style": {
                             "backgroundColor": "#1E1E1E",
                             "color": "white",
@@ -147,7 +143,7 @@ if code_recherche:
             
             st.write("---")
             
-            # Grille visuelle pour la liste des commerces sous la carte
+            # Grille visuelle sous la carte
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee['Nom_Commerce']
                 adresse = rangee.get('Adresse_Rue', 'Adresse non disponible')
@@ -156,24 +152,19 @@ if code_recherche:
                 
                 with st.container():
                     col1, col2 = st.columns([3, 1])
-                    
                     with col1:
                         st.markdown(f"### **{nom_magasin}**")
                         st.write(f"📍 {adresse}, {municipalite} *(à {distance:.1f} km)*")
-                    
                     with col2:
                         st.write("")
                         st.write("")
                         cle_banniere = str(nom_magasin).strip().upper()
                         if cle_banniere in BANNIERE_URLS:
-                            url_circulaire = BANNIERE_URLS[cle_banniere]
-                            st.link_button(f"🔗 Circulaire {nom_magasin}", url_circulaire, use_container_width=True)
+                            st.link_button(f"🔗 Circulaire {nom_magasin}", BANNIERE_URLS[cle_banniere], use_container_width=True)
                         else:
                             st.caption("Aucun lien disponible")
-                            
                     st.divider()
         else:
             st.warning(f"Aucun commerce ne correspond à vos critères dans un rayon de {rayon_max} km.")
-            
     else:
         st.error("❌ Code postal introuvable ou invalide dans la base de données du Québec.")

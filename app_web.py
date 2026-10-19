@@ -54,7 +54,7 @@ st.html("""
         border-radius: 8px !important;
         border: none !important;
         font-weight: bold !important;
-        font-size: 18px !important;
+        font-size: 26px !important;
         padding: 10px 20px !important;
     }
     /* Effet au survol de la souris */

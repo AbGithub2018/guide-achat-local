@@ -169,7 +169,7 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (CODE DE DÉCOUPAGE CORRIGÉ)
+# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (DECOUPE ULTRA-SECURISEE)
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
@@ -200,28 +200,28 @@ with col_droite:
                         use_container_width=True,
                         type="primary"
                     ):
-                        # 1. On enlève le .jpeg de la fin de la chaîne de caractères (ex: "5.99_article_22")
-                        nom_sans_extension = str(photo).rsplit('.', 1)[0]
+                        # 1. On isole le nom sans l'extension de fichier (ex: "2.99_article_32.jpeg" -> "2.99_article_32")
+                        nom_complet_sans_ext, _ = os.path.splitext(str(photo))
                         
                         # 2. On découpe selon le premier tiret bas "_"
-                        if "_" in nom_sans_extension:
-                            parties = nom_sans_extension.split("_", 1)
+                        if "_" in nom_complet_sans_ext:
+                            parties = nom_complet_sans_ext.split("_", 1)
                             premier_morceau = parties[0]
                             reste_du_texte = parties[1]
                             
                             try:
-                                # On convertit le prix trouvé en float (ex: "5.99" -> 5.99)
+                                # On convertit le prix trouvé en chiffre float (ex: 2.99)
                                 prix_automatique = float(premier_morceau)
                                 nom_automatique = reste_du_texte.replace("_", " ").capitalize()
                             except ValueError:
-                                # Si le fichier est un ancien fichier non renommé (ex: 83988)
+                                # Si c'est un résidu d'ancien fichier système
                                 prix_automatique = 0.00
                                 nom_automatique = "Article Circulaire"
                         else:
                             prix_automatique = 0.00
                             nom_automatique = "Article Circulaire"
 
-                        # 3. Enregistrement propre dans la facture
+                        # 3. Enregistrement propre dans la commande commune
                         st.session_state["panier_achats"].append(
                             {
                                 "magasin": banniere_active,

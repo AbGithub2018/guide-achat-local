@@ -169,7 +169,7 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (AVEC FILTRE DE NOM SÉCURISÉ)
+# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (CODE DE DÉCOUPAGE CORRIGÉ)
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
@@ -194,35 +194,34 @@ with col_droite:
                 with grille_visuelle[index % 2]:
                     st.image(image_aliment, use_container_width=True)
 
-                    # LE BOUTON D'ENREGISTREMENT EN DIRECT ENTIÈREMENT SÉCURISÉ
                     if st.button(
                         f"➕ Ajouter ce spécial",
                         key=f"btn_photo_{index}",
                         use_container_width=True,
                         type="primary"
                     ):
-                        # 1. On extrait le nom sans l'extension (.jpeg)
-                        nom_fichier_pur = os.path.splitext(photo)[0]
+                        # 1. On enlève le .jpeg de la fin de la chaîne de caractères (ex: "5.99_article_22")
+                        nom_sans_extension = str(photo).rsplit('.', 1)[0]
                         
-                        # 2. ANALYSE ET NETTOYAGE DU NOM ET DU PRIX
-                        if "_" in nom_fichier_pur:
-                            premier_morceau = nom_fichier_pur.split("_")[0]
+                        # 2. On découpe selon le premier tiret bas "_"
+                        if "_" in nom_sans_extension:
+                            parties = nom_sans_extension.split("_", 1)
+                            premier_morceau = parties[0]
+                            reste_du_texte = parties[1]
                             
                             try:
-                                # Si le premier morceau est un vrai prix court (ex: 1.44 ou 5.99)
+                                # On convertit le prix trouvé en float (ex: "5.99" -> 5.99)
                                 prix_automatique = float(premier_morceau)
-                                # On nettoie le reste du texte pour faire le nom
-                                reste = nom_fichier_pur.split("_", 1)[1]
-                                nom_automatique = reste.replace("_", " ").capitalize()
+                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
                             except ValueError:
-                                # S'il s'agit de vos codes longs (ex: 83988), on bloque le bug !
+                                # Si le fichier est un ancien fichier non renommé (ex: 83988)
                                 prix_automatique = 0.00
                                 nom_automatique = "Article Circulaire"
                         else:
                             prix_automatique = 0.00
                             nom_automatique = "Article Circulaire"
 
-                        # 3. Ajout immédiat au panier commun de l'Étape 1
+                        # 3. Enregistrement propre dans la facture
                         st.session_state["panier_achats"].append(
                             {
                                 "magasin": banniere_active,

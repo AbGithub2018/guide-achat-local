@@ -193,44 +193,57 @@ with col_gauche:
             st.error("Code postal introuvable.")
 
 # =========================================================================
-# COLONNE DE DROITE : LA ZONE DE TEST DE VOS PHOTOS
+# COLONNE DE DROITE : AFFICHAGE DIRECT DE VOS PHOTOS DE CIRCULAIRE
 # =========================================================================
 with col_droite:
     if "banniere_manuelle" in st.session_state:
         banniere_active = st.session_state["banniere_manuelle"]
 
-    st.subheader(f"📸 Zone de test : Vos rabais pré-découpés")
-    st.write(f"Bannière active détectée : **{banniere_active}**")
+    st.subheader(f"📖 Les Rabais en vedette : {banniere_active}")
 
-    # 1. On prépare le chemin vers votre dossier (ex: bannieres/super_c)
+    # 1. Adapter le nom pour trouver le bon dossier sur GitHub (ex: "SUPER C" -> "super_c")
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
-    chemin_dossier = os.path.join("bannieres", nom_sous_dossier)
+    chemin_dossier_images = os.path.join("bannieres", nom_sous_dossier)
 
-    # 2. On vérifie si ce dossier existe sur votre ordinateur
-    if os.path.exists(chemin_dossier):
-        # On fait la liste des images (.png, .jpg, .jpeg) présentes dans le dossier
-        fichiers = [f for f in os.listdir(chemin_dossier) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    # 2. Vérifier si le dossier existe
+    if os.path.exists(chemin_dossier_images):
+        # On liste toutes les photos (.jpeg, .png, .jpg) présentes dans le dossier
+        fichiers_photos = [f for f in os.listdir(chemin_dossier_images) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         
-        if not fichiers:
-            st.info(f"Le dossier '{nom_sous_dossier}' est vide. Glissez-y 1 ou 2 images renommées (ex: 5.99_crevettes.jpeg) pour tester !")
+        if not fichiers_photos:
+            st.info(f"Le dossier '{nom_sous_dossier}' ne contient pas encore de photos.")
         else:
-            # On affiche les images les unes sous les autres pour le test
-            for fichier in fichiers:
-                chemin_image_complete = os.path.join(chemin_dossier, fichier)
+            st.write(f"✨ Cliquez sur un article pour l'ajouter à votre document.")
+            
+            # On crée une belle grille de 2 colonnes pour afficher les photos côte à côte
+            grille_visuelle = st.columns(2)
+            
+            for index, photo in enumerate(fichiers_photos):
+                chemin_complet_photo = os.path.join(chemin_dossier_images, photo)
                 
-                # On sépare le prix du reste du texte (ex: "5.99_crevettes.jpeg" devient "5.99 $")
-                if "_" in fichier:
-                    prix_texte = fichier.split("_")[0] + " $"
-                else:
-                    prix_texte = "Prix non inscrit au début du fichier"
+                # Charger et afficher l'image de la circulaire
+                image_aliment = Image.open(chemin_complet_photo)
                 
-                # On affiche la photo dans l'application Streamlit
-                st.image(chemin_image_complete, width=220)
-                st.write(f"Prix extrait du nom : **{prix_texte}**")
-                
-                # Un bouton de test pour simuler le clic de l'utilisateur
-                if st.button(f"Sélectionner cet article", key=f"test_{fichier}"):
-                    st.success(f"Réussite ! Vous avez cliqué sur le rabais à {prix_texte}.")
-                st.write("---")
+                with grille_visually[index % 2]:
+                    # On affiche la photo du rabais
+                    st.image(image_aliment, use_container_width=True)
+                    
+                    # Un bouton juste en dessous de la photo pour que l'utilisateur puisse la sélectionner
+                    if st.button(f"➕ Choisir cet article", key=f"btn_photo_{index}"):
+                        # Pour le test, on extrait un nom simple à partir du nom de fichier
+                        nom_simple = photo.split(".")[0].replace("_", " ").capitalize()
+                        
+                        nouvel_article = {
+                            "Magasin": banniere_active,
+                            "Fichier Image": photo
+                        }
+                        
+                        # On l'enregistre dans la mémoire de la liste d'épicerie
+                        if "liste_epicerie" not in st.session_state:
+                            st.session_state.liste_epicerie = []
+                            
+                        st.session_state.liste_epicerie.append(nouvel_article)
+                        st.toast(f"✅ Article ajouté à votre document !", icon="📝")
+                        st.rerun()
     else:
-        st.warning(f"Pour tester cette bannière, créez le dossier : bannieres\\{nom_sous_dossier}")
+        st.warning(f"Dossier de photos introuvable : bannieres/{nom_sous_dossier}")

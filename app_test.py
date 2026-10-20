@@ -1,51 +1,10 @@
-import numpy as np
-import pandas as pd
-import streamlit as st
-
-
-def calculer_distance(lat1, lon1, lat2, lon2):
-    """Calcule la distance en kilomètres entre deux coordonnées GPS."""
-    R = 6371.0
-    lat1_rad = np.radians(lat1)
-    lon1_rad = np.radians(lon1)
-    lat2_rad = np.radians(lat2)
-    lon2_rad = np.radians(lon2)
-
-    dlon = lon2_rad - lon1_rad
-    dlat = lat2_rad - lat1_rad
-
-    a = (
-        np.sin(dlat / 2) ** 2
-        + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2) ** 2
-    )
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-    return R * c
-
-
-@st.cache_data
-def charger_donnees():
-    """Charge et nettoie les fichiers de codes postaux et de magasins."""
-    try:
-        df_coords = pd.read_csv("codes_qc.csv", sep=";")
-        df_magasins = pd.read_csv("disponibilite_magasins.csv")
-
-        df_coords["Code postal"] = (
-            df_coords["Code postal"].astype(str).str.replace(" ", "").str.upper()
-        )
-        df_magasins["Code postal"] = (
-            df_magasins["Code postal"].astype(str).str.replace(" ", "").str.upper()
-        )
-        return df_coords, df_magasins
-    except Exception as e:
-        st.error(f"Erreur lors de la lecture des fichiers CSV : {e}")
-        return None, None
 import os
 import urllib.parse
 import pandas as pd
 import streamlit as st
 from PIL import Image
 
-# Importation de vos fonctions géographiques depuis le fichier fonctions_geo.py
+# Importation de vos fonctions géographiques depuis fonctions_geo.py
 from fonctions_geo import calculer_distance, charger_donnees
 
 # --- CONFIGURATION DE LA PAGE ---
@@ -69,7 +28,9 @@ df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
 
-# --- BARRE LATÉRALE : FILTRES ---
+# =========================================================================
+# SECTION COMPLÈTEMENT À GAUCHE : BARRE LATÉRALE (FILTRES + COMMERCES)
+# =========================================================================
 st.sidebar.header("Critères de recherche")
 saisie_utilisateur = st.sidebar.text_input(
     "Entrez votre code postal (ex: G0M 1G0)", "G0M1G0"
@@ -91,10 +52,66 @@ if banniere_selectionnee != "Toutes les bannières":
 
 banniere_active = st.session_state["banniere_manuelle"]
 
+st.sidebar.write("---")
+
+# FLUX GÉOLOCALISÉ ENTIÈREMENT DÉPLACÉ DANS LA BARRE DE GAUCHE
+st.sidebar.subheader("📍 Commerces les plus proches")
+if code_recherche:
+    point_origine = df_coords[df_coords["Code postal"] == code_recherche]
+
+    if not point_origine.empty:
+        lat_centre = float(point_origine.iloc[0]["Latitude"])
+        lon_centre = float(point_origine.iloc[0]["Longitude"])
+        st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
+
+        df_magasins_gps = pd.merge(
+            df_magasins,
+            df_coords,
+            on="Code postal",
+            how="inner",
+            suffixes=("", "_Ref"),
+        )
+        df_magasins_gps["Distance_KM"] = calculer_distance(
+            lat_centre,
+            lon_centre,
+            df_magasins_gps["Latitude"],
+            df_magasins_gps["Longitude"],
+        )
+
+        resultats_filtres = df_magasins_gps[
+            df_magasins_gps["Distance_KM"] <= rayon_max
+        ].sort_values(by="Distance_KM")
+        if banniere_selectionnee != "Toutes les bannières":
+            resultats_filtres = resultats_filtres[
+                resultats_filtres["Nom_Commerce"] == banniere_selectionnee
+            ]
+
+        if not resultats_filtres.empty:
+            for index, rangee in resultats_filtres.iterrows():
+                nom_magasin = rangee["Nom_Commerce"]
+                distance = rangee["Distance_KM"]
+
+                # Interface compacte adaptée pour la barre latérale
+                st.sidebar.markdown(
+                    f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{rangee.get('Adresse_Rue', '')}</small>",
+                    unsafe_allow_html=True,
+                )
+                if st.sidebar.button(
+                    "📖 Consulter",
+                    key=f"voir_magasin_{index}",
+                    use_container_width=True,
+                ):
+                    st.session_state["banniere_manuelle"] = nom_magasin
+                    st.rerun()
+                st.sidebar.write("")
+        else:
+            st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
+
+
 # --- EN-TÊTE PRINCIPAL ---
 st.title("🍎 Planificateur de Budget Épicerie")
 
-# LA LIGNE ROUGE (CONSERVÉE)
+# LA LIGNE ROUGE
 st.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner un Code-Barres / Pays d'Origine)",
     "https://streamlit.app",
@@ -103,11 +120,11 @@ st.link_button(
 )
 st.write("---")
 
-# --- LES DEUX COLONNES ---
+# --- LES DEUX COLONNES CENTRALES ---
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
 # =========================================================================
-# COLONNE DE GAUCHE : FORMULAIRE ET DISTANCES
+# COLONNE DE GAUCHE : FORMULAIRE MANUEL + FACTURE MONTÉE
 # =========================================================================
 with col_gauche:
     st.subheader("🔍 Étape 1 : Saisie de ma liste d'épicerie")
@@ -115,14 +132,11 @@ with col_gauche:
     with st.expander("➕ Ajouter un rabais trouvé à ma liste", expanded=True):
         st.write(f"Magasin sélectionné : **{banniere_active}**")
 
-        nom_defaut = st.session_state.get("nom_article_saisi", "")
-        prix_defaut = st.session_state.get("prix_article_saisi", 0.00)
-
         nom_article = st.text_input(
-            "Nom de l'article :", value=nom_defaut, key="input_nom"
+            "Nom de l'article :", placeholder="Ex: Banane, Beurre...", key="input_nom"
         )
         prix_article = st.number_input(
-            "Prix en spécial ($) :", value=float(prix_defaut), key="input_prix"
+            "Prix en spécial ($) :", value=0.00, step=0.01, key="input_prix"
         )
 
         if st.button("Enregistrer l'article", use_container_width=True):
@@ -134,64 +148,26 @@ with col_gauche:
                         "prix": prix_article,
                     }
                 )
-                st.session_state["nom_article_saisi"] = ""
-                st.session_state["prix_article_saisi"] = 0.00
                 st.toast("Article enregistré dans la commande !", icon="✅")
                 st.rerun()
+            else:
+                st.warning("Veuillez entrer un nom d'article.")
 
     st.write("---")
 
-    # ZONE GÉOLOCALISÉE (Boutons Consulter réparés)
-    st.subheader("📍 Commerces les plus proches")
-    if code_recherche:
-        point_origine = df_coords[df_coords["Code postal"] == code_recherche]
+    st.subheader("🛍️ Récapitulatif de ma commande & Facture")
+    if st.session_state["panier_achats"]:
+        df_panier = pd.DataFrame(st.session_state["panier_achats"])
+        st.dataframe(df_panier, use_container_width=True, hide_index=True)
+        st.markdown(
+            f"### 💰 Montant total de la commande : **{df_panier['prix'].sum():.2f} $**"
+        )
 
-        if not point_origine.empty:
-            lat_centre = float(point_origine.iloc[0]["Latitude"])
-            lon_centre = float(point_origine.iloc[0]["Longitude"])
-            st.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
-
-            df_magasins_gps = pd.merge(
-                df_magasins,
-                df_coords,
-                on="Code postal",
-                how="inner",
-                suffixes=("", "_Ref"),
-            )
-            df_magasins_gps["Distance_KM"] = calculer_distance(
-                lat_centre,
-                lon_centre,
-                df_magasins_gps["Latitude"],
-                df_magasins_gps["Longitude"],
-            )
-
-            resultats_filtres = df_magasins_gps[
-                df_magasins_gps["Distance_KM"] <= rayon_max
-            ].sort_values(by="Distance_KM")
-            if banniere_selectionnee != "Toutes les bannières":
-                resultats_filtres = resultats_filtres[
-                    resultats_filtres["Nom_Commerce"] == banniere_selectionnee
-                ]
-
-            if not resultats_filtres.empty:
-                for index, rangee in resultats_filtres.iterrows():
-                    nom_magasin = rangee["Nom_Commerce"]
-                    distance = rangee["Distance_KM"]
-
-                    col_info, col_action = st.columns([0.6, 0.4])
-                    with col_info:
-                        st.markdown(
-                            f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{rangee.get('Adresse_Rue', '')}</small>",
-                            unsafe_allow_html=True,
-                        )
-                    with col_action:
-                        if st.button(
-                            "📖 Consulter",
-                            key=f"voir_magasin_{index}",
-                            use_container_width=True,
-                        ):
-                            st.session_state["banniere_manuelle"] = nom_magasin
-                            st.rerun()
+        if st.button("🗑️ Vider complètement la commande", use_container_width=True):
+            st.session_state["panier_achats"] = []
+            st.rerun()
+    else:
+        st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
 # COLONNE DE DROITE : LISEUSE VISUELLE REEBEE
@@ -220,37 +196,35 @@ with col_droite:
                     st.image(image_aliment, use_container_width=True)
 
                     if st.button(
-                        f"➕ Saisir cet article",
+                        f"➕ Ajouter ce spécial en direct",
                         key=f"btn_photo_{index}",
                         use_container_width=True,
                     ):
-                        nom_nettoye = (
-                            os.path.splitext(photo)[0]
-                            .replace("_", " ")
-                            .capitalize()
+                        nom_sans_ext = os.path.splitext(photo)[0]
+                        
+                        if "_" in nom_sans_ext:
+                            parties = nom_sans_ext.split("_", 1)
+                            try:
+                                prix_automatique = float(parties[0])
+                                nom_automatique = parties[1].replace("_", " ").capitalize()
+                            except ValueError:
+                                prix_automatique = 0.00
+                                nom_automatique = nom_sans_ext.replace("_", " ").capitalize()
+                        else:
+                            prix_automatique = 0.00
+                            nom_automatique = nom_sans_ext.replace("_", " ").capitalize()
+
+                        st.session_state["panier_achats"].append(
+                            {
+                                "magasin": banniere_active,
+                                "produit": nom_automatique,
+                                "prix": prix_automatique,
+                            }
                         )
-                        st.session_state["nom_article_saisi"] = nom_nettoye
-                        st.session_state["prix_article_saisi"] = 0.00
+                        st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
                         st.rerun()
                     st.write("---")
         else:
             st.info("Aucune photo dans ce dossier pour le moment.")
     else:
         st.warning(f"Dossier introuvable : bannieres/{nom_sous_dossier}")
-
-# =========================================================================
-# FIN DE PAGE : LE PANIER TOTAL
-# =========================================================================
-st.write("---")
-st.subheader("🛍️ Récapitulatif de ma commande & Facture")
-
-if st.session_state["panier_achats"]:
-    df_panier = pd.DataFrame(st.session_state["panier_achats"])
-    st.dataframe(df_panier, use_container_width=True, hide_index=True)
-    st.markdown(
-        f"### 💰 Montant total de la commande : **{df_panier['prix'].sum():.2f} $**"
-    )
-
-    if st.button("🗑️ Vider complètement la commande", use_container_width=True):
-        st.session_state["panier_achats"] = []
-        st.rerun()

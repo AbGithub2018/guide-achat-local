@@ -29,7 +29,7 @@ if df_coords is None or df_magasins is None:
     st.stop()
 
 # =========================================================================
-# SECTION COMPLÈTEMENT À GAUCHE : BARRE LATÉRALE (FILTRES + COMMERCES)
+# SECTION À GAUCHE : BARRE LATÉRALE (FILTRES + COMMERCES)
 # =========================================================================
 st.sidebar.header("Critères de recherche")
 saisie_utilisateur = st.sidebar.text_input(
@@ -54,7 +54,7 @@ banniere_active = st.session_state["banniere_manuelle"]
 
 st.sidebar.write("---")
 
-# FLUX GÉOLOCALISÉ ENTIÈREMENT DÉPLACÉ DANS LA BARRE DE GAUCHE
+# FLUX GÉOLOCALISÉ DANS LA BARRE DE GAUCHE
 st.sidebar.subheader("📍 Commerces les plus proches")
 if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
@@ -91,11 +91,11 @@ if code_recherche:
                 nom_magasin = rangee["Nom_Commerce"]
                 distance = rangee["Distance_KM"]
 
-                # Interface compacte adaptée pour la barre latérale
                 st.sidebar.markdown(
                     f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{rangee.get('Adresse_Rue', '')}</small>",
                     unsafe_allow_html=True,
                 )
+                # APPARITION NO. 2 de st.button (Bouton Consulter)
                 if st.sidebar.button(
                     "📖 Consulter",
                     key=f"voir_magasin_{index}",
@@ -139,6 +139,7 @@ with col_gauche:
             "Prix en spécial ($) :", value=0.00, step=0.01, key="input_prix"
         )
 
+        # APPARITION NO. 1 de st.button (Enregistrer manuel)
         if st.button("Enregistrer l'article", use_container_width=True):
             if nom_article:
                 st.session_state["panier_achats"].append(
@@ -170,7 +171,7 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE
+# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (AVEC BOUTON CORRIGÉ)
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
@@ -195,24 +196,32 @@ with col_droite:
                 with grille_visuelle[index % 2]:
                     st.image(image_aliment, use_container_width=True)
 
+                    # APPARITION NO. 3 de st.button (Bouton sous les photos - CORRIGÉ)
                     if st.button(
-                        f"➕ Ajouter ce spécial en direct",
+                        f"➕ Ajouter ce spécial",
                         key=f"btn_photo_{index}",
                         use_container_width=True,
+                        type="primary"
                     ):
-                        nom_sans_ext = os.path.splitext(photo)[0]
+                        # Extraction propre et sécurisée du nom textuel
+                        nom_fichier_pur = os.path.splitext(photo)[0]
                         
-                        if "_" in nom_sans_ext:
-                            parties = nom_sans_ext.split("_", 1)
+                        if "_" in nom_fichier_pur:
+                            parties = nom_fichier_pur.split("_", 1)
+                            premier_morceau = parties[0]
+                            reste_du_texte = parties[1]
+                            
                             try:
-                                prix_automatique = float(parties[0])
-                                nom_automatique = parties[1].replace("_", " ").capitalize()
+                                # On essaie de lire un prix au début (ex: 1.44)
+                                prix_automatique = float(premier_morceau)
+                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
                             except ValueError:
+                                # Si c'est un code brut (ex: 83988), on force à 0.00 $
                                 prix_automatique = 0.00
-                                nom_automatique = nom_sans_ext.replace("_", " ").capitalize()
+                                nom_automatique = nom_fichier_pur.replace("_", " ").capitalize()
                         else:
                             prix_automatique = 0.00
-                            nom_automatique = nom_sans_ext.replace("_", " ").capitalize()
+                            nom_automatique = nom_fichier_pur.replace("_", " ").capitalize()
 
                         st.session_state["panier_achats"].append(
                             {
@@ -223,7 +232,7 @@ with col_droite:
                         )
                         st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
                         st.rerun()
-                    st.write("---")
+                    st.write("")
         else:
             st.info("Aucune photo dans ce dossier pour le moment.")
     else:

@@ -95,7 +95,6 @@ if code_recherche:
                     f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{rangee.get('Adresse_Rue', '')}</small>",
                     unsafe_allow_html=True,
                 )
-                # APPARITION NO. 2 de st.button (Bouton Consulter)
                 if st.sidebar.button(
                     "📖 Consulter",
                     key=f"voir_magasin_{index}",
@@ -139,7 +138,6 @@ with col_gauche:
             "Prix en spécial ($) :", value=0.00, step=0.01, key="input_prix"
         )
 
-        # APPARITION NO. 1 de st.button (Enregistrer manuel)
         if st.button("Enregistrer l'article", use_container_width=True):
             if nom_article:
                 st.session_state["panier_achats"].append(
@@ -171,7 +169,7 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (AVEC BOUTON CORRIGÉ)
+# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (AVEC FILTRE DE NOM SÉCURISÉ)
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
@@ -196,33 +194,35 @@ with col_droite:
                 with grille_visuelle[index % 2]:
                     st.image(image_aliment, use_container_width=True)
 
-                    # APPARITION NO. 3 de st.button (Bouton sous les photos - CORRIGÉ)
+                    # LE BOUTON D'ENREGISTREMENT EN DIRECT ENTIÈREMENT SÉCURISÉ
                     if st.button(
                         f"➕ Ajouter ce spécial",
                         key=f"btn_photo_{index}",
                         use_container_width=True,
                         type="primary"
                     ):
-                        # Extraction propre et sécurisée du nom textuel
+                        # 1. On extrait le nom sans l'extension (.jpeg)
                         nom_fichier_pur = os.path.splitext(photo)[0]
                         
+                        # 2. ANALYSE ET NETTOYAGE DU NOM ET DU PRIX
                         if "_" in nom_fichier_pur:
-                            parties = nom_fichier_pur.split("_", 1)
-                            premier_morceau = parties[0]
-                            reste_du_texte = parties[1]
+                            premier_morceau = nom_fichier_pur.split("_")[0]
                             
                             try:
-                                # On essaie de lire un prix au début (ex: 1.44)
+                                # Si le premier morceau est un vrai prix court (ex: 1.44 ou 5.99)
                                 prix_automatique = float(premier_morceau)
-                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
+                                # On nettoie le reste du texte pour faire le nom
+                                reste = nom_fichier_pur.split("_", 1)[1]
+                                nom_automatique = reste.replace("_", " ").capitalize()
                             except ValueError:
-                                # Si c'est un code brut (ex: 83988), on force à 0.00 $
+                                # S'il s'agit de vos codes longs (ex: 83988), on bloque le bug !
                                 prix_automatique = 0.00
-                                nom_automatique = nom_fichier_pur.replace("_", " ").capitalize()
+                                nom_automatique = "Article Circulaire"
                         else:
                             prix_automatique = 0.00
-                            nom_automatique = nom_fichier_pur.replace("_", " ").capitalize()
+                            nom_automatique = "Article Circulaire"
 
+                        # 3. Ajout immédiat au panier commun de l'Étape 1
                         st.session_state["panier_achats"].append(
                             {
                                 "magasin": banniere_active,

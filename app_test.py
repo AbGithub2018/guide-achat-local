@@ -193,15 +193,44 @@ with col_gauche:
             st.error("Code postal introuvable.")
 
 # =========================================================================
-# COLONNE DE DROITE : LA CIRCULAIRE INTERACTIVE FLIPP / REEBEE DIRECTE
+# COLONNE DE DROITE : LA ZONE DE TEST DE VOS PHOTOS
 # =========================================================================
 with col_droite:
     if "banniere_manuelle" in st.session_state:
         banniere_active = st.session_state["banniere_manuelle"]
 
-    st.subheader(f"📖 Circulaire en direct : {banniere_active}")
-    
-    cle_recherche_flipp = str(banniere_active).strip().upper()
-    url_embed_flipp = FLIPP_EMBED_URLS.get(cle_recherche_flipp, "https://flipp.com")
-    
-    st.iframe(url_embed_flipp, height=800)
+    st.subheader(f"📸 Zone de test : Vos rabais pré-découpés")
+    st.write(f"Bannière active détectée : **{banniere_active}**")
+
+    # 1. On prépare le chemin vers votre dossier (ex: bannieres/super_c)
+    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
+    chemin_dossier = os.path.join("bannieres", nom_sous_dossier)
+
+    # 2. On vérifie si ce dossier existe sur votre ordinateur
+    if os.path.exists(chemin_dossier):
+        # On fait la liste des images (.png, .jpg, .jpeg) présentes dans le dossier
+        fichiers = [f for f in os.listdir(chemin_dossier) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        
+        if not fichiers:
+            st.info(f"Le dossier '{nom_sous_dossier}' est vide. Glissez-y 1 ou 2 images renommées (ex: 5.99_crevettes.jpeg) pour tester !")
+        else:
+            # On affiche les images les unes sous les autres pour le test
+            for fichier in fichiers:
+                chemin_image_complete = os.path.join(chemin_dossier, fichier)
+                
+                # On sépare le prix du reste du texte (ex: "5.99_crevettes.jpeg" devient "5.99 $")
+                if "_" in fichier:
+                    prix_texte = fichier.split("_")[0] + " $"
+                else:
+                    prix_texte = "Prix non inscrit au début du fichier"
+                
+                # On affiche la photo dans l'application Streamlit
+                st.image(chemin_image_complete, width=220)
+                st.write(f"Prix extrait du nom : **{prix_texte}**")
+                
+                # Un bouton de test pour simuler le clic de l'utilisateur
+                if st.button(f"Sélectionner cet article", key=f"test_{fichier}"):
+                    st.success(f"Réussite ! Vous avez cliqué sur le rabais à {prix_texte}.")
+                st.write("---")
+    else:
+        st.warning(f"Pour tester cette bannière, créez le dossier : bannieres\\{nom_sous_dossier}")

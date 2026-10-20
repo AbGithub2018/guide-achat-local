@@ -226,7 +226,7 @@ with col_droite:
                 # Charger et afficher l'image de la circulaire
                 image_aliment = Image.open(chemin_complet_photo)
                 
-                with grille_visually[index % 2]:
+                with grille_visuelle[index % 2]:
                     # On affiche la photo du rabais
                     st.image(image_aliment, use_container_width=True)
                     

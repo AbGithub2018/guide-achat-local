@@ -193,7 +193,7 @@ with col_droite:
         "dollarama": "https://dollarama.com",
         "marche_adonis": "https://groupeadonis.com",
         "marche_ami": "https://marcheami.ca",
-        "marche_bonichoix": "https://bonichoix.com",
+        "marche_bonichoix": "https://www.bonichoix.com/fr/notre-circulaire/",
         "marche_richelieu": "https://marcherichelieu.com",
         "marche_tradition": "https://circulaires.com",
 

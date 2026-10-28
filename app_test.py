@@ -243,7 +243,7 @@ with col_droite:
 
                 # Création d'une belle boîte de texte pur, sécuritaire pour le droit d'auteur
                 with st.container(border=True):
-                    col_info, col_action = st.columns()
+                    col_info, col_action = st.columns(2)
                     
                     with col_info:
                         st.markdown(f"**{nom_automatique}**")

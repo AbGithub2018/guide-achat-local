@@ -141,7 +141,7 @@ st.write("---")
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
 # =========================================================================
-# COLONNE DE GAUCHE : FORMULAIRE AVEC CATÉGORIES + RECAPITULATIF AGRANDI
+# COLONNE DE GAUCHE : FORMULAIRE AVEC CATÉGORIES + RECAPITULATIF & COMPARAISON
 # =========================================================================
 with col_gauche:
     st.markdown("<h2 style='font-size: 28px; margin-bottom: 0px;'>🔍 Étape 1 : Saisie de ma liste d'épicerie</h2>", unsafe_allow_html=True)
@@ -190,16 +190,30 @@ with col_gauche:
     if st.session_state["panier_achats"]:
         df_panier = pd.DataFrame(st.session_state["panier_achats"])
         
+        # 1. Préparation du tableau d'affichage des articles
         df_affichage = df_panier.rename(columns={
             "magasin": "Magasin",
             "catégorie": "Catégorie",
             "produit": "Article",
             "prix": "Prix"
         })
-        
         df_affichage["Prix"] = df_affichage["Prix"].map("{:.2f} $".format)
         st.dataframe(df_affichage, use_container_width=True, hide_index=True)
         
+        # 2. BLOC DE COMPARAISON AUTOMATIQUE PAR BANNIÈRE
+        st.write("---")
+        st.markdown("<h3 style='font-size: 20px; margin-bottom: 10px;'>📊 Comparatif des dépenses par bannière :</h3>", unsafe_allow_html=True)
+        
+        # On calcule la somme cumulée pour chaque magasin unique dans la liste
+        df_comparatif = df_panier.groupby("magasin")["prix"].sum().reset_index()
+        
+        # On affiche chaque magasin avec un marqueur visuel et son sous-total
+        for _, rangee in df_comparatif.iterrows():
+            magasin_nom = rangee["magasin"]
+            total_magasin = rangee["prix"]
+            st.markdown(f"🔹 Total estimé chez **{magasin_nom}** : `{total_magasin:.2f} $`")
+        
+        # 3. Montant total global écrit en très gros
         st.markdown(
             f"<h1 style='font-size: 32px; color: #1E3A8A; margin-top: 15px;'>💰 Montant total de la commande : {df_panier['prix'].sum():.2f} $</h1>", 
             unsafe_allow_html=True
@@ -217,12 +231,10 @@ with col_gauche:
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # --- AJOUT DES DEUX BOUTONS DE REDIRECTION ---
     cle_recherche = str(banniere_active).upper().strip()
     url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
     code_postal_url = urllib.parse.quote(code_recherche)
     
-    # Routage dynamique vers Google Maps pour Sobeys (Tradition, Bonichoix, Richelieu, Ami)
     if cle_recherche in ["MARCHÉ AMI", "MARCHÉ BONICHOIX", "MARCHÉ RICHELIEU", "MARCHÉ TRADITION", "COSTCO"]:
         url_final_site = f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
     elif "superc" in url_base_site or "metro" in url_base_site:
@@ -244,7 +256,6 @@ with col_droite:
 
     st.write("---")
 
-    # --- AFFICHAGE DE VOS IMAGES LOCALES DE CIRCULAIRES ---
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 

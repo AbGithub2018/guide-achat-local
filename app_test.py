@@ -169,9 +169,6 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (DECOUPE ULTRA-SECURISEE)
-# =========================================================================
-# =========================================================================
 # COLONNE DE DROITE : ACCÈS DIRECT AUX LIENS DE LA BANNIÈRE (FICHIER TEXTE)
 # =========================================================================
 with col_droite:
@@ -201,6 +198,7 @@ with col_droite:
         ]
 
         if fichiers_txt:
+            # On prend le premier fichier texte trouvé
             chemin_fichier_info = os.path.join(chemin_dossier_banniere, fichiers_txt[0])
             try:
                 with open(chemin_fichier_info, "r", encoding="utf-8") as f:
@@ -242,10 +240,3 @@ with col_droite:
             type="primary",
             use_container_width=True
         )
-        
-    st.write("---")
-
-    else:
-        st.info("Aucune photo dans ce dossier pour le moment.")
-    else:
-        st.warning(f"Dossier introuvable : bannieres/{nom_sous_dossier}")

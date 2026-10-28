@@ -212,7 +212,10 @@ with col_droite:
 
     # =========================================================================
 
-    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
+    import unicodedata
+    nom_propre = str(banniere_active).lower().replace(" ", "_")
+    nom_sous_dossier = "".join(c for c in unicodedata.normalize('NFD', nom_propre) if unicodedata.category(c) != 'Mn')
+
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
     if os.path.exists(chemin_dossier_images):

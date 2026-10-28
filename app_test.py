@@ -48,7 +48,6 @@ df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
 # =========================================================================
-# =========================================================================
 # SECTION À GAUCHE : BARRE LATÉRALE PROPRE
 # =========================================================================
 st.sidebar.markdown("<h2 style='font-size: 22px; color: #1E3A8A; margin-bottom: 10px;'>⚙️ Critères de recherche</h2>", unsafe_allow_html=True)
@@ -79,7 +78,6 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        # CORRECTION STRICTE ICI : Ajout de .iloc[0] pour lire la première ligne trouvée de manière sécurisée
         lat_centre = float(point_origine["Latitude"].iloc[0])
         lon_centre = float(point_origine["Longitude"].iloc[0])
         st.sidebar.caption(f"Position détectée : {point_origine['Ville'].iloc[0]}")
@@ -125,7 +123,6 @@ if code_recherche:
                 st.sidebar.write("")
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
-
 # =========================================================================
 # EN-TÊTE PRINCIPAL LOOK APPLICATION MOBILE BANDEAU BLEU
 # =========================================================================
@@ -134,6 +131,18 @@ st.markdown(
     <div style="background-color: #1E3A8A; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center;">
         <h1 style="color: white; margin: 0; font-size: 26px; font-weight: bold;">🍎 Mon Planificateur Anti-Inflation</h1>
         <p style="color: #E0E7FF; margin: 3px 0 0 0; font-size: 13px;">Optimisez votre facture d'épicerie sur le pouce</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# --- MESSAGE DE GUIDAGE MOBILE BIEN VISIBLE ---
+st.markdown(
+    f"""
+    <div style="background-color: #FFFBEB; border-left: 5px solid #F59E0B; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
+        <p style="margin: 0; color: #B45309; font-size: 14px; font-weight: bold;">
+            📱 Mode Cellulaire : Cliquez d'abord sur le menu de gauche (la petite flèche ou le bouton en haut à gauche de votre écran) pour entrer votre code postal et ajuster la distance de recherche autour de votre domicile !
+        </p>
     </div>
     """,
     unsafe_allow_html=True
@@ -152,13 +161,13 @@ st.write("---")
 # 📱 RÉORGANISATION EN ONGLETS POUR CELLULAIRE
 # =========================================================================
 onglet_circulaire, onglet_saisie, onglet_facture = st.tabs([
-    "📸 1. Regarder la Circulaire", 
+    f"📸 1. Regarder la Circulaire ({code_recherche})", 
     "✍️ 2. Écrire mes Rabais", 
     "🛍️ 3. Ma Facture"
 ])
 
 # -------------------------------------------------------------------------
-# ONGLET 1 : SITES OFFICIELS + LISEUSE DE PHOTOS (BOUTONS EMPILÉS POUR MOBILE)
+# ONGLET 1 : SITES SÉCURISÉS + LISEUSE DE PHOTOS (BOUTONS EMPILÉS POUR MOBILE)
 # -------------------------------------------------------------------------
 with onglet_circulaire:
     with st.container(border=True):
@@ -206,8 +215,8 @@ with onglet_circulaire:
                         
                         if "_" in nom_complet_sans_ext:
                             parties = nom_complet_sans_ext.split("_", 1)
-                            premier_morceau = parties
-                            reste_du_texte = parties
+                            premier_morceau = parties[0]
+                            reste_du_texte = parties[1]
                             
                             try:
                                 prix_automatique = float(premier_morceau)
@@ -277,7 +286,7 @@ with onglet_facture:
             
             df_affichage = df_panier.rename(columns={"magasin": "Magasin", "catégorie": "Rayon", "produit": "Article", "prix": "Prix"})
             df_affichage["Prix"] = df_affichage["Prix"].map("{:.2f} $".format)
-            st.dataframe(df_panier, use_container_width=True, hide_index=True)
+            st.dataframe(df_affichage, use_container_width=True, hide_index=True)
             
             st.markdown("<h4 style='font-size: 15px; color: #4B5563; font-weight: bold; margin-top: 10px;'>📊 Répartition de mes dépenses :</h4>", unsafe_allow_html=True)
             df_comparatif = df_panier.groupby("magasin")["prix"].sum().reset_index()
@@ -298,5 +307,3 @@ with onglet_facture:
             if st.button("🗑️ Réinitialiser ma liste", use_container_width=True, key="btn_mobile_clear"):
                 st.session_state["panier_achats"] = []
                 st.rerun()
-        else:
-            st.info("Votre liste d'épicerie est vide. Parcourez l'onglet Circulaire pour commencer !")

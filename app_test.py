@@ -23,6 +23,26 @@ if "banniere_manuelle" not in st.session_state:
 
 DOSSIER_BANNIERES = "bannieres"
 
+# =========================================================================
+# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES SITES DE BANNIÈRES
+# =========================================================================
+LIENS_OFFICIELS = {
+    "SUPER C": "https://superc.ca",
+    "MAXI": "https://maxi.ca",
+    "IGA": "https://iga.net",
+    "PROVIGO": "https://provigo.ca",
+    "METRO": "https://metro.ca",
+    "MARCHÉ ADONIS": "https://groupeadonis.ca",
+    "MARCHÉ AMI": "https://marcheami.ca",
+    "MARCHÉ BONICHOIX": "https://bonichoix.com",
+    "MARCHÉ RICHELIEU": "https://marcherichelieu.ca",
+    "MARCHÉ TRADITION": "https://marchetradition.com",
+    "WALMART": "https://walmart.ca",
+    "COSTCO": "https://costco.ca",
+    "TIGRE GÉANT": "https://gianttiger.com",
+    "DOLLARAMA": "https://dollarama.com"
+}
+
 # --- CHARGEMENT DES DONNÉES ---
 df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
@@ -60,7 +80,6 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        # CORRECTION ILOC ICI : Pour éviter l'erreur de type sur l'index de coordonnées
         lat_centre = float(point_origine["Latitude"].iloc[0])
         lon_centre = float(point_origine["Longitude"].iloc[0])
         st.sidebar.caption(f"Position détectée : {point_origine['Ville'].iloc[0]}")
@@ -106,7 +125,7 @@ if code_recherche:
                 st.sidebar.write("")
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
-            # --- EN-TÊTE PRINCIPAL ---
+# --- EN-TÊTE PRINCIPAL ---
 st.title("🍎 Planificateur de Budget Épicerie")
 
 # LA LIGNE ROUGE
@@ -193,11 +212,39 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : CONFIGURATION DE LA LISEUSE VISUELLE REFAITE SANS BUG
+# COLONNE DE DROITE : ACCÈS SITES OFFICIELS + LISEUSE DE PHOTOS D'ORIGINE
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
+    # --- AJOUT DES DEUX BOUTONS DE REDIRECTION ---
+    cle_recherche = str(banniere_active).upper().strip()
+    url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
+    code_postal_url = urllib.parse.quote(code_recherche)
+    
+    # Routage dynamique vers Google Maps pour Sobeys (Tradition, Bonichoix, Richelieu, Ami)
+    if cle_recherche in ["MARCHÉ AMI", "MARCHÉ BONICHOIX", "MARCHÉ RICHELIEU", "MARCHÉ TRADITION", "COSTCO"]:
+        url_final_site = f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
+    elif "superc" in url_base_site or "metro" in url_base_site:
+        url_final_site = f"{url_base_site}?search={code_postal_url}"
+    elif "maxi" in url_base_site or "provigo" in url_base_site:
+        url_final_site = f"{url_base_site}?searchQuery={code_postal_url}"
+    elif "walmart" in url_base_site or "gianttiger" in url_base_site:
+        url_final_site = f"{url_base_site}?q={code_postal_url}"
+    elif "dollarama" in url_base_site:
+        url_final_site = f"{url_base_site}?localisation={code_postal_url}"
+    else:
+        url_final_site = url_base_site
+
+    col_l1, col_l2 = st.columns(2)
+    with col_l1:
+        st.link_button("🌐 Site général de la bannière", url_base_site, use_container_width=True)
+    with col_l2:
+        st.link_button(f"📍 Trouver ma succursale", url_final_site, type="primary", use_container_width=True)
+
+    st.write("---")
+
+    # --- AFFICHAGE DE VOS IMAGES LOCALES DE CIRCULAIRES ---
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
@@ -211,22 +258,14 @@ with col_droite:
         if fichiers_photos:
             grille_visuelle = st.columns(2)
             for index, photo in enumerate(fichiers_photos):
-                image_aliment = Image.open(
-                    os.path.join(chemin_dossier_images, photo)
-                )
+                image_aliment = Image.open(os.path.join(chemin_dossier_images, photo))
 
                 with grille_visuelle[index % 2]:
                     st.image(image_aliment, use_container_width=True)
 
-                    if st.button(
-                        f"➕ Ajouter ce spécial",
-                        key=f"btn_photo_{index}",
-                        use_container_width=True,
-                        type="primary"
-                    ):
+                    if st.button(f"➕ Ajouter ce spécial", key=f"btn_photo_{index}", use_container_width=True, type="primary"):
                         nom_complet_sans_ext, _ = os.path.splitext(str(photo))
                         
-                        # CORRECTION DU CLIC DE DÉCOUPE DES NOM/PRIX DES IMAGES ICI :
                         if "_" in nom_complet_sans_ext:
                             parties = nom_complet_sans_ext.split("_", 1)
                             premier_morceau = parties[0]
@@ -242,14 +281,12 @@ with col_droite:
                             prix_automatique = 0.00
                             nom_automatique = nom_complet_sans_ext.replace("_", " ").capitalize()
 
-                        st.session_state["panier_achats"].append(
-                            {
-                                "magasin": banniere_active,
-                                "catégorie": "🍎 Circulaire Visuelle",
-                                "produit": nom_automatique,
-                                "prix": prix_automatique,
-                            }
-                        )
+                        st.session_state["panier_achats"].append({
+                            "magasin": banniere_active,
+                            "catégorie": "🍎 Circulaire Visuelle",
+                            "produit": nom_automatique,
+                            "prix": prix_automatique,
+                        })
                         st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
                         st.rerun()
                     st.write("")

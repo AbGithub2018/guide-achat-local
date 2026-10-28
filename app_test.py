@@ -48,7 +48,7 @@ df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
 # =========================================================================
-# SECTION À GAUCHE : BARRE LATÉRALE PROPRE
+# SECTION À GAUCHE : BARRE LATÉRALE PROPRE + BOUTON GUIDE D'ACHAT
 # =========================================================================
 st.sidebar.markdown("<h2 style='font-size: 22px; color: #1E3A8A; margin-bottom: 10px;'>⚙️ Critères de recherche</h2>", unsafe_allow_html=True)
 saisie_utilisateur = st.sidebar.text_input(
@@ -59,17 +59,14 @@ rayon_max = st.sidebar.slider(
     "Rayon maximum de recherche (km)", 5, 100, 25, 5
 )
 
-bannieres_disponibles = ["Toutes les bannières"] + sorted(
-    list(df_magasins["Nom_Commerce"].dropna().unique())
+# LE BOUTON ROUGE EST INTÉGRÉ DANS LA SIDEBAR POUR GAGNER DE L'ESPACE SUR MOBILE
+st.sidebar.write("---")
+st.sidebar.link_button(
+    "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner / Pays d'Origine)",
+    "https://streamlit.app",
+    type="primary",
+    use_container_width=True,
 )
-banniere_selectionnee = st.sidebar.selectbox(
-    "Filtrer par bannière :", bannieres_disponibles
-)
-
-if banniere_selectionnee != "Toutes les bannières":
-    st.session_state["banniere_manuelle"] = banniere_selectionnee
-
-banniere_active = st.session_state["banniere_manuelle"]
 
 st.sidebar.write("---")
 
@@ -99,10 +96,21 @@ if code_recherche:
         resultats_filtres = df_magasins_gps[
             df_magasins_gps["Distance_KM"] <= rayon_max
         ].sort_values(by="Distance_KM")
+        
+        bannieres_disponibles = ["Toutes les bannières"] + sorted(
+            list(df_magasins["Nom_Commerce"].dropna().unique())
+        )
+        banniere_selectionnee = st.sidebar.selectbox(
+            "Filtrer par bannière :", bannieres_disponibles, index=bannieres_disponibles.index(st.session_state["banniere_manuelle"]) if st.session_state["banniere_manuelle"] in bannieres_disponibles else 0
+        )
+
         if banniere_selectionnee != "Toutes les bannières":
+            st.session_state["banniere_manuelle"] = banniere_selectionnee
             resultats_filtres = resultats_filtres[
                 resultats_filtres["Nom_Commerce"] == banniere_selectionnee
             ]
+
+        banniere_active = st.session_state["banniere_manuelle"]
 
         if not resultats_filtres.empty:
             for index, rangee in resultats_filtres.iterrows():
@@ -141,21 +149,12 @@ st.markdown(
     f"""
     <div style="background-color: #FFFBEB; border-left: 5px solid #F59E0B; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
         <p style="margin: 0; color: #B45309; font-size: 14px; font-weight: bold;">
-            📱 Mode Cellulaire : Cliquez d'abord sur le menu de gauche (la petite flèche ou le bouton en haut à gauche de votre écran) pour entrer votre code postal et ajuster la distance de recherche autour de votre domicile !
+            📱 Mode Cellulaire : Cliquez d'abord sur le menu de gauche (la petite flèche ou le bouton en haut à gauche de votre écran) pour entrer votre code postal, ajuster le rayon d'action et ouvrir notre Guide d'Achat Local !
         </p>
     </div>
     """,
     unsafe_allow_html=True
 )
-
-# LA LIGNE ROUGE FLUIDE
-st.link_button(
-    "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner / Pays d'Origine)",
-    "https://streamlit.app",
-    type="primary",
-    use_container_width=True,
-)
-st.write("---")
 
 # =========================================================================
 # 📱 RÉORGANISATION EN ONGLETS POUR CELLULAIRE
@@ -307,3 +306,5 @@ with onglet_facture:
             if st.button("🗑️ Réinitialiser ma liste", use_container_width=True, key="btn_mobile_clear"):
                 st.session_state["panier_achats"] = []
                 st.rerun()
+        else:
+            st.info("Votre liste d'épicerie est vide. Parcourez l'onglet Circulaire pour commencer !")

@@ -66,9 +66,10 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
+        # Correction de la syntaxe Pandas avec .iloc[0]
         lat_centre = float(point_origine.iloc[0]["Latitude"])
         lon_centre = float(point_origine.iloc[0]["Longitude"])
-        st.sidebar.caption(f"Position détectée : {point_origine.iloc['Ville']}")
+        st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
 
         df_magasins_gps = pd.merge(
             df_magasins,
@@ -192,7 +193,7 @@ with col_droite:
         ]
 
         if fichiers_texte:
-            fichier_cible = os.path.join(chemin_dossier_txt, fichiers_texte)
+            fichier_cible = os.path.join(chemin_dossier_txt, fichiers_texte[0])
             
             try:
                 with open(fichier_cible, "r", encoding="utf-8") as f:

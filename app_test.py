@@ -62,7 +62,7 @@ LIENS_OFFICIELS = {
     },
     "MARCHÉ TRADITION": {
         "site": "https://marchetradition.com",
-        "speciaux": "https://marchetradition.comfr/circulaire"
+        "speciaux": "https://www.marchestradition.com/fr/circulaire/"
     },
     "WALMART": {
         "site": "https://www.walmart.ca/fr",

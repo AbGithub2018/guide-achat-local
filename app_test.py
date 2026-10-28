@@ -62,7 +62,7 @@ LIENS_OFFICIELS = {
     },
     "DOLLARAMA": {
         "site": "https://www.dollarama.com/fr-CA",
-        "speciaux": "https://doordash.com"
+        "speciaux": "https://www.doordash.com/convenience/store/24918186/"
     },
     "TIGRE GÉANT": {
         "site": "https://gianttiger.com",

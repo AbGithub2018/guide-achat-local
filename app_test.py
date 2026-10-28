@@ -23,65 +23,6 @@ if "banniere_manuelle" not in st.session_state:
 
 DOSSIER_BANNIERES = "bannieres"
 
-# =========================================================================
-# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES BANNIÈRES
-# =========================================================================
-# Ce dictionnaire contient les vrais liens. Les clés sont en MAJUSCULES pour éviter les conflits.
-LIENS_OFFICIELS = {
-    "SUPER C": {
-        "site": "https://superc.ca",
-        "speciaux": "https://superc.ca/circulaire"
-    },
-    "MAXI": {
-        "site": "https://maxi.ca",
-        "speciaux": "https://maxi.ca/circulaire"
-    },
-    "IGA": {
-        "site": "https://iga.net",
-        "speciaux": "https://iga.netfr/circulaire_hebdomadaire"
-    },
-    "PROVIGO": {
-        "site": "https://provigo.ca",
-        "speciaux": "https://provigo.ca/circulaire"
-    },
-    "METRO": {
-        "site": "https://metro.ca",
-        "speciaux": "https://metro.ca/circulaire"
-    },
-    "MARCHÉ BONICHOIX": {
-        "site": "https://www.bonichoix.com/fr/",
-        "speciaux": "https://www.bonichoix.com/fr/notre-circulaire/"
-    },
-    "MARCHÉ AMI": {
-        "site": "https://marcheami.ca",
-        "speciaux": "https://reebee.com"
-    },
-    "MARCHÉ RICHELIEU": {
-        "site": "https://marcherichelieu.ca",
-        "speciaux": "https://marcherichelieu.cafr/circulaire"
-    },
-    "MARCHÉ TRADITION": {
-        "site": "https://www.marchestradition.com/fr/",
-        "speciaux": "https://www.marchestradition.com/fr/circulaire/"
-    },
-    "WALMART": {
-        "site": "https://www.walmart.ca/fr",
-        "speciaux": "https://www.walmart.ca/fr/flyer"
-    },
-    "COSTCO": {
-        "site": "https://costco.ca",
-        "speciaux": "https://costco.ca/circulaires-offres.html"
-    },
-    "DOLLARAMA": {
-        "site": "https://www.dollarama.com/fr-CA",
-        "speciaux": "https://www.doordash.com/convenience/store/24918186/"
-    },
-    "TIGRE GÉANT": {
-        "site": "https://gianttiger.com",
-        "speciaux": "https://gianttiger.com/circulaire"
-    }
-}
-
 # --- CHARGEMENT DES DONNÉES ---
 df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
@@ -182,13 +123,26 @@ st.write("---")
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
 # =========================================================================
-# COLONNE DE GAUCHE : FORMULAIRE MANUEL + FACTURE MONTÉE
+# COLONNE DE GAUCHE : FORMULAIRE MANUEL AVEC CATÉGORIES + FACTURE MONTÉE
 # =========================================================================
 with col_gauche:
     st.subheader("🔍 Étape 1 : Saisie de ma liste d'épicerie")
 
     with st.expander("➕ Ajouter un rabais trouvé à ma liste", expanded=True):
         st.write(f"Magasin sélectionné : **{banniere_active}**")
+
+        # 1. Ajout de l'option des catégories demandée dans l'espace central
+        categorie = st.selectbox(
+            "Catégorie de l'article :",
+            [
+                "🍎 Fruits et Légumes", 
+                "🥩 Viandes et Poissons", 
+                "🧀 Produits laitiers", 
+                "🍞 Boulangerie", 
+                "📦 Épicerie / Boîtes", 
+                "🧼 Entretien / Autre"
+            ]
+        )
 
         nom_article = st.text_input(
             "Nom de l'article :", placeholder="Ex: Banane, Beurre...", key="input_nom"
@@ -202,6 +156,7 @@ with col_gauche:
                 st.session_state["panier_achats"].append(
                     {
                         "magasin": banniere_active,
+                        "catégorie": categorie, # On enregistre la catégorie sélectionnée
                         "produit": nom_article,
                         "prix": prix_article,
                     }
@@ -228,40 +183,67 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : ACCÈS DIRECT AUX LIENS DE LA BANNIÈRE (DICTIONNAIRE CORRIGÉ)
+# COLONNE DE DROITE : VOTRE CONFIGURATION D'ORIGINE DE LA LISEUSE
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # Récupération des URLs directement depuis notre dictionnaire interne (LIENS_OFFICIELS)
-    # On force en majuscules pour éviter les erreurs d'écriture (ex: "Super C" vs "SUPER C")
-    cle_recherche = str(banniere_active).upper().strip()
-    config_banniere = LIENS_OFFICIELS.get(cle_recherche, {})
+    # Nettoyage de la chaîne pour le sous-dossier
+    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
+    chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
-    url_site = config_banniere.get("site")
-    url_speciaux = config_banniere.get("speciaux")
+    if os.path.exists(chemin_dossier_images):
+        fichiers_photos = [
+            f
+            for f in os.listdir(chemin_dossier_images)
+            if f.lower().endswith((".png", ".jpg", ".jpeg"))
+        ]
 
-    # Si le magasin sélectionné n'est pas répertorié dans le dictionnaire, on crée une recherche Google propre
-    if not url_site:
-        nom_encode = urllib.parse.quote(banniere_active)
-        url_site = f"https://google.com{nom_encode}+epicerie+quebec"
-        url_speciaux = f"https://google.com{nom_encode}+circulaire+reebee"
+        if fichiers_photos:
+            grille_visuelle = st.columns(2)
+            for index, photo in enumerate(fichiers_photos):
+                image_aliment = Image.open(
+                    os.path.join(chemin_dossier_images, photo)
+                )
 
-    # Affichage des deux boutons d'action demandés
-    st.write("### 🔗 Accès rapide")
-    
-    col_lien1, col_lien2 = st.columns(2)
-    with col_lien1:
-        st.link_button(
-            "🌐 Site Internet de la bannière",
-            url_site,
-            use_container_width=True
-        )
-    with col_lien2:
-        st.link_button(
-            "🏷️ Lien des spéciaux",
-            url_speciaux,
-            type="primary",
-            use_container_width=True
-        )
+                with grille_visuelle[index % 2]:
+                    st.image(image_aliment, use_container_width=True)
 
+                    if st.button(
+                        f"➕ Ajouter ce spécial",
+                        key=f"btn_photo_{index}",
+                        use_container_width=True,
+                        type="primary"
+                    ):
+                        nom_complet_sans_ext, _ = os.path.splitext(str(photo))
+                        
+                        if "_" in nom_complet_sans_ext:
+                            parties = nom_complet_sans_ext.split("_", 1)
+                            premier_morceau = parties[0]
+                            reste_du_texte = parties[1]
+                            
+                            try:
+                                prix_automatique = float(premier_morceau)
+                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
+                            except ValueError:
+                                prix_automatique = 0.00
+                                nom_automatique = "Article Circulaire"
+                        else:
+                            prix_automatique = 0.00
+                            nom_automatique = "Article Circulaire"
+
+                        st.session_state["panier_achats"].append(
+                            {
+                                "magasin": banniere_active,
+                                "catégorie": "🍎 Circulaire Visuelle", # Par défaut pour les photos
+                                "produit": nom_automatique,
+                                "prix": prix_automatique,
+                            }
+                        )
+                        st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
+                        st.rerun()
+                    st.write("")
+        else:
+            st.info("Aucune photo dans ce dossier pour le moment.")
+    else:
+        st.warning(f"Dossier introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")

@@ -66,8 +66,8 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc["Latitude"])
-        lon_centre = float(point_origine.iloc["Longitude"])
+        lat_centre = float(point_origine.iloc[0]["Latitude"])
+        lon_centre = float(point_origine.iloc[0]["Longitude"])
         st.sidebar.caption(f"Position détectée : {point_origine.iloc['Ville']}")
 
         df_magasins_gps = pd.merge(

@@ -181,7 +181,8 @@ with col_gauche:
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
+    # Nettoyage des espaces, des minuscules et des accents (é -> e)
+    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
     if os.path.exists(chemin_dossier_images):

@@ -63,7 +63,7 @@ rayon_max = st.sidebar.slider(
 st.sidebar.write("---")
 st.sidebar.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner / Pays d'Origine)",
-    "https://streamlit.app",
+    "https://achatquebec.streamlit.app/",
     type="primary",
     use_container_width=True,
 )

@@ -48,6 +48,7 @@ df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
 # =========================================================================
+# =========================================================================
 # SECTION À GAUCHE : BARRE LATÉRALE PROPRE
 # =========================================================================
 st.sidebar.markdown("<h2 style='font-size: 22px; color: #1E3A8A; margin-bottom: 10px;'>⚙️ Critères de recherche</h2>", unsafe_allow_html=True)
@@ -78,9 +79,10 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        lat_centre = float(point_origine["Latitude"].iloc)
-        lon_centre = float(point_origine["Longitude"].iloc)
-        st.sidebar.caption(f"Position détectée : {point_origine['Ville'].iloc}")
+        # CORRECTION STRICTE ICI : Ajout de .iloc[0] pour lire la première ligne trouvée de manière sécurisée
+        lat_centre = float(point_origine["Latitude"].iloc[0])
+        lon_centre = float(point_origine["Longitude"].iloc[0])
+        st.sidebar.caption(f"Position détectée : {point_origine['Ville'].iloc[0]}")
 
         df_magasins_gps = pd.merge(
             df_magasins,
@@ -123,6 +125,7 @@ if code_recherche:
                 st.sidebar.write("")
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
+
 # =========================================================================
 # EN-TÊTE PRINCIPAL LOOK APPLICATION MOBILE BANDEAU BLEU
 # =========================================================================

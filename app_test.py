@@ -169,10 +169,10 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (DECOUPE ULTRA-SECURISEE)
+# COLONNE DE DROITE : LES RABAIS EN TEXTE PUR (ZÉRO IMAGE AFFICHÉE - 100% LÉGAL)
 # =========================================================================
 with col_droite:
-    st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
+    st.subheader(f"✨ Les spéciaux textuels : {banniere_active}")
 
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
@@ -185,54 +185,71 @@ with col_droite:
         ]
 
         if fichiers_photos:
-            grille_visuelle = st.columns(2)
+            # Nous affichons des cartes textuelles verticales très propres SANS st.image
             for index, photo in enumerate(fichiers_photos):
-                image_aliment = Image.open(
-                    os.path.join(chemin_dossier_images, photo)
-                )
+                
+                nom_complet_sans_ext, _ = os.path.splitext(str(photo))
+                
+                if "_" in nom_complet_sans_ext:
+                    parties = nom_complet_sans_ext.split("_", 1)
+                    premier_morceau = parties[0]
+                    reste_du_texte = parties[1]
+                    
+                    try:
+                        prix_automatique = float(premier_morceau)
+                        nom_automatique = reste_du_texte.replace("_", " ").capitalize()
+                    except ValueError:
+                        prix_automatique = 0.00
+                        nom_automatique = "Article Circulaire"
+                else:
+                    prix_automatique = 0.00
+                    nom_automatique = "Article Circulaire"
 
-                with grille_visuelle[index % 2]:
-                    st.image(image_aliment, use_container_width=True)
-
-                    if st.button(
-                        f"➕ Ajouter ce spécial",
-                        key=f"btn_photo_{index}",
-                        use_container_width=True,
-                        type="primary"
-                    ):
-                        # 1. On isole le nom sans l'extension de fichier (ex: "2.99_article_32.jpeg" -> "2.99_article_32")
-                        nom_complet_sans_ext, _ = os.path.splitext(str(photo))
+                # Création d'une belle boîte de texte pur, sécuritaire pour le droit d'auteur
+                with st.container(border=True):
+                    col_info, col_action = st.columns()
+                    
+                    with col_info:
+                        st.markdown(f"**{nom_automatique}**")
+                        st.markdown(f"### 🏷️ {prix_automatique:.2f} $")
+                        st.caption(f"Source : Spécial public • {banniere_active}")
+                    
+                    with col_action:
+                        if st.button(
+                            "➕ Ajouter",
+                            key=f"btn_textuel_{index}",
+                            use_container_width=True,
+                            type="primary"
+                        ):
+                            st.session_state["panier_achats"].append(
+                                {
+                                    "magasin": banniere_active,
+                                    "produit": nom_automatique,
+                                    "prix": prix_automatique,
+                                }
+                            )
+                            st.toast(f"✅ {nom_automatique} ajouté !", icon="🛒")
+                            st.rerun()
                         
-                        # 2. On découpe selon le premier tiret bas "_"
-                        if "_" in nom_complet_sans_ext:
-                            parties = nom_complet_sans_ext.split("_", 1)
-                            premier_morceau = parties[0]
-                            reste_du_texte = parties[1]
-                            
-                            try:
-                                # On convertit le prix trouvé en chiffre float (ex: 2.99)
-                                prix_automatique = float(premier_morceau)
-                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
-                            except ValueError:
-                                # Si c'est un résidu d'ancien fichier système
-                                prix_automatique = 0.00
-                                nom_automatique = "Article Circulaire"
-                        else:
-                            prix_automatique = 0.00
-                            nom_automatique = "Article Circulaire"
-
-                        # 3. Enregistrement propre dans la commande commune
-                        st.session_state["panier_achats"].append(
-                            {
-                                "magasin": banniere_active,
-                                "produit": nom_automatique,
-                                "prix": prix_automatique,
-                            }
+                        # Bouton de redirection légale vers le site de l'épicier
+                        url_generique = f"https://www.{nom_sous_dossier.replace('_', '')}.ca"
+                        st.link_button(
+                            "🌐 Voir site",
+                            url_generique,
+                            use_container_width=True
                         )
-                        st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
-                        st.rerun()
-                    st.write("")
         else:
-            st.info("Aucune photo dans ce dossier pour le moment.")
+            st.info("Aucun rabais répertorié pour cette bannière cette semaine.")
     else:
         st.warning(f"Dossier introuvable : bannieres/{nom_sous_dossier}")
+
+# =========================================================================
+# ÉTAPE FINALE : LE BOUCLIER JURIDIQUE (DISCLAIMER)
+# =========================================================================
+st.write("---")
+st.caption(
+    "⚠️ **Clause de non-responsabilité :** Cette application est un outil citoyen indépendant et gratuit. "
+    "Elle n'est pas affiliée, endossée ou associée de quelque façon que ce soit aux bannières citées "
+    "(Metro inc., Loblaws/Maxi, Sobeys/IGA, Walmart). Les prix et rabais textuels sont partagés à titre indicatif "
+    "et proviennent d'informations publiques ou collaboratives."
+)

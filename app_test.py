@@ -2,16 +2,10 @@ import os
 import urllib.parse
 import pandas as pd
 import streamlit as st
+from PIL import Image
 
 # Importation de vos fonctions géographiques depuis fonctions_geo.py
 from fonctions_geo import calculer_distance, charger_donnees
-
-# IMPORTATION DES LIENS ET DES BOUTONS DEPUIS LE DEUXIÈME FICHIER
-from gestion_circulaires import (
-    liens_circulaires, 
-    noms_affichage_circulaires, 
-    generer_bouton_circulaire
-)
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(
@@ -66,7 +60,6 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        # Correction de la syntaxe Pandas avec .iloc[0]
         lat_centre = float(point_origine.iloc[0]["Latitude"])
         lon_centre = float(point_origine.iloc[0]["Longitude"])
         st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
@@ -176,59 +169,70 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : AFFICHAGE DU TEXTE EN VERSION STYLISÉE (MARKDOWN)
+# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (DECOUPE ULTRA-SECURISEE)
 # =========================================================================
 with col_droite:
-    st.subheader(f"📋 Les Rabais Vedettes : {banniere_active}")
+    st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # Gestion automatique des noms de sous-dossiers (sans accents)
-    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
-    chemin_dossier_txt = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
+    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
+    chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
-    if os.path.exists(chemin_dossier_txt):
-        fichiers_texte = [
+    if os.path.exists(chemin_dossier_images):
+        fichiers_photos = [
             f
-            for f in os.listdir(chemin_dossier_txt)
-            if f.lower().endswith(".txt")
+            for f in os.listdir(chemin_dossier_images)
+            if f.lower().endswith((".png", ".jpg", ".jpeg"))
         ]
 
-        if fichiers_texte:
-            fichier_cible = os.path.join(chemin_dossier_txt, fichiers_texte[0])
-            
-            try:
-                with open(fichier_cible, "r", encoding="utf-8") as f:
-                    contenu_notes = f.read()
-                
-                # Encadré visuel élégant pour mettre en valeur vos promotions rédigées
-                st.info("💡 **Astuce budget :** Comparez ces rabais vedettes avec votre liste à gauche avant d'ouvrir la circulaire complète.")
-                
-                # Affichage sous forme de page stylisée plutôt qu'une boîte grise de saisie
-                st.markdown(
-                    f'<div style="background-color: #F8F9FA; padding: 20px; border-radius: 10px; '
-                    f'border-left: 5px solid #FF4B4B; line-height: 1.6; color: #212529; font-size: 15px;">'
-                    f'{contenu_notes.replace("\n", "<br>")}'
-                    f'</div>',
-                    unsafe_allow_html=True
+        if fichiers_photos:
+            grille_visuelle = st.columns(2)
+            for index, photo in enumerate(fichiers_photos):
+                image_aliment = Image.open(
+                    os.path.join(chemin_dossier_images, photo)
                 )
-                
-            except Exception as e:
-                st.error("Impossible de lire le fichier de description.")
+
+                with grille_visuelle[index % 2]:
+                    st.image(image_aliment, use_container_width=True)
+
+                    if st.button(
+                        f"➕ Ajouter ce spécial",
+                        key=f"btn_photo_{index}",
+                        use_container_width=True,
+                        type="primary"
+                    ):
+                        # 1. On isole le nom sans l'extension de fichier (ex: "2.99_article_32.jpeg" -> "2.99_article_32")
+                        nom_complet_sans_ext, _ = os.path.splitext(str(photo))
+                        
+                        # 2. On découpe selon le premier tiret bas "_"
+                        if "_" in nom_complet_sans_ext:
+                            parties = nom_complet_sans_ext.split("_", 1)
+                            premier_morceau = parties[0]
+                            reste_du_texte = parties[1]
+                            
+                            try:
+                                # On convertit le prix trouvé en chiffre float (ex: 2.99)
+                                prix_automatique = float(premier_morceau)
+                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
+                            except ValueError:
+                                # Si c'est un résidu d'ancien fichier système
+                                prix_automatique = 0.00
+                                nom_automatique = "Article Circulaire"
+                        else:
+                            prix_automatique = 0.00
+                            nom_automatique = "Article Circulaire"
+
+                        # 3. Enregistrement propre dans la commande commune
+                        st.session_state["panier_achats"].append(
+                            {
+                                "magasin": banniere_active,
+                                "produit": nom_automatique,
+                                "prix": prix_automatique,
+                            }
+                        )
+                        st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
+                        st.rerun()
+                    st.write("")
         else:
-            st.info("Aucun fichier de rabais textuel (.txt) dans ce dossier.")
+            st.info("Aucune photo dans ce dossier pour le moment.")
     else:
         st.warning(f"Dossier introuvable : bannieres/{nom_sous_dossier}")
-
-# =========================================================================
-# SECTION INFÉRIEURE : LES LIENS EXTERNES DIRECTS
-# =========================================================================
-st.write("---")
-st.header("🔗 Consulter la circulaire complète sur le site officiel")
-st.write("Cliquez ci-dessous pour ouvrir la circulaire interactive originale directement chez le commerçant.")
-
-colonnes_liens = st.columns(4)
-for i, (cle, url) in enumerate(liens_circulaires.items()):
-    nom_magasin = noms_affichage_circulaires[cle]
-    code_bouton_html = generer_bouton_circulaire(nom_magasin, url)
-    
-    with colonnes_liens[i % 4]:
-        st.markdown(code_bouton_html, unsafe_allow_html=True)

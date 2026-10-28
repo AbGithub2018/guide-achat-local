@@ -195,7 +195,7 @@ with col_droite:
         "marche_ami": "https://marcheami.ca",
         "marche_bonichoix": "https://www.bonichoix.com/fr/notre-circulaire/",
         "marche_richelieu": "https://marcherichelieu.com",
-        "marche_tradition": "https://circulaires.com",
+        "marche_tradition": "https://www.marchestradition.com/fr/circulaire/",
 
     }
 

@@ -65,8 +65,8 @@ LIENS_OFFICIELS = {
         "speciaux": "https://marchetradition.comfr/circulaire"
     },
     "WALMART": {
-        "site": "https://walmart.ca",
-        "speciaux": "https://walmart.ca/circulaire-flyer"
+        "site": "https://www.walmart.ca/fr",
+        "speciaux": "https://walmart.ca/fr/circulaire-flyer"
     },
     "COSTCO": {
         "site": "https://costco.ca",

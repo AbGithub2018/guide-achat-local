@@ -59,7 +59,7 @@ rayon_max = st.sidebar.slider(
     "Rayon maximum de recherche (km)", 5, 100, 25, 5
 )
 
-# LE BOUTON ROUGE EST DÉPLACÉ DANS LA SIDEBAR POUR GAGNER DE L'ESPACE SUR MOBILE
+# LE BOUTON ROUGE EST INTÉGRÉ DANS LA SIDEBAR POUR GAGNER DE L'ESPACE SUR MOBILE
 st.sidebar.write("---")
 st.sidebar.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner / Pays d'Origine)",
@@ -149,7 +149,7 @@ st.markdown(
     f"""
     <div style="background-color: #FFFBEB; border-left: 5px solid #F59E0B; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
         <p style="margin: 0; color: #B45309; font-size: 14px; font-weight: bold;">
-            📱 Mode Cellulaire : Cliquez d'abord sur le menu de gauche (bouton en haut à gauche) pour entrer votre code postal, ajuster la distance et ouvrir le Guide d'Achat Local !
+            📱 Mode Cellulaire : Cliquez d'abord sur le menu de gauche (bouton en haut à gauche) pour entrer votre code postal, ajuster la distance et ouvrir notre Guide d'Achat Local !
         </p>
     </div>
     """,
@@ -166,34 +166,41 @@ onglet_circulaire, onglet_saisie, onglet_facture = st.tabs([
 ])
 
 # -------------------------------------------------------------------------
-# ONGLET 1 : SITES OFFICIELS + LISEUSE DE PHOTOS (AVEC TIROIR RÉTRACTABLE)
+# ONGLET 1 : SITES EN INCRUSTATION + LISEUSE DE PHOTOS PROPRES
 # -------------------------------------------------------------------------
 with onglet_circulaire:
-    # --- TIROIR EXTENSIBLE POUR LES BOUTONS OFFICIELS ---
-    with st.expander(f"➡️ Ouvrir les liens officiels de la bannière : {banniere_active}", expanded=True):
-        cle_recherche = str(banniere_active).upper().strip()
-        url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
-        code_postal_url = urllib.parse.quote(code_recherche)
-        
-        if cle_recherche in ["MARCHÉ AMI", "MARCHÉ BONICHOIX", "MARCHÉ RICHELIEU", "MARCHÉ TRADITION", "COSTCO"]:
-            url_final_site = f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
-        elif "superc" in url_base_site or "metro" in url_base_site:
-            url_final_site = f"{url_base_site}?search={code_postal_url}"
-        elif "maxi" in url_base_site or "provigo" in url_base_site:
-            url_final_site = f"{url_base_site}?searchQuery={code_postal_url}"
-        elif "walmart" in url_base_site or "gianttiger" in url_base_site:
-            url_final_site = f"{url_base_site}?q={code_postal_url}"
-        elif "dollarama" in url_base_site:
-            url_final_site = f"{url_base_site}?localisation={code_postal_url}"
-        else:
-            url_final_site = url_base_site
+    
+    # 1. Résolution dynamique de l'URL par magasin et code postal
+    cle_recherche = str(banniere_active).upper().strip()
+    url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
+    code_postal_url = urllib.parse.quote(code_recherche)
+    
+    if cle_recherche in ["MARCHÉ AMI", "MARCHÉ BONICHOIX", "MARCHÉ RICHELIEU", "MARCHÉ TRADITION", "COSTCO"]:
+        url_final_site = f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
+    elif "superc" in url_base_site or "metro" in url_base_site:
+        url_final_site = f"{url_base_site}?search={code_postal_url}"
+    elif "maxi" in url_base_site or "provigo" in url_base_site:
+        url_final_site = f"{url_base_site}?searchQuery={code_postal_url}"
+    elif "walmart" in url_base_site or "gianttiger" in url_base_site:
+        url_final_site = f"{url_base_site}?q={code_postal_url}"
+    elif "dollarama" in url_base_site:
+        url_final_site = f"{url_base_site}?localisation={code_postal_url}"
+    else:
+        url_final_site = url_base_site
 
-        st.link_button("🌐 Ouvrir le site général de la bannière", url_base_site, use_container_width=True)
-        st.link_button(f"📍 Trouver ma succursale ({code_recherche})", url_final_site, type="primary", use_container_width=True)
+    # 2. INTÉGRATION DE LA LISEUSE INTERNET INCRUSTÉE (IFRAME)
+    with st.container(border=True):
+        st.markdown(f"<h3 style='font-size: 18px; color: #1E3A8A; font-weight: bold; margin-top: 0px;'>🌐 Site en direct : {banniere_active}</h3>", unsafe_allow_html=True)
+        
+        # Le site officiel s'incruste dans une fenêtre scrollable intégrée à la page Streamlit
+        code_html_fenetre = f"""
+        <iframe src="{url_final_site}" width="100%" height="500px" style="border:1px solid #E5E7EB; border-radius:8px;"></iframe>
+        """
+        st.components.v1.html(code_html_fenetre, height=520)
 
     st.write("")
 
-    # Affichage des photos locales de circulaires
+    # 3. Affichage des photos locales si présentes
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
@@ -201,6 +208,7 @@ with onglet_circulaire:
         fichiers_photos = [f for f in os.listdir(chemin_dossier_images) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
 
         if fichiers_photos:
+            st.markdown("<h4 style='font-size: 16px; margin-top: 10px;'>📸 Coupures de circulaires locales :</h4>", unsafe_allow_html=True)
             grille_visuelle = st.columns(2)
             for index, photo in enumerate(fichiers_photos):
                 image_aliment = Image.open(os.path.join(chemin_dossier_images, photo))
@@ -235,12 +243,6 @@ with onglet_circulaire:
                         st.toast(f"✅ {nom_automatique} ajouté !", icon="🛒")
                         st.rerun()
                     st.write("")
-        else:
-            with st.container(border=True):
-                st.info("Aucun feuillet visuel cette semaine. Ouvrez le tiroir ci-dessus pour accéder directement au site de l'épicerie !")
-    else:
-        with st.container(border=True):
-            st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
 
 # -------------------------------------------------------------------------
 # ONGLET 2 : FORMULAIRE DE SAISIE DE RABAIS

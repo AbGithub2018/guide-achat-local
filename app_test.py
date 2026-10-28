@@ -59,11 +59,11 @@ rayon_max = st.sidebar.slider(
     "Rayon maximum de recherche (km)", 5, 100, 25, 5
 )
 
-# LE BOUTON ROUGE EST INTÉGRÉ DANS LA SIDEBAR POUR GAGNER DE L'ESPACE SUR MOBILE
+# LE BOUTON ROUGE EST DÉPLACÉ DANS LA SIDEBAR POUR GAGNER DE L'ESPACE SUR MOBILE
 st.sidebar.write("---")
 st.sidebar.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner / Pays d'Origine)",
-    "https://achatquebec.streamlit.app/",
+    "https://streamlit.app",
     type="primary",
     use_container_width=True,
 )
@@ -149,7 +149,7 @@ st.markdown(
     f"""
     <div style="background-color: #FFFBEB; border-left: 5px solid #F59E0B; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
         <p style="margin: 0; color: #B45309; font-size: 14px; font-weight: bold;">
-            📱 Mode Cellulaire : Cliquez d'abord sur le menu de gauche (la petite flèche ou le bouton en haut à gauche de votre écran) pour entrer votre code postal, ajuster le rayon d'action et ouvrir notre Guide d'Achat Local !
+            📱 Mode Cellulaire : Cliquez d'abord sur le menu de gauche (bouton en haut à gauche) pour entrer votre code postal, ajuster la distance et ouvrir le Guide d'Achat Local !
         </p>
     </div>
     """,
@@ -166,12 +166,11 @@ onglet_circulaire, onglet_saisie, onglet_facture = st.tabs([
 ])
 
 # -------------------------------------------------------------------------
-# ONGLET 1 : SITES SÉCURISÉS + LISEUSE DE PHOTOS (BOUTONS EMPILÉS POUR MOBILE)
+# ONGLET 1 : SITES OFFICIELS + LISEUSE DE PHOTOS (AVEC TIROIR RÉTRACTABLE)
 # -------------------------------------------------------------------------
 with onglet_circulaire:
-    with st.container(border=True):
-        st.markdown(f"<h3 style='font-size: 20px; color: #1E3A8A; font-weight: 600; margin-top: 0px;'>Liens : {banniere_active}</h3>", unsafe_allow_html=True)
-
+    # --- TIROIR EXTENSIBLE POUR LES BOUTONS OFFICIELS ---
+    with st.expander(f"➡️ Ouvrir les liens officiels de la bannière : {banniere_active}", expanded=True):
         cle_recherche = str(banniere_active).upper().strip()
         url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
         code_postal_url = urllib.parse.quote(code_recherche)
@@ -238,7 +237,7 @@ with onglet_circulaire:
                     st.write("")
         else:
             with st.container(border=True):
-                st.info("Aucun feuillet visuel cette semaine. Cliquez sur les boutons du haut pour voir le site !")
+                st.info("Aucun feuillet visuel cette semaine. Ouvrez le tiroir ci-dessus pour accéder directement au site de l'épicerie !")
     else:
         with st.container(border=True):
             st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")

@@ -21,65 +21,30 @@ if "panier_achats" not in st.session_state:
 if "banniere_manuelle" not in st.session_state:
     st.session_state["banniere_manuelle"] = "SUPER C"
 
+# On mémorise l'adresse de la succursale consultée pour l'injecter dans le bouton
+if "adresse_magasin_actif" not in st.session_state:
+    st.session_state["adresse_magasin_actif"] = ""
+
 DOSSIER_BANNIERES = "bannieres"
 
 # =========================================================================
-# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES BANNIÈRES
+# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES SITES DE BANNIÈRES
 # =========================================================================
-# Ce dictionnaire contient les vrais liens. Les clés sont en MAJUSCULES pour éviter les conflits.
 LIENS_OFFICIELS = {
-    "SUPER C": {
-        "site": "https://superc.ca",
-        "speciaux": "https://superc.ca/circulaire"
-    },
-    "MAXI": {
-        "site": "https://maxi.ca",
-        "speciaux": "https://maxi.ca/circulaire"
-    },
-    "IGA": {
-        "site": "https://iga.net",
-        "speciaux": "https://iga.netfr/circulaire_hebdomadaire"
-    },
-    "PROVIGO": {
-        "site": "https://provigo.ca",
-        "speciaux": "https://provigo.ca/circulaire"
-    },
-    "METRO": {
-        "site": "https://metro.ca",
-        "speciaux": "https://metro.ca/circulaire"
-    },
-    "MARCHÉ BONICHOIX": {
-        "site": "https://www.bonichoix.com/fr/",
-        "speciaux": "https://www.bonichoix.com/fr/notre-circulaire/"
-    },
-    "MARCHÉ AMI": {
-        "site": "https://marcheami.ca",
-        "speciaux": "https://reebee.com"
-    },
-    "MARCHÉ RICHELIEU": {
-        "site": "https://marcherichelieu.ca",
-        "speciaux": "https://marcherichelieu.cafr/circulaire"
-    },
-    "MARCHÉ TRADITION": {
-        "site": "https://www.marchestradition.com/fr/",
-        "speciaux": "https://www.marchestradition.com/fr/circulaire/"
-    },
-    "WALMART": {
-        "site": "https://www.walmart.ca/fr",
-        "speciaux": "https://www.walmart.ca/fr/flyer"
-    },
-    "COSTCO": {
-        "site": "https://costco.ca",
-        "speciaux": "https://costco.ca/circulaires-offres.html"
-    },
-    "DOLLARAMA": {
-        "site": "https://www.dollarama.com/fr-CA",
-        "speciaux": "https://www.doordash.com/convenience/store/24918186/"
-    },
-    "TIGRE GÉANT": {
-        "site": "https://gianttiger.com",
-        "speciaux": "https://gianttiger.com/circulaire"
-    }
+    "SUPER C": "https://superc.ca",
+    "MAXI": "https://maxi.ca",
+    "IGA": "https://iga.net",
+    "PROVIGO": "https://provigo.ca",
+    "METRO": "https://metro.ca",
+    "MARCHÉ ADONIS": "https://groupeadonis.ca",
+    "MARCHÉ AMI": "https://marcheami.ca",
+    "MARCHÉ BONICHOIX": "https://bonichoix.com",
+    "MARCHÉ RICHELIEU": "https://marcherichelieu.ca",
+    "MARCHÉ TRADITION": "https://marchetradition.com",
+    "WALMART": "https://walmart.ca",
+    "COSTCO": "https://costco.ca",
+    "TIGRE GÉANT": "https://gianttiger.com",
+    "DOLLARAMA": "https://dollarama.com"
 }
 
 # --- CHARGEMENT DES DONNÉES ---
@@ -149,9 +114,10 @@ if code_recherche:
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee["Nom_Commerce"]
                 distance = rangee["Distance_KM"]
+                adresse_rue = rangee.get('Adresse_Rue', '')
 
                 st.sidebar.markdown(
-                    f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{rangee.get('Adresse_Rue', '')}</small>",
+                    f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{adresse_rue}</small>",
                     unsafe_allow_html=True,
                 )
                 if st.sidebar.button(
@@ -160,6 +126,8 @@ if code_recherche:
                     use_container_width=True,
                 ):
                     st.session_state["banniere_manuelle"] = nom_magasin
+                    # On mémorise l'adresse de la rue affichée à gauche
+                    st.session_state["adresse_magasin_actif"] = adresse_rue
                     st.rerun()
                 st.sidebar.write("")
         else:
@@ -228,40 +196,47 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : ACCÈS DIRECT AUX LIENS DE LA BANNIÈRE (DICTIONNAIRE CORRIGÉ)
+# COLONNE DE DROITE : ACCÈS DIRECT AUX LIENS DES SITES BANNIÈRES
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # Récupération des URLs directement depuis notre dictionnaire interne (LIENS_OFFICIELS)
-    # On force en majuscules pour éviter les erreurs d'écriture (ex: "Super C" vs "SUPER C")
+    # Récupération de l'URL de base de la bannière
     cle_recherche = str(banniere_active).upper().strip()
-    config_banniere = LIENS_OFFICIELS.get(cle_recherche, {})
+    url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
 
-    url_site = config_banniere.get("site")
-    url_speciaux = config_banniere.get("speciaux")
+    # On récupère l'adresse exacte trouvée à gauche et le code postal
+    adresse_cible = st.session_state["adresse_magasin_actif"]
+    
+    # On assemble l'adresse de la rue et le code postal pour la recherche interne du site de la bannière
+    recherche_complete = f"{adresse_cible} {code_recherche}".strip()
+    parametre_url = urllib.parse.quote(recherche_complete)
 
-    # Si le magasin sélectionné n'est pas répertorié dans le dictionnaire, on crée une recherche Google propre
-    if not url_site:
-        nom_encode = urllib.parse.quote(banniere_active)
-        url_site = f"https://google.com{nom_encode}+epicerie+quebec"
-        url_speciaux = f"https://google.com{nom_encode}+circulaire+reebee"
+    # Création des liens directs sur les moteurs de recherche internes des bannières officielles
+    url_final_site = f"{url_base_site}?search={parametre_url}"
+    
+    # Ajustement des paramètres d'URL spécifiques selon la structure des bannières courantes
+    if "maxi" in url_base_site or "provigo" in url_base_site:
+        url_final_site = f"{url_base_site}?searchQuery={parametre_url}"
+    elif "walmart" in url_base_site or "gianttiger" in url_base_site:
+        url_final_site = f"{url_base_site}?q={parametre_url}"
+    elif "dollarama" in url_base_site:
+        url_final_site = f"{url_base_site}?localisation={parametre_url}"
 
     # Affichage des deux boutons d'action demandés
-    st.write("### 🔗 Accès rapide")
+    st.write("### 🔗 Accès direct au magasin sélectionné")
     
     col_lien1, col_lien2 = st.columns(2)
     with col_lien1:
         st.link_button(
-            "🌐 Site Internet de la bannière",
-            url_site,
+            f"🌐 Aller sur le site de la bannière",
+            url_base_site,
             use_container_width=True
         )
     with col_lien2:
         st.link_button(
-            "🏷️ Lien des spéciaux",
-            url_speciaux,
+            f"📍 Ouvrir la succursale ({adresse_cible if adresse_cible else code_recherche})",
+            url_final_site,
             type="primary",
             use_container_width=True
         )
-

@@ -21,14 +21,13 @@ if "panier_achats" not in st.session_state:
 if "banniere_manuelle" not in st.session_state:
     st.session_state["banniere_manuelle"] = "SUPER C"
 
-# On mémorise l'adresse de la succursale consultée
 if "adresse_magasin_actif" not in st.session_state:
     st.session_state["adresse_magasin_actif"] = ""
 
 DOSSIER_BANNIERES = "bannieres"
 
 # =========================================================================
-# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES SITES DE BANNIÈRES
+# CONFIGURATION STRICTE DES URLS OFFICIELLES
 # =========================================================================
 LIENS_OFFICIELS = {
     "SUPER C": "https://superc.ca",
@@ -53,7 +52,7 @@ if df_coords is None or df_magasins is None:
     st.stop()
 
 # =========================================================================
-# SECTION À GAUCHE : BARRE LATÉRALE (FILTRES + COMMERCES)
+# BARRE LATÉRALE (CRITÈRES ET COMMERCES LES PLUS PROCHES)
 # =========================================================================
 st.sidebar.header("Critères de recherche")
 saisie_utilisateur = st.sidebar.text_input(
@@ -75,18 +74,16 @@ if banniere_selectionnee != "Toutes les bannières":
     st.session_state["banniere_manuelle"] = banniere_selectionnee
 
 banniere_active = st.session_state["banniere_manuelle"]
-
 st.sidebar.write("---")
 
-# FLUX GÉOLOCALISÉ DANS LA BARRE DE GAUCHE
 st.sidebar.subheader("📍 Commerces les plus proches")
 if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc["Latitude"])
-        lon_centre = float(point_origine.iloc["Longitude"])
-        st.sidebar.caption(f"Position détectée : {point_origine.iloc['Ville']}")
+        lat_centre = float(point_origine.iloc[0]["Latitude"])
+        lon_centre = float(point_origine.iloc[0]["Longitude"])
+        st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
 
         df_magasins_gps = pd.merge(
             df_magasins,
@@ -105,6 +102,7 @@ if code_recherche:
         resultats_filtres = df_magasins_gps[
             df_magasins_gps["Distance_KM"] <= rayon_max
         ].sort_values(by="Distance_KM")
+        
         if banniere_selectionnee != "Toutes les bannières":
             resultats_filtres = resultats_filtres[
                 resultats_filtres["Nom_Commerce"] == banniere_selectionnee
@@ -131,12 +129,11 @@ if code_recherche:
                 st.sidebar.write("")
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
-
-
-# --- EN-TÊTE PRINCIPAL ---
+# =========================================================================
+# ZONE PRINCIPALE DE L'APPLICATION
+# =========================================================================
 st.title("🍎 Planificateur de Budget Épicerie")
 
-# LA LIGNE ROUGE
 st.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner un Code-Barres / Pays d'Origine)",
     "https://streamlit.app",
@@ -145,12 +142,10 @@ st.link_button(
 )
 st.write("---")
 
-# --- LES DEUX COLONNES CENTRALES ---
+# Division de l'espace central en deux colonnes égales
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
-# =========================================================================
-# COLONNE DE GAUCHE : FORMULAIRE MANUEL + FACTURE MONTÉE
-# =========================================================================
+# --- COLONNE DE GAUCHE : COMMANDE & SAISIE MANUELLE ---
 with col_gauche:
     st.subheader("🔍 Étape 1 : Saisie de ma liste d'épicerie")
 
@@ -194,51 +189,60 @@ with col_gauche:
     else:
         st.info("Aucun article dans la commande actuellement.")
 
-# =========================================================================
-# COLONNE DE DROITE : ACCÈS DIRECT ET STRICT AUX SITES OFFICIELS
-# =========================================================================
+# --- COLONNE DE DROITE : ACCÈS DIRECT AUX SITES OFFICIELS LOCALISÉS ---
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
+    # Récupération sécurisée de l'URL générale
     cle_recherche = str(banniere_active).upper().strip()
     url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
 
-    adresse_cible = st.session_state["adresse_magasin_actif"]
-    
-    # Encodage propre des variables pour l'URL
+    # Encodage du code postal seul (pour éviter les adresses mal formées sur Sobeys/Metro/Loblaws)
     code_postal_url = urllib.parse.quote(code_recherche)
-    adresse_complete_url = urllib.parse.quote(f"{adresse_cible} {code_recherche}".strip())
+    adresse_cible = st.session_state["adresse_magasin_actif"]
 
-    # --- STRUCTURE EXACTE DES URLS SELON CHAQUE SITE BANNIÈRE ---
+    # Construction de la route d'URL dynamique adaptée aux paramètres de chaque serveur
     if "superc" in url_base_site:
-        url_final_site = f"https://superc.ca?search={code_postal_url}"
+        url_final_site = f"https://superc.ca{code_postal_url}"
     elif "maxi" in url_base_site:
-        url_final_site = f"https://maxi.ca?searchQuery={code_postal_url}"
+        url_final_site = f"https://maxi.ca{code_postal_url}"
     elif "provigo" in url_base_site:
-        url_final_site = f"https://provigo.ca?searchQuery={code_postal_url}"
+        url_final_site = f"https://provigo.ca{code_postal_url}"
     elif "metro" in url_base_site:
-        url_final_site = f"https://metro.ca?search={code_postal_url}"
+        url_final_site = f"https://metro.ca{code_postal_url}"
     elif "iga" in url_base_site:
-        url_final_site = f"https://iga.net?store_search={code_postal_url}"
+        url_final_site = f"https://iga.net{code_postal_url}"
     elif "bonichoix" in url_base_site:
-        url_final_site = f"https://bonichoix.com?store_search={code_postal_url}"
+        url_final_site = f"https://bonichoix.com{code_postal_url}"
     elif "marcherichelieu" in url_base_site:
-        url_final_site = f"https://marcherichelieu.ca?store_search={code_postal_url}"
+        url_final_site = f"https://marcherichelieu.ca{code_postal_url}"
     elif "marchetradition" in url_base_site:
-        url_final_site = f"https://marchetradition.com?store_search={code_postal_url}"
+        url_final_site = f"https://marchetradition.com{code_postal_url}"
     elif "walmart" in url_base_site:
-        url_final_site = f"https://walmart.ca?q={code_postal_url}"
+        url_final_site = f"https://walmart.ca{code_postal_url}"
     elif "gianttiger" in url_base_site:
-        url_final_site = f"https://gianttiger.com?q={code_postal_url}"
+        url_final_site = f"https://gianttiger.com{code_postal_url}"
     elif "dollarama" in url_base_site:
-        url_final_site = f"https://dollarama.com?localisation={code_postal_url}"
+        url_final_site = f"https://dollarama.com{code_postal_url}"
     elif "adonis" in url_base_site:
-        url_final_site = f"https://groupeadonis.ca?search={code_postal_url}"
+        url_final_site = f"https://groupeadonis.ca{code_postal_url}"
     else:
         url_final_site = f"{url_base_site}?search={code_postal_url}"
 
+    # Affichage propre des deux boutons d'accès direct
     st.write("### 🔗 Accès direct au magasin sélectionné")
     
-    col_lien1, col_lien2 = st.columns(2)
-    with col_lien1:
+    col_l1, col_l2 = st.columns(2)
+    with col_l1:
         st.link_button(
+            "🌐 Aller sur le site général",
+            url_base_site,
+            use_container_width=True
+        )
+    with col_l2:
+        st.link_button(
+            f"📍 Ouvrir la succursale ({adresse_cible if adresse_cible else code_recherche})",
+            url_final_site,
+            type="primary",
+            use_container_width=True
+        )

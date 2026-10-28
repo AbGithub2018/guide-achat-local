@@ -23,6 +23,26 @@ if "banniere_manuelle" not in st.session_state:
 
 DOSSIER_BANNIERES = "bannieres"
 
+# =========================================================================
+# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES SITES DE BANNIÈRES
+# =========================================================================
+LIENS_OFFICIELS = {
+    "SUPER C": "https://superc.ca",
+    "MAXI": "https://maxi.ca",
+    "IGA": "https://iga.net",
+    "PROVIGO": "https://provigo.ca",
+    "METRO": "https://metro.ca",
+    "MARCHÉ ADONIS": "https://groupeadonis.ca",
+    "MARCHÉ AMI": "https://marcheami.ca",
+    "MARCHÉ BONICHOIX": "https://bonichoix.com",
+    "MARCHÉ RICHELIEU": "https://marcherichelieu.ca",
+    "MARCHÉ TRADITION": "https://marchetradition.com",
+    "WALMART": "https://walmart.ca",
+    "COSTCO": "https://costco.ca",
+    "TIGRE GÉANT": "https://gianttiger.com",
+    "DOLLARAMA": "https://dollarama.com"
+}
+
 # --- CHARGEMENT DES DONNÉES ---
 df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
@@ -202,13 +222,7 @@ with col_gauche:
                 magasin_nom = rangee["magasin"]
                 total_magasin = rangee["prix"]
                 st.markdown(
-                    f"""
-                    <div style="display: flex; justify-content: space-between; background-color: #F9FAFB; padding: 6px 12px; border-radius: 4px; margin-bottom: 4px; border: 1px solid #E5E7EB;">
-                        <span style="font-weight: 500;">Sous-total <strong>{magasin_nom}</strong></span>
-                        <span style="font-family: monospace; font-weight: bold; color: #111827;">{total_magasin:.2f} $</span>
-                    </div>
-                    """, 
-                    unsafe_allow_html=True
+                    f"🔹 Total estimé chez **{magasin_nom}** : `{total_magasin:.2f} $`"
                 )
             
             st.markdown(
@@ -228,10 +242,36 @@ with col_gauche:
             st.info("Votre liste d'épicerie est vide pour le moment. Trouvez des rabais à droite et ajoutez-les ici !")
 
 # =========================================================================
-# COLONNE DE DROITE : CONFIGURATION DE LA LISEUSE VISUELLE D'ORIGINE
+# COLONNE DE DROITE : ACCÈS SITES OFFICIELS + LISEUSE DE PHOTOS D'ORIGINE
 # =========================================================================
 with col_droite:
-    st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
+    with st.container(border=True):
+        st.markdown(f"<h2 style='font-size: 24px; color: #1E3A8A; font-weight: 600; margin-top: 0px;'>📸 Feuillets et Liens : {banniere_active}</h2>", unsafe_allow_html=True)
+
+        cle_recherche = str(banniere_active).upper().strip()
+        url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
+        code_postal_url = urllib.parse.quote(code_recherche)
+        
+        if cle_recherche in ["MARCHÉ AMI", "MARCHÉ BONICHOIX", "MARCHÉ RICHELIEU", "MARCHÉ TRADITION", "COSTCO"]:
+            url_final_site = f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
+        elif "superc" in url_base_site or "metro" in url_base_site:
+            url_final_site = f"{url_base_site}?search={code_postal_url}"
+        elif "maxi" in url_base_site or "provigo" in url_base_site:
+            url_final_site = f"{url_base_site}?searchQuery={code_postal_url}"
+        elif "walmart" in url_base_site or "gianttiger" in url_base_site:
+            url_final_site = f"{url_base_site}?q={code_postal_url}"
+        elif "dollarama" in url_base_site:
+            url_final_site = f"{url_base_site}?localisation={code_postal_url}"
+        else:
+            url_final_site = url_base_site
+
+        col_l1, col_l2 = st.columns(2)
+        with col_l1:
+            st.link_button("🌐 Site de l'épicerie", url_base_site, use_container_width=True)
+        with col_l2:
+            st.link_button(f"📍 Ma succursale locale", url_final_site, type="primary", use_container_width=True)
+
+    st.write("")
 
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
@@ -279,6 +319,8 @@ with col_droite:
                         st.rerun()
                     st.write("")
         else:
-            st.info("Aucune photo dans ce dossier pour le moment.")
+            with st.container(border=True):
+                st.info("Aucun feuillet visuel téléversé pour cette bannière cette semaine. Utilisez le bouton ci-dessus pour ouvrir le site de l'épicerie !")
     else:
-        st.warning(f"Dossier introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
+        with st.container(border=True):
+            st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")

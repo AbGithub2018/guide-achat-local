@@ -60,6 +60,10 @@ LIENS_OFFICIELS = {
         "site": "https://costco.ca",
         "speciaux": "https://costco.ca/circulaires-offres.html"
     },
+    "DOLLARAMA": {
+        "site": "https://www.dollarama.com/fr-CA",
+        "speciaux": "https://www.instacart.ca/store/dollarama/storefront?hl=fr"
+    },
     "TIGRE GÉANT": {
         "site": "https://gianttiger.com",
         "speciaux": "https://gianttiger.com/circulaire"

@@ -171,67 +171,80 @@ with col_gauche:
 # =========================================================================
 # COLONNE DE DROITE : LISEUSE VISUELLE REEBEE (DECOUPE ULTRA-SECURISEE)
 # =========================================================================
+# =========================================================================
+# COLONNE DE DROITE : ACCÈS DIRECT AUX LIENS DE LA BANNIÈRE (FICHIER TEXTE)
+# =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
-    chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
+    # 1. Nettoyage sécurisé du nom du dossier (conversion "Marché Ami" -> "marche_ami")
+    nom_sous_dossier = (
+        str(banniere_active)
+        .lower()
+        .replace(" ", "_")
+        .replace("é", "e")
+        .replace("è", "e")
+        .replace("à", "a")
+    )
+    chemin_dossier_banniere = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
-    if os.path.exists(chemin_dossier_images):
-        fichiers_photos = [
+    # Variables pour stocker les liens extraits
+    url_site = None
+    url_speciaux = None
+
+    # 2. Lecture du fichier texte de configuration
+    if os.path.exists(chemin_dossier_banniere):
+        fichiers_txt = [
             f
-            for f in os.listdir(chemin_dossier_images)
-            if f.lower().endswith((".png", ".jpg", ".jpeg"))
+            for f in os.listdir(chemin_dossier_banniere)
+            if f.lower().endswith(".txt")
         ]
 
-        if fichiers_photos:
-            grille_visuelle = st.columns(2)
-            for index, photo in enumerate(fichiers_photos):
-                image_aliment = Image.open(
-                    os.path.join(chemin_dossier_images, photo)
-                )
+        if fichiers_txt:
+            chemin_fichier_info = os.path.join(chemin_dossier_banniere, fichiers_txt[0])
+            try:
+                with open(chemin_fichier_info, "r", encoding="utf-8") as f:
+                    lignes = f.read().splitlines()
+                    
+                    # Extraction des lignes (Ligne 1 = Site, Ligne 2 = Spéciaux)
+                    if len(lignes) >= 1:
+                        url_site = lignes[0].strip()
+                    if len(lignes) >= 2:
+                        url_speciaux = lignes[1].strip()
+            except Exception as e:
+                st.error(f"Erreur lors de la lecture du fichier texte : {e}")
+        else:
+            st.info(f"Aucun fichier .txt de configuration trouvé dans '{nom_sous_dossier}'.")
+    else:
+        st.warning(f"Dossier introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
 
-                with grille_visuelle[index % 2]:
-                    st.image(image_aliment, use_container_width=True)
+    # Fallback automatique sur une recherche Google si le fichier texte est vide ou introuvable
+    nom_encode = urllib.parse.quote(banniere_active)
+    if not url_site:
+        url_site = f"https://google.com{nom_encode}+epicerie+quebec"
+    if not url_speciaux:
+        url_speciaux = f"https://google.com{nom_encode}+circulaire+reebee"
 
-                    if st.button(
-                        f"➕ Ajouter ce spécial",
-                        key=f"btn_photo_{index}",
-                        use_container_width=True,
-                        type="primary"
-                    ):
-                        # 1. On isole le nom sans l'extension de fichier (ex: "2.99_article_32.jpeg" -> "2.99_article_32")
-                        nom_complet_sans_ext, _ = os.path.splitext(str(photo))
-                        
-                        # 2. On découpe selon le premier tiret bas "_"
-                        if "_" in nom_complet_sans_ext:
-                            parties = nom_complet_sans_ext.split("_", 1)
-                            premier_morceau = parties[0]
-                            reste_du_texte = parties[1]
-                            
-                            try:
-                                # On convertit le prix trouvé en chiffre float (ex: 2.99)
-                                prix_automatique = float(premier_morceau)
-                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
-                            except ValueError:
-                                # Si c'est un résidu d'ancien fichier système
-                                prix_automatique = 0.00
-                                nom_automatique = "Article Circulaire"
-                        else:
-                            prix_automatique = 0.00
-                            nom_automatique = "Article Circulaire"
+    # 3. Affichage immédiat des boutons (le site de la bannière en premier)
+    st.write("### 🔗 Accès rapide")
+    
+    col_lien1, col_lien2 = st.columns(2)
+    with col_lien1:
+        st.link_button(
+            "🌐 Site Internet de la bannière",
+            url_site,
+            use_container_width=True
+        )
+    with col_lien2:
+        st.link_button(
+            "🏷️ Lien des spéciaux",
+            url_speciaux,
+            type="primary",
+            use_container_width=True
+        )
+        
+    st.write("---")
 
-                        # 3. Enregistrement propre dans la commande commune
-                        st.session_state["panier_achats"].append(
-                            {
-                                "magasin": banniere_active,
-                                "produit": nom_automatique,
-                                "prix": prix_automatique,
-                            }
-                        )
-                        st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
-                        st.rerun()
-                    st.write("")
         else:
             st.info("Aucune photo dans ce dossier pour le moment.")
     else:

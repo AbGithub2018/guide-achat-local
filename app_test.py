@@ -176,29 +176,32 @@ with col_droite:
     st.subheader(f"✨ Les spéciaux textuels : {banniere_active}")
 
     # =========================================================================
-    # LE BOUTON DYNAMIQUE VERS LES LIENS OFFICIELS (100% LÉGAL)
+    # LE BOUTON DYNAMIQUE EN MINUSCULES (100% COMPATIBLE AVEC VOS DOSSIERS)
     # =========================================================================
+    # On transforme le nom actif en minuscules pour correspondre à vos nouveaux dossiers
+    nom_banniere_minuscule = str(banniere_active).lower().replace(" ", "_")
+
     liens_circulaires = {
-        "SUPER C": "https://superc.ca",
+        "super_c": "https://superc.ca",
         "maxi": "https://maxi.ca",
-        "Walmart": "https://walmart.ca",
-        "IGA": "https://iga.net",
-        "Metro": "https://metro.ca",
-        "Tigre_Geant": "https://gianttiger.com",
-        "Provigo": "https://provigo.ca",
-        "Costco": "https://costco.ca",
-        "Dollarama": "https://dollarama.com",
-        "Marche_Adonis": "https://groupeadonis.com",
-        "Marche_Ami": "https://marcheami.ca",
-        "Marche_Bonichoix": "https://bonichoix.com",
-        "Marche_Richelieu": "https://marcherichelieu.com",
-        "Marche_Tradition": "https://lesmarchestradition.com"
+        "walmart": "https://walmart.ca",
+        "iga": "https://iga.net",
+        "metro": "https://metro.ca",
+        "tigre_geant": "https://gianttiger.com",
+        "provigo": "https://provigo.ca",
+        "costco": "https://costco.ca",
+        "dollarama": "https://dollarama.com",
+        "marche_adonis": "https://groupeadonis.com",
+        "marche_ami": "https://marcheami.ca",
+        "marche_bonichoix": "https://bonichoix.com",
+        "marche_richelieu": "https://marcherichelieu.com",
+        "marche_tradition": "https://lesmarchestradition.com"
     }
 
-    # On récupère le bon lien ou on utilise Google en secours si le nom ne concorde pas parfaitement
-    lien_officiel = liens_circulaires.get(banniere_active, "https://google.com")
+    # On cherche le lien avec la version en minuscules
+    lien_officiel = liens_circulaires.get(nom_banniere_minuscule, "https://google.com")
 
-    # Affichage du bouton de redirection
+    # Affichage du bouton de redirection légale
     st.link_button(
         f"🌐 Ouvrir la circulaire officielle de {banniere_active} (Site externe)",
         lien_officiel,
@@ -206,6 +209,7 @@ with col_droite:
         use_container_width=True
     )
     st.write("---")
+
     # =========================================================================
 
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")

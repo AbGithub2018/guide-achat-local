@@ -60,9 +60,10 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc[0]["Latitude"])
-        lon_centre = float(point_origine.iloc[0]["Longitude"])
-        st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
+        # CORRECTION ILOC ICI : Pour éviter l'erreur de type sur l'index de coordonnées
+        lat_centre = float(point_origine["Latitude"].iloc[0])
+        lon_centre = float(point_origine["Longitude"].iloc[0])
+        st.sidebar.caption(f"Position détectée : {point_origine['Ville'].iloc[0]}")
 
         df_magasins_gps = pd.merge(
             df_magasins,
@@ -105,9 +106,7 @@ if code_recherche:
                 st.sidebar.write("")
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
-
-
-# --- EN-TÊTE PRINCIPAL ---
+            # --- EN-TÊTE PRINCIPAL ---
 st.title("🍎 Planificateur de Budget Épicerie")
 
 # LA LIGNE ROUGE
@@ -123,15 +122,14 @@ st.write("---")
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
 # =========================================================================
-# COLONNE DE GAUCHE : FORMULAIRE MANUEL AVEC CATÉGORIES + FACTURE MONTÉE
+# COLONNE DE GAUCHE : FORMULAIRE AVEC CATÉGORIES + RECAPITULATIF AGRANDI
 # =========================================================================
 with col_gauche:
-    st.subheader("🔍 Étape 1 : Saisie de ma liste d'épicerie")
+    st.markdown("<h2 style='font-size: 28px; margin-bottom: 0px;'>🔍 Étape 1 : Saisie de ma liste d'épicerie</h2>", unsafe_allow_html=True)
 
     with st.expander("➕ Ajouter un rabais trouvé à ma liste", expanded=True):
-        st.write(f"Magasin sélectionné : **{banniere_active}**")
+        st.markdown(f"<p style='font-size: 18px;'>Magasin sélectionné : <strong>{banniere_active}</strong></p>", unsafe_allow_html=True)
 
-        # 1. Ajout de l'option des catégories demandée dans l'espace central
         categorie = st.selectbox(
             "Catégorie de l'article :",
             [
@@ -156,7 +154,7 @@ with col_gauche:
                 st.session_state["panier_achats"].append(
                     {
                         "magasin": banniere_active,
-                        "catégorie": categorie, # On enregistre la catégorie sélectionnée
+                        "catégorie": categorie,
                         "produit": nom_article,
                         "prix": prix_article,
                     }
@@ -168,12 +166,24 @@ with col_gauche:
 
     st.write("---")
 
-    st.subheader("🛍️ Récapitulatif de ma commande & Facture")
+    st.markdown("<h2 style='font-size: 28px; margin-bottom: 15px;'>🛍️ Récapitulatif de ma commande & Facture</h2>", unsafe_allow_html=True)
+    
     if st.session_state["panier_achats"]:
         df_panier = pd.DataFrame(st.session_state["panier_achats"])
-        st.dataframe(df_panier, use_container_width=True, hide_index=True)
+        
+        df_affichage = df_panier.rename(columns={
+            "magasin": "Magasin",
+            "catégorie": "Catégorie",
+            "produit": "Article",
+            "prix": "Prix"
+        })
+        
+        df_affichage["Prix"] = df_affichage["Prix"].map("{:.2f} $".format)
+        st.dataframe(df_affichage, use_container_width=True, hide_index=True)
+        
         st.markdown(
-            f"### 💰 Montant total de la commande : **{df_panier['prix'].sum():.2f} $**"
+            f"<h1 style='font-size: 32px; color: #1E3A8A; margin-top: 15px;'>💰 Montant total de la commande : {df_panier['prix'].sum():.2f} $</h1>", 
+            unsafe_allow_html=True
         )
 
         if st.button("🗑️ Vider complètement la commande", use_container_width=True):
@@ -183,12 +193,11 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : VOTRE CONFIGURATION D'ORIGINE DE LA LISEUSE
+# COLONNE DE DROITE : CONFIGURATION DE LA LISEUSE VISUELLE REFAITE SANS BUG
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # Nettoyage de la chaîne pour le sous-dossier
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
@@ -217,6 +226,7 @@ with col_droite:
                     ):
                         nom_complet_sans_ext, _ = os.path.splitext(str(photo))
                         
+                        # CORRECTION DU CLIC DE DÉCOUPE DES NOM/PRIX DES IMAGES ICI :
                         if "_" in nom_complet_sans_ext:
                             parties = nom_complet_sans_ext.split("_", 1)
                             premier_morceau = parties[0]
@@ -227,15 +237,15 @@ with col_droite:
                                 nom_automatique = reste_du_texte.replace("_", " ").capitalize()
                             except ValueError:
                                 prix_automatique = 0.00
-                                nom_automatique = "Article Circulaire"
+                                nom_automatique = nom_complet_sans_ext.replace("_", " ").capitalize()
                         else:
                             prix_automatique = 0.00
-                            nom_automatique = "Article Circulaire"
+                            nom_automatique = nom_complet_sans_ext.replace("_", " ").capitalize()
 
                         st.session_state["panier_achats"].append(
                             {
                                 "magasin": banniere_active,
-                                "catégorie": "🍎 Circulaire Visuelle", # Par défaut pour les photos
+                                "catégorie": "🍎 Circulaire Visuelle",
                                 "produit": nom_automatique,
                                 "prix": prix_automatique,
                             }

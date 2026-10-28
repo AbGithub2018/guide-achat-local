@@ -4,8 +4,15 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 
-# Importation de vos fonctions géographiques depuis fonctions_geo.py
+# Importation de vos fonctions géographiques
 from fonctions_geo import calculer_distance, charger_donnees
+
+# IMPORTATION DES LIENS ET FONCTIONS DE CIRCULAIRES (Depuis la partie 2)
+from gestion_circulaires import (
+    liens_circulaires, 
+    noms_affichage_circulaires, 
+    generer_bouton_circulaire
+)
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(
@@ -106,7 +113,6 @@ if code_recherche:
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
 
-
 # --- EN-TÊTE PRINCIPAL ---
 st.title("🍎 Planificateur de Budget Épicerie")
 
@@ -169,131 +175,140 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : LES RABAIS EN TEXTE PUR (ZÉRO IMAGE AFFICHÉE - 100% LÉGAL)
+# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE
 # =========================================================================
-
 with col_droite:
-    st.subheader(f"✨ Les spéciaux textuels : {banniere_active}")
+    st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # =========================================================================
-    # LE BOUTON DYNAMIQUE EN MINUSCULES (100% COMPATIBLE AVEC VOS DOSSIERS)
-    # =========================================================================
-    # On transforme le nom actif en minuscules pour correspondre à vos nouveaux dossiers
-    nom_banniere_minuscule = str(banniere_active).lower().replace(" ", "_")
-
-    liens_circulaires = {
-        "super_c": "https://superc.ca",
-        "maxi": "https://maxi.ca",
-        "walmart": "https://walmart.ca",
-        "iga": "https://iga.net",
-        "metro": "https://metro.ca",
-        "tigre_geant": "https://gianttiger.com",
-        "provigo": "https://provigo.ca",
-        "costco": "https://costco.ca",
-        "dollarama": "https://dollarama.com",
-        "marche_adonis": "https://groupeadonis.com",
-        "marche_ami": "https://marcheami.ca",
-        "marche_bonichoix": "https://www.bonichoix.com/fr/notre-circulaire/",
-        "marche_richelieu": "https://marcherichelieu.com",
-        "marche_tradition": "https://www.marchestradition.com/fr/circulaire/",
-
-    }
-
-    # On cherche le lien avec la version en minuscules
-    lien_officiel = liens_circulaires.get(nom_banniere_minuscule, "https://google.com")
-
-    # Affichage du bouton de redirection légale
-    st.link_button(
-        f"🌐 Ouvrir la circulaire officielle de {banniere_active} (Site externe)",
-        lien_officiel,
-        type="secondary",
-        use_container_width=True
-    )
-    st.write("---")
-
-    # =========================================================================
-
-    import unicodedata
-    nom_propre = str(banniere_active).lower().replace(" ", "_")
-    nom_sous_dossier = "".join(c for c in unicodedata.normalize('NFD', nom_propre) if unicodedata.category(c) != 'Mn')
-
+    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
     if os.path.exists(chemin_dossier_images):
-        # ICI : On modifie pour chercher les fichiers .txt à la place des images
         fichiers_photos = [
             f
             for f in os.listdir(chemin_dossier_images)
-            if f.lower().endswith(".txt")
+            if f.lower().endswith((".png", ".jpg", ".jpeg"))
         ]
 
         if fichiers_photos:
-            # Nous affichons des cartes textuelles verticales très propres SANS st.image
+            grille_visuelle = st.columns(2)
             for index, photo in enumerate(fichiers_photos):
-                
-                nom_complet_sans_ext, _ = os.path.splitext(str(photo))
+                image_aliment = Image.open(
+                    os.path.join(chemin_dossier_images, photo)
+                )
 
-                
-                if "_" in nom_complet_sans_ext:
-                    parties = nom_complet_sans_ext.split("_", 1)
-                    premier_morceau = parties[0]
-                    reste_du_texte = parties[1]
-                    
-                    try:
-                        prix_automatique = float(premier_morceau)
-                        nom_automatique = reste_du_texte.replace("_", " ").capitalize()
-                    except ValueError:
-                        prix_automatique = 0.00
-                        nom_automatique = "Article Circulaire"
-                else:
-                    prix_automatique = 0.00
-                    nom_automatique = "Article Circulaire"
+                with grille_visuelle[index % 2]:
+                    st.image(image_aliment, use_container_width=True)
 
-                # Création d'une belle boîte de texte pur, sécuritaire pour le droit d'auteur
-                with st.container(border=True):
-                    col_info, col_action = st.columns(2)
-                    
-                    with col_info:
-                        st.markdown(f"**{nom_automatique}**")
-                        st.markdown(f"### 🏷️ {prix_automatique:.2f} $")
-                        st.caption(f"Source : Spécial public • {banniere_active}")
-                    
-                    with col_action:
-                        if st.button(
-                            "➕ Ajouter",
-                            key=f"btn_textuel_{index}",
-                            use_container_width=True,
-                            type="primary"
-                        ):
-                            st.session_state["panier_achats"].append(
-                                {
-                                    "magasin": banniere_active,
-                                    "produit": nom_automatique,
-                                    "prix": prix_automatique,
-                                }
-                            )
-                            st.toast(f"✅ {nom_automatique} ajouté !", icon="🛒")
-                            st.rerun()
+                    if st.button(
+                        f"➕ Ajouter ce spécial",
+                        key=f"btn_photo_{index}",
+                        use_container_width=True,
+                        type="primary"
+                    ):
+                        nom_complet_sans_ext, _ = os.path.splitext(str(photo))
                         
-                        # Bouton de redirection légale vers le site de l'épicier
-                        url_generique = f"https://www.{nom_sous_dossier.replace('_', '')}.ca"
-                        st.link_button(
-                            "🌐 Voir site",
-                            url_generique,
-                            use_container_width=True
+                        if "_" in nom_complet_sans_ext:
+                            parties = nom_complet_sans_ext.split("_", 1)
+                            premier_morceau = parties[0]
+                            reste_du_texte = parties[1]
+                            
+                            try:
+                                prix_automatique = float(premier_morceau)
+                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
+                            except ValueError:
+                                prix_automatique = 0.00
+                                nom_automatique = "Article Circulaire"
+                        else:
+                            prix_automatique = 0.00
+                            nom_automatique = "Article Circulaire"
+
+                        st.session_state["panier_achats"].append(
+                            {
+                                "magasin": banniere_active,
+                                "produit": nom_automatique,
+                                "prix": prix_automatique,
+                            }
                         )
+                        st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
+                        st.rerun()
+                    st.write("")
         else:
-            st.info("Aucun rabais répertorié pour cette bannière cette semaine.")
+            st.info("Aucune photo dans ce dossier pour le moment.")
     else:
         st.warning(f"Dossier introuvable : bannieres/{nom_sous_dossier}")
 
 # =========================================================================
-# ÉTAPE FINALE : LE BOUCLIER JURIDIQUE (DISCLAIMER)
+# SECTION INFÉRIEURE : ACCÈS DIRECT ET GRATUIT AUX LIENS
 # =========================================================================
 st.write("---")
-st.caption(
-    "⚠️ **Clause de non-responsabilité :** Cette application est un outil citoyen indépendant et gratuit. "
-    "Elle n'est pas affiliée, endossée ou associée de quelque façon que ce soit aux bannières citées "
-    "(Metro inc., Loblaws/Maxi, Sobeys/IGA, Walmart). Les prix et rabais textuels sont partagés à titre indicatif "
-    "et proviennent d'informations publiques ou collaboratives."
-)
+st.header("🔗 Accès direct et gratuit aux circulaires en ligne")
+st.write("Certains sites bloquent l'accès direct depuis des applications web. Les boutons ci-dessous contournent de façon sécurisée ces restrictions.")
+
+colonnes_liens = st.columns(4)
+for i, (cle, url) in enumerate(liens_circulaires.items()):
+    nom_magasin = noms_affichage_circulaires[cle]
+    code_bouton_html = generer_bouton_circulaire(nom_magasin, url)
+    
+    with colonnes_liens[i % 4]:
+        st.markdown(code_bouton_html, unsafe_allow_html=True)
+# =========================================================================
+# DICTIONNAIRES ET BASE DE DONNÉES DES LIENS
+# =========================================================================
+liens_circulaires = {
+    "super_c": "https://superc.ca",
+    "maxi": "https://maxi.ca",
+    "walmart": "https://walmart.ca",
+    "iga": "https://iga.net",
+    "metro": "https://metro.ca",
+    "tigre_geant": "https://gianttiger.com",
+    "provigo": "https://provigo.ca",
+    "costco": "https://costco.ca",
+    "dollarama": "https://dollarama.com",
+    "marche_adonis": "https://groupeadonis.com",
+    "marche_ami": "https://marcheami.ca",
+    "marche_bonichoix": "https://www.bonichoix.com/fr/notre-circulaire/",
+    "marche_richelieu": "https://marcherichelieu.com",
+    "marche_tradition": "https://www.marchestradition.com/fr/circulaire/"
+}
+
+noms_affichage_circulaires = {
+    "super_c": "Super C",
+    "maxi": "Maxi",
+    "walmart": "Walmart",
+    "iga": "IGA",
+    "metro": "Metro",
+    "tigre_geant": "Tigre Géant",
+    "provigo": "Provigo",
+    "costco": "Costco",
+    "dollarama": "Dollarama",
+    "marche_adonis": "Marché Adonis",
+    "marche_ami": "Marché Ami",
+    "marche_bonichoix": "Marché Bonichoix",
+    "marche_richelieu": "Marché Richelieu",
+    "marche_tradition": "Marché Tradition"
+}
+
+# =========================================================================
+# FONCTION UTILITAIRE : RENDER DES BOUTONS SÉCURISÉS (ANTI-BLOCAGE REFERER)
+# =========================================================================
+def generer_bouton_circulaire(nom_magasin, url_cible):
+    """
+    Génère un bouton HTML injecté propre.
+    L'attribut rel="noreferrer" permet de masquer l'origine de l'application 
+    Streamlit et empêche le serveur cible (ex: Sobeys / Marché Tradition) de bloquer l'utilisateur.
+    """
+    style_bouton = (
+        "display: inline-block; "
+        "width: 100%; "
+        "text-align: center; "
+        "padding: 0.5rem 1rem; "
+        "color: #31333F; "                  # Texte identique au thème Streamlit
+        "background-color: #F0F2F6; "        # Fond gris natif Streamlit
+        "border: 1px solid rgba(49, 51, 63, 0.2); "
+        "border-radius: 0.5rem; "
+        "text-decoration: none; "
+        "font-weight: 500; "
+        "margin-bottom: 10px;"
+    )
+    return f'<a href="{url_cible}" target="_blank" rel="noreferrer" style="{style_bouton}">📖 {nom_magasin}</a>'

@@ -81,9 +81,10 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc["Latitude"])
-        lon_centre = float(point_origine.iloc["Longitude"])
-        st.sidebar.caption(f"Position détectée : {point_origine.iloc['Ville']}")
+        # CORRECTION ICI : Ajout de .iloc[0] avant de cibler la colonne textuelle
+        lat_centre = float(point_origine.iloc[0]["Latitude"])
+        lon_centre = float(point_origine.iloc[0]["Longitude"])
+        st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
 
         df_magasins_gps = pd.merge(
             df_magasins,
@@ -129,6 +130,7 @@ if code_recherche:
                 st.sidebar.write("")
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
+
 # =========================================================================
 # ZONE PRINCIPALE DE L'APPLICATION
 # =========================================================================

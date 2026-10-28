@@ -23,6 +23,49 @@ if "banniere_manuelle" not in st.session_state:
 
 DOSSIER_BANNIERES = "bannieres"
 
+# =========================================================================
+# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES BANNIÈRES
+# =========================================================================
+# Ce dictionnaire contient les vrais liens. Les clés sont en MAJUSCULES pour éviter les conflits.
+LIENS_OFFICIELS = {
+    "SUPER C": {
+        "site": "https://superc.ca",
+        "speciaux": "https://superc.cacirculaire"
+    },
+    "MAXI": {
+        "site": "https://maxi.ca",
+        "speciaux": "https://maxi.cacirculaire"
+    },
+    "IGA": {
+        "site": "https://iga.net",
+        "speciaux": "https://iga.netfr/circulaire_hebdomadaire"
+    },
+    "PROVIGO": {
+        "site": "https://provigo.ca",
+        "speciaux": "https://provigo.cacirculaire"
+    },
+    "METRO": {
+        "site": "https://metro.ca",
+        "speciaux": "https://metro.cacirculaire"
+    },
+    "MARCHÉ AMI": {
+        "site": "https://marcheami.ca",
+        "speciaux": "https://reebee.com"
+    },
+    "WALMART": {
+        "site": "https://walmart.ca",
+        "speciaux": "https://walmart.ca/circulaire-flyer"
+    },
+    "COSTCO": {
+        "site": "https://costco.ca",
+        "speciaux": "https://costco.cacirculaires-offres.html"
+    },
+    "TIGRE GÉANT": {
+        "site": "https://gianttiger.com",
+        "speciaux": "https://gianttiger.com/circulaire"
+    }
+}
+
 # --- CHARGEMENT DES DONNÉES ---
 df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
@@ -169,57 +212,26 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : ACCÈS DIRECT AUX LIENS DE LA BANNIÈRE (FICHIER TEXTE)
+# COLONNE DE DROITE : ACCÈS DIRECT AUX LIENS DE LA BANNIÈRE (DICTIONNAIRE CORRIGÉ)
 # =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # 1. Nettoyage du nom du dossier (conversion "Marché Ami" -> "marche_ami")
-    nom_sous_dossier = (
-        str(banniere_active)
-        .lower()
-        .replace(" ", "_")
-        .replace("é", "e")
-        .replace("è", "e")
-        .replace("à", "a")
-    )
-    chemin_dossier_banniere = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
+    # Récupération des URLs directement depuis notre dictionnaire interne (LIENS_OFFICIELS)
+    # On force en majuscules pour éviter les erreurs d'écriture (ex: "Super C" vs "SUPER C")
+    cle_recherche = str(banniere_active).upper().strip()
+    config_banniere = LIENS_OFFICIELS.get(cle_recherche, {})
 
-    # Variables pour stocker les liens extraits
-    url_site = None
-    url_speciaux = None
+    url_site = config_banniere.get("site")
+    url_speciaux = config_banniere.get("speciaux")
 
-    # 2. Lecture du fichier texte de configuration
-    if os.path.exists(chemin_dossier_banniere):
-        fichiers_txt = [
-            f
-            for f in os.listdir(chemin_dossier_banniere)
-            if f.lower().endswith(".txt")
-        ]
-
-        if fichiers_txt:
-            # On sélectionne le premier fichier trouvé de la liste
-            chemin_fichier_info = os.path.join(chemin_dossier_banniere, fichiers_txt[0])
-            try:
-                with open(chemin_fichier_info, "r", encoding="utf-8") as f:
-                    lignes = f.read().splitlines()
-                    
-                    # Extraction propre sans espaces cachés (.strip())
-                    if len(lignes) >= 1:
-                        url_site = lignes[0].strip()
-                    if len(lignes) >= 2:
-                        url_speciaux = lignes[1].strip()
-            except Exception as e:
-                st.error(f"Erreur lors de la lecture du fichier texte : {e}")
-
-    # 3. Correction des URLs Google de secours (Fallback) si le fichier est vide ou absent
-    nom_encode = urllib.parse.quote(banniere_active)
-    if not url_site or not url_site.startswith("http"):
+    # Si le magasin sélectionné n'est pas répertorié dans le dictionnaire, on crée une recherche Google propre
+    if not url_site:
+        nom_encode = urllib.parse.quote(banniere_active)
         url_site = f"https://google.com{nom_encode}+epicerie+quebec"
-    if not url_speciaux or not url_speciaux.startswith("http"):
         url_speciaux = f"https://google.com{nom_encode}+circulaire+reebee"
 
-    # 4. Affichage des deux boutons d'action
+    # Affichage des deux boutons d'action demandés
     st.write("### 🔗 Accès rapide")
     
     col_lien1, col_lien2 = st.columns(2)
@@ -236,3 +248,4 @@ with col_droite:
             type="primary",
             use_container_width=True
         )
+

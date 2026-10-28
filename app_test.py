@@ -195,7 +195,7 @@ with col_droite:
         "marche_ami": "https://marcheami.ca",
         "marche_bonichoix": "https://bonichoix.com",
         "marche_richelieu": "https://marcherichelieu.com",
-        "marche_tradition": "https://lesmarchestradition.com"
+        "marche_tradition": "https://www.circulaires.com/marches-tradition/"
     }
 
     # On cherche le lien avec la version en minuscules

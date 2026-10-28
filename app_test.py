@@ -30,11 +30,11 @@ DOSSIER_BANNIERES = "bannieres"
 LIENS_OFFICIELS = {
     "SUPER C": {
         "site": "https://superc.ca",
-        "speciaux": "https://superc.cacirculaire"
+        "speciaux": "https://superc.ca/circulaire"
     },
     "MAXI": {
         "site": "https://maxi.ca",
-        "speciaux": "https://maxi.cacirculaire"
+        "speciaux": "https://maxi.ca/circulaire"
     },
     "IGA": {
         "site": "https://iga.net",
@@ -42,11 +42,11 @@ LIENS_OFFICIELS = {
     },
     "PROVIGO": {
         "site": "https://provigo.ca",
-        "speciaux": "https://provigo.cacirculaire"
+        "speciaux": "https://provigo.ca/circulaire"
     },
     "METRO": {
         "site": "https://metro.ca",
-        "speciaux": "https://metro.cacirculaire"
+        "speciaux": "https://metro.ca/circulaire"
     },
     "MARCHÉ AMI": {
         "site": "https://marcheami.ca",
@@ -58,7 +58,7 @@ LIENS_OFFICIELS = {
     },
     "COSTCO": {
         "site": "https://costco.ca",
-        "speciaux": "https://costco.cacirculaires-offres.html"
+        "speciaux": "https://costco.ca/circulaires-offres.html"
     },
     "TIGRE GÉANT": {
         "site": "https://gianttiger.com",

@@ -171,17 +171,52 @@ with col_gauche:
 # =========================================================================
 # COLONNE DE DROITE : LES RABAIS EN TEXTE PUR (ZÉRO IMAGE AFFICHÉE - 100% LÉGAL)
 # =========================================================================
+
 with col_droite:
     st.subheader(f"✨ Les spéciaux textuels : {banniere_active}")
+
+    # =========================================================================
+    # LE BOUTON DYNAMIQUE VERS LES LIENS OFFICIELS (100% LÉGAL)
+    # =========================================================================
+    liens_circulaires = {
+        "SUPER C": "https://superc.ca",
+        "maxi": "https://maxi.ca",
+        "Walmart": "https://walmart.ca",
+        "IGA": "https://iga.net",
+        "Metro": "https://metro.ca",
+        "Tigre_Geant": "https://gianttiger.com",
+        "Provigo": "https://provigo.ca",
+        "Costco": "https://costco.ca",
+        "Dollarama": "https://dollarama.com",
+        "Marche_Adonis": "https://groupeadonis.com",
+        "Marche_Ami": "https://marcheami.ca",
+        "Marche_Bonichoix": "https://bonichoix.com",
+        "Marche_Richelieu": "https://marcherichelieu.com",
+        "Marche_Tradition": "https://lesmarchestradition.com"
+    }
+
+    # On récupère le bon lien ou on utilise Google en secours si le nom ne concorde pas parfaitement
+    lien_officiel = liens_circulaires.get(banniere_active, "https://google.com")
+
+    # Affichage du bouton de redirection
+    st.link_button(
+        f"🌐 Ouvrir la circulaire officielle de {banniere_active} (Site externe)",
+        lien_officiel,
+        type="secondary",
+        use_container_width=True
+    )
+    st.write("---")
+    # =========================================================================
 
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
     if os.path.exists(chemin_dossier_images):
+        # ICI : On modifie pour chercher les fichiers .txt à la place des images
         fichiers_photos = [
             f
             for f in os.listdir(chemin_dossier_images)
-            if f.lower().endswith((".png", ".jpg", ".jpeg"))
+            if f.lower().endswith(".txt")
         ]
 
         if fichiers_photos:
@@ -189,6 +224,7 @@ with col_droite:
             for index, photo in enumerate(fichiers_photos):
                 
                 nom_complet_sans_ext, _ = os.path.splitext(str(photo))
+
                 
                 if "_" in nom_complet_sans_ext:
                     parties = nom_complet_sans_ext.split("_", 1)

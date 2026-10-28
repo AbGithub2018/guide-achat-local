@@ -61,7 +61,7 @@ LIENS_OFFICIELS = {
         "speciaux": "https://marcherichelieu.cafr/circulaire"
     },
     "MARCHÉ TRADITION": {
-        "site": "https://marchetradition.com",
+        "site": "https://www.marchestradition.com/fr/",
         "speciaux": "https://www.marchestradition.com/fr/circulaire/"
     },
     "WALMART": {

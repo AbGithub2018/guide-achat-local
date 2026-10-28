@@ -174,7 +174,7 @@ with col_gauche:
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # 1. Nettoyage sécurisé du nom du dossier (conversion "Marché Ami" -> "marche_ami")
+    # 1. Nettoyage du nom du dossier (conversion "Marché Ami" -> "marche_ami")
     nom_sous_dossier = (
         str(banniere_active)
         .lower()
@@ -198,32 +198,28 @@ with col_droite:
         ]
 
         if fichiers_txt:
-            # On prend le premier fichier texte trouvé
+            # On sélectionne le premier fichier trouvé de la liste
             chemin_fichier_info = os.path.join(chemin_dossier_banniere, fichiers_txt[0])
             try:
                 with open(chemin_fichier_info, "r", encoding="utf-8") as f:
                     lignes = f.read().splitlines()
                     
-                    # Extraction des lignes (Ligne 1 = Site, Ligne 2 = Spéciaux)
+                    # Extraction propre sans espaces cachés (.strip())
                     if len(lignes) >= 1:
                         url_site = lignes[0].strip()
                     if len(lignes) >= 2:
                         url_speciaux = lignes[1].strip()
             except Exception as e:
                 st.error(f"Erreur lors de la lecture du fichier texte : {e}")
-        else:
-            st.info(f"Aucun fichier .txt de configuration trouvé dans '{nom_sous_dossier}'.")
-    else:
-        st.warning(f"Dossier introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
 
-    # Fallback automatique sur une recherche Google si le fichier texte est vide ou introuvable
+    # 3. Correction des URLs Google de secours (Fallback) si le fichier est vide ou absent
     nom_encode = urllib.parse.quote(banniere_active)
-    if not url_site:
+    if not url_site or not url_site.startswith("http"):
         url_site = f"https://google.com{nom_encode}+epicerie+quebec"
-    if not url_speciaux:
+    if not url_speciaux or not url_speciaux.startswith("http"):
         url_speciaux = f"https://google.com{nom_encode}+circulaire+reebee"
 
-    # 3. Affichage immédiat des boutons (le site de la bannière en premier)
+    # 4. Affichage des deux boutons d'action
     st.write("### 🔗 Accès rapide")
     
     col_lien1, col_lien2 = st.columns(2)

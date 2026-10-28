@@ -4,10 +4,10 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 
-# Importation de vos fonctions géographiques
+# Importation de vos fonctions géographiques depuis fonctions_geo.py
 from fonctions_geo import calculer_distance, charger_donnees
 
-# IMPORTATION DES LIENS ET FONCTIONS DE CIRCULAIRES (Depuis la partie 2)
+# IMPORTATION DES LIENS DEPUIS LE DEUXIÈME FICHIER
 from gestion_circulaires import (
     liens_circulaires, 
     noms_affichage_circulaires, 
@@ -112,6 +112,7 @@ if code_recherche:
                 st.sidebar.write("")
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
+
 
 # --- EN-TÊTE PRINCIPAL ---
 st.title("🍎 Planificateur de Budget Épicerie")
@@ -239,12 +240,13 @@ with col_droite:
         st.warning(f"Dossier introuvable : bannieres/{nom_sous_dossier}")
 
 # =========================================================================
-# SECTION INFÉRIEURE : ACCÈS DIRECT ET GRATUIT AUX LIENS
+# SECTION INFERIEURE : ACCÈS DIRECT AUX CIRCULAIRES EN LIGNE
 # =========================================================================
 st.write("---")
 st.header("🔗 Accès direct et gratuit aux circulaires en ligne")
 st.write("Certains sites bloquent l'accès direct depuis des applications web. Les boutons ci-dessous contournent de façon sécurisée ces restrictions.")
 
+# Grille de boutons en bas de page pour toutes les circulaires
 colonnes_liens = st.columns(4)
 for i, (cle, url) in enumerate(liens_circulaires.items()):
     nom_magasin = noms_affichage_circulaires[cle]
@@ -253,7 +255,7 @@ for i, (cle, url) in enumerate(liens_circulaires.items()):
     with colonnes_liens[i % 4]:
         st.markdown(code_bouton_html, unsafe_allow_html=True)
 # =========================================================================
-# DICTIONNAIRES ET BASE DE DONNÉES DES LIENS
+# DICTIONNAIRES ET BASE DE DONNÉES DES LIENS (CORRECTION DE L'ERREUR 533)
 # =========================================================================
 liens_circulaires = {
     "super_c": "https://superc.ca",
@@ -269,7 +271,8 @@ liens_circulaires = {
     "marche_ami": "https://marcheami.ca",
     "marche_bonichoix": "https://www.bonichoix.com/fr/notre-circulaire/",
     "marche_richelieu": "https://marcherichelieu.com",
-    "marche_tradition": "https://www.marchestradition.com/fr/circulaire/"
+    # On ajoute "https://href.li?" pour nettoyer la requête et supprimer le blocage 533
+    "marche_tradition": "https://href.li?https://www.marchestradition.com/fr/circulaire/"
 }
 
 noms_affichage_circulaires = {
@@ -290,21 +293,16 @@ noms_affichage_circulaires = {
 }
 
 # =========================================================================
-# FONCTION UTILITAIRE : RENDER DES BOUTONS SÉCURISÉS (ANTI-BLOCAGE REFERER)
+# FONCTION POUR CRÉER LES BOUTONS HTML SÉCURISÉS
 # =========================================================================
 def generer_bouton_circulaire(nom_magasin, url_cible):
-    """
-    Génère un bouton HTML injecté propre.
-    L'attribut rel="noreferrer" permet de masquer l'origine de l'application 
-    Streamlit et empêche le serveur cible (ex: Sobeys / Marché Tradition) de bloquer l'utilisateur.
-    """
     style_bouton = (
         "display: inline-block; "
         "width: 100%; "
         "text-align: center; "
         "padding: 0.5rem 1rem; "
-        "color: #31333F; "                  # Texte identique au thème Streamlit
-        "background-color: #F0F2F6; "        # Fond gris natif Streamlit
+        "color: #31333F; "                  # Même couleur de texte que Streamlit
+        "background-color: #F0F2F6; "        # Même couleur de fond que Streamlit
         "border: 1px solid rgba(49, 51, 63, 0.2); "
         "border-radius: 0.5rem; "
         "text-decoration: none; "

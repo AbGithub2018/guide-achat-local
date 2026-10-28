@@ -49,8 +49,8 @@ LIENS_OFFICIELS = {
         "speciaux": "https://metro.ca/circulaire"
     },
     "MARCHÉ BONICHOIX": {
-        "site": "https://www.bonichoix.com/",
-        "speciaux": "https://bonichoix.com"
+        "site": "https://www.bonichoix.com/fr/",
+        "speciaux": "https://www.bonichoix.com/fr/notre-circulaire/"
     },
     "MARCHÉ AMI": {
         "site": "https://marcheami.ca",

@@ -66,7 +66,7 @@ LIENS_OFFICIELS = {
     },
     "WALMART": {
         "site": "https://www.walmart.ca/fr",
-        "speciaux": "https://walmart.ca/circulaire-flyer"
+        "speciaux": "https://www.walmart.ca/fr/flyer"
     },
     "COSTCO": {
         "site": "https://costco.ca",

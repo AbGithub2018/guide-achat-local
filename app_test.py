@@ -2,12 +2,11 @@ import os
 import urllib.parse
 import pandas as pd
 import streamlit as st
-from PIL import Image
 
 # Importation de vos fonctions géographiques depuis fonctions_geo.py
 from fonctions_geo import calculer_distance, charger_donnees
 
-# IMPORTATION SÉCURISÉE DE LA DEUXIÈME PARTIE DES LIENS
+# IMPORTATION DES LIENS DEPUIS LE DEUXIÈME FICHIER
 from gestion_circulaires import (
     liens_circulaires, 
     noms_affichage_circulaires, 
@@ -176,78 +175,51 @@ with col_gauche:
         st.info("Aucun article dans la commande actuellement.")
 
 # =========================================================================
-# COLONNE DE DROITE : LISEUSE VISUELLE REEBEE
+# COLONNE DE DROITE : LECTURE DU FICHIER TEXTE BRUT (100% LÉGAL)
 # =========================================================================
 with col_droite:
-    st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
+    st.subheader(f"📋 Infos et Rabais textuels : {banniere_active}")
 
-    # Nettoyage des espaces, des minuscules et des accents (é -> e)
+    # Gestion automatique des noms de sous-dossiers (sans accents)
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
-    chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
+    chemin_dossier_txt = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
-    if os.path.exists(chemin_dossier_images):
-        fichiers_photos = [
+    if os.path.exists(chemin_dossier_txt):
+        fichiers_texte = [
             f
-            for f in os.listdir(chemin_dossier_images)
-            if f.lower().endswith((".png", ".jpg", ".jpeg"))
+            for f in os.listdir(chemin_dossier_txt)
+            if f.lower().endswith(".txt")
         ]
 
-        if fichiers_photos:
-            grille_visuelle = st.columns(2)
-            for index, photo in enumerate(fichiers_photos):
-                image_aliment = Image.open(
-                    os.path.join(chemin_dossier_images, photo)
+        if fichiers_texte:
+            # On prend le premier fichier .txt trouvé dans le dossier
+            fichier_cible = os.path.join(chemin_dossier_txt, fichiers_texte[0])
+            
+            try:
+                with open(fichier_cible, "r", encoding="utf-8") as f:
+                    contenu_notes = f.read()
+                
+                # On affiche le texte écrit par vous de manière propre dans un encadré
+                st.text_area(
+                    label="Notes et spéciaux de la semaine rédigés par l'administrateur :", 
+                    value=contenu_notes, 
+                    height=350, 
+                    disabled=True
                 )
-
-                with grille_visuelle[index % 2]:
-                    st.image(image_aliment, use_container_width=True)
-
-                    if st.button(
-                        f"➕ Ajouter ce spécial",
-                        key=f"btn_photo_{index}",
-                        use_container_width=True,
-                        type="primary"
-                    ):
-                        nom_complet_sans_ext, _ = os.path.splitext(str(photo))
-                        
-                        if "_" in nom_complet_sans_ext:
-                            parties = nom_complet_sans_ext.split("_", 1)
-                            premier_morceau = parties[0]
-                            reste_du_texte = parties[1]
-                            
-                            try:
-                                prix_automatique = float(premier_morceau)
-                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
-                            except ValueError:
-                                prix_automatique = 0.00
-                                nom_automatique = "Article Circulaire"
-                        else:
-                            prix_automatique = 0.00
-                            nom_automatique = "Article Circulaire"
-
-                        st.session_state["panier_achats"].append(
-                            {
-                                "magasin": banniere_active,
-                                "produit": nom_automatique,
-                                "prix": prix_automatique,
-                            }
-                        )
-                        st.toast(f"✅ {nom_automatique} ajouté au panier !", icon="🛒")
-                        st.rerun()
-                    st.write("")
+            except Exception as e:
+                st.error("Impossible de lire le fichier de description.")
         else:
-            st.info("Aucune photo dans ce dossier pour le moment.")
+            st.info("Aucun fichier de rabais textuel (.txt) dans ce dossier.")
     else:
         st.warning(f"Dossier introuvable : bannieres/{nom_sous_dossier}")
 
 # =========================================================================
-# SECTION INFERIEURE : ACCÈS DIRECT AUX CIRCULAIRES EN LIGNE
+# SECTION INFÉRIEURE : LES LIENS EXTERNES DIRECTS
 # =========================================================================
 st.write("---")
-st.header("🔗 Accès direct et gratuit aux circulaires en ligne")
-st.write("Certains sites bloquent l'accès direct depuis des applications web. Les boutons ci-dessous contournent de façon sécurisée ces restrictions.")
+st.header("🔗 Consulter la circulaire complète sur le site officiel")
+st.write("Cliquez ci-dessous pour ouvrir la circulaire interactive originale directement chez le commerçant.")
 
-# Grille de boutons en bas de page pour toutes les circulaires
 colonnes_liens = st.columns(4)
 for i, (cle, url) in enumerate(liens_circulaires.items()):
     nom_magasin = noms_affichage_circulaires[cle]

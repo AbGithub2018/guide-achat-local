@@ -21,29 +21,65 @@ if "panier_achats" not in st.session_state:
 if "banniere_manuelle" not in st.session_state:
     st.session_state["banniere_manuelle"] = "SUPER C"
 
-if "adresse_magasin_actif" not in st.session_state:
-    st.session_state["adresse_magasin_actif"] = ""
-
 DOSSIER_BANNIERES = "bannieres"
 
 # =========================================================================
-# CONFIGURATION STRICTE DES URLS OFFICIELLES
+# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES BANNIÈRES
 # =========================================================================
+# Ce dictionnaire contient les vrais liens. Les clés sont en MAJUSCULES pour éviter les conflits.
 LIENS_OFFICIELS = {
-    "SUPER C": "https://superc.ca",
-    "MAXI": "https://maxi.ca",
-    "IGA": "https://iga.net",
-    "PROVIGO": "https://provigo.ca",
-    "METRO": "https://metro.ca",
-    "MARCHÉ ADONIS": "https://groupeadonis.ca",
-    "MARCHÉ AMI": "https://marcheami.ca",
-    "MARCHÉ BONICHOIX": "https://bonichoix.com",
-    "MARCHÉ RICHELIEU": "https://marcherichelieu.ca",
-    "MARCHÉ TRADITION": "https://marchetradition.com",
-    "WALMART": "https://walmart.ca",
-    "COSTCO": "https://costco.ca",
-    "TIGRE GÉANT": "https://gianttiger.com",
-    "DOLLARAMA": "https://dollarama.com"
+    "SUPER C": {
+        "site": "https://superc.ca",
+        "speciaux": "https://superc.ca/circulaire"
+    },
+    "MAXI": {
+        "site": "https://maxi.ca",
+        "speciaux": "https://maxi.ca/circulaire"
+    },
+    "IGA": {
+        "site": "https://iga.net",
+        "speciaux": "https://iga.netfr/circulaire_hebdomadaire"
+    },
+    "PROVIGO": {
+        "site": "https://provigo.ca",
+        "speciaux": "https://provigo.ca/circulaire"
+    },
+    "METRO": {
+        "site": "https://metro.ca",
+        "speciaux": "https://metro.ca/circulaire"
+    },
+    "MARCHÉ BONICHOIX": {
+        "site": "https://www.bonichoix.com/fr/",
+        "speciaux": "https://www.bonichoix.com/fr/notre-circulaire/"
+    },
+    "MARCHÉ AMI": {
+        "site": "https://marcheami.ca",
+        "speciaux": "https://reebee.com"
+    },
+    "MARCHÉ RICHELIEU": {
+        "site": "https://marcherichelieu.ca",
+        "speciaux": "https://marcherichelieu.cafr/circulaire"
+    },
+    "MARCHÉ TRADITION": {
+        "site": "https://www.marchestradition.com/fr/",
+        "speciaux": "https://www.marchestradition.com/fr/circulaire/"
+    },
+    "WALMART": {
+        "site": "https://www.walmart.ca/fr",
+        "speciaux": "https://www.walmart.ca/fr/flyer"
+    },
+    "COSTCO": {
+        "site": "https://costco.ca",
+        "speciaux": "https://costco.ca/circulaires-offres.html"
+    },
+    "DOLLARAMA": {
+        "site": "https://www.dollarama.com/fr-CA",
+        "speciaux": "https://www.doordash.com/convenience/store/24918186/"
+    },
+    "TIGRE GÉANT": {
+        "site": "https://gianttiger.com",
+        "speciaux": "https://gianttiger.com/circulaire"
+    }
 }
 
 # --- CHARGEMENT DES DONNÉES ---
@@ -52,7 +88,7 @@ if df_coords is None or df_magasins is None:
     st.stop()
 
 # =========================================================================
-# BARRE LATÉRALE (CRITÈRES ET COMMERCES LES PLUS PROCHES)
+# SECTION À GAUCHE : BARRE LATÉRALE (FILTRES + COMMERCES)
 # =========================================================================
 st.sidebar.header("Critères de recherche")
 saisie_utilisateur = st.sidebar.text_input(
@@ -74,14 +110,15 @@ if banniere_selectionnee != "Toutes les bannières":
     st.session_state["banniere_manuelle"] = banniere_selectionnee
 
 banniere_active = st.session_state["banniere_manuelle"]
+
 st.sidebar.write("---")
 
+# FLUX GÉOLOCALISÉ DANS LA BARRE DE GAUCHE
 st.sidebar.subheader("📍 Commerces les plus proches")
 if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        # CORRECTION ICI : Ajout de .iloc[0] avant de cibler la colonne textuelle
         lat_centre = float(point_origine.iloc[0]["Latitude"])
         lon_centre = float(point_origine.iloc[0]["Longitude"])
         st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
@@ -103,7 +140,6 @@ if code_recherche:
         resultats_filtres = df_magasins_gps[
             df_magasins_gps["Distance_KM"] <= rayon_max
         ].sort_values(by="Distance_KM")
-        
         if banniere_selectionnee != "Toutes les bannières":
             resultats_filtres = resultats_filtres[
                 resultats_filtres["Nom_Commerce"] == banniere_selectionnee
@@ -113,10 +149,9 @@ if code_recherche:
             for index, rangee in resultats_filtres.iterrows():
                 nom_magasin = rangee["Nom_Commerce"]
                 distance = rangee["Distance_KM"]
-                adresse_rue = rangee.get('Adresse_Rue', '')
 
                 st.sidebar.markdown(
-                    f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{adresse_rue}</small>",
+                    f"**{nom_magasin}** ({distance:.1f} km)<br/><small>{rangee.get('Adresse_Rue', '')}</small>",
                     unsafe_allow_html=True,
                 )
                 if st.sidebar.button(
@@ -125,17 +160,16 @@ if code_recherche:
                     use_container_width=True,
                 ):
                     st.session_state["banniere_manuelle"] = nom_magasin
-                    st.session_state["adresse_magasin_actif"] = adresse_rue
                     st.rerun()
                 st.sidebar.write("")
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
 
-# =========================================================================
-# ZONE PRINCIPALE DE L'APPLICATION
-# =========================================================================
+
+# --- EN-TÊTE PRINCIPAL ---
 st.title("🍎 Planificateur de Budget Épicerie")
 
+# LA LIGNE ROUGE
 st.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner un Code-Barres / Pays d'Origine)",
     "https://streamlit.app",
@@ -144,10 +178,12 @@ st.link_button(
 )
 st.write("---")
 
-# Division de l'espace central en deux colonnes égales
+# --- LES DEUX COLONNES CENTRALES ---
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
-# --- COLONNE DE GAUCHE : COMMANDE & SAISIE MANUELLE ---
+# =========================================================================
+# COLONNE DE GAUCHE : FORMULAIRE MANUEL + FACTURE MONTÉE
+# =========================================================================
 with col_gauche:
     st.subheader("🔍 Étape 1 : Saisie de ma liste d'épicerie")
 
@@ -191,59 +227,41 @@ with col_gauche:
     else:
         st.info("Aucun article dans la commande actuellement.")
 
-# --- COLONNE DE DROITE : ACCÈS DIRECT AUX SITES OFFICIELS LOCALISÉS ---
+# =========================================================================
+# COLONNE DE DROITE : ACCÈS DIRECT AUX LIENS DE LA BANNIÈRE (DICTIONNAIRE CORRIGÉ)
+# =========================================================================
 with col_droite:
     st.subheader(f"📸 Circulaire visuelle : {banniere_active}")
 
-    # Récupération sécurisée de l'URL générale
+    # Récupération des URLs directement depuis notre dictionnaire interne (LIENS_OFFICIELS)
+    # On force en majuscules pour éviter les erreurs d'écriture (ex: "Super C" vs "SUPER C")
     cle_recherche = str(banniere_active).upper().strip()
-    url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
+    config_banniere = LIENS_OFFICIELS.get(cle_recherche, {})
 
-    # Encodage du code postal seul (pour éviter les adresses mal formées sur Sobeys/Metro/Loblaws)
-    code_postal_url = urllib.parse.quote(code_recherche)
-    adresse_cible = st.session_state["adresse_magasin_actif"]
+    url_site = config_banniere.get("site")
+    url_speciaux = config_banniere.get("speciaux")
 
-    # Création d'une alternative de repli robuste par recherche cartographique géolocalisée
-    texte_recherche_maps = f"{banniere_active} {adresse_cible} {code_recherche}".strip()
-    url_maps_precise = f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(texte_recherche_maps)}"
+    # Si le magasin sélectionné n'est pas répertorié dans le dictionnaire, on crée une recherche Google propre
+    if not url_site:
+        nom_encode = urllib.parse.quote(banniere_active)
+        url_site = f"https://google.com{nom_encode}+epicerie+quebec"
+        url_speciaux = f"https://google.com{nom_encode}+circulaire+reebee"
 
-    # Construction de la route d'URL dynamique adaptée aux structures d'URL de chaque serveur
-    if "superc" in url_base_site:
-        url_final_site = f"https://superc.ca{code_postal_url}"
-    elif "maxi" in url_base_site:
-        url_final_site = f"https://maxi.ca{code_postal_url}"
-    elif "provigo" in url_base_site:
-        url_final_site = f"https://provigo.ca{code_postal_url}"
-    elif "metro" in url_base_site:
-        url_final_site = f"https://metro.ca{code_postal_url}"
-    elif "iga" in url_base_site:
-        url_final_site = f"https://iga.net{code_postal_url}"
-    elif "walmart" in url_base_site:
-        url_final_site = f"https://walmart.ca{code_postal_url}"
-    elif "gianttiger" in url_base_site:
-        url_final_site = f"https://gianttiger.com{code_postal_url}"
-    elif "dollarama" in url_base_site:
-        url_final_site = f"https://dollarama.com{code_postal_url}"
-    elif "adonis" in url_base_site:
-        url_final_site = f"https://groupeadonis.ca{code_postal_url}"
-    # Si le site officiel refuse la recherche par URL (Tradition, Bonichoix, Richelieu, Ami, Costco), on bascule sur Maps
-    else:
-        url_final_site = url_maps_precise
-
-    # Affichage propre des deux boutons d'accès direct
-    st.write("### 🔗 Accès direct au magasin sélectionné")
+    # Affichage des deux boutons d'action demandés
+    st.write("### 🔗 Accès rapide")
     
-    col_l1, col_l2 = st.columns(2)
-    with col_l1:
+    col_lien1, col_lien2 = st.columns(2)
+    with col_lien1:
         st.link_button(
-            "🌐 Aller sur le site général",
-            url_base_site,
+            "🌐 Site Internet de la bannière",
+            url_site,
             use_container_width=True
         )
-    with col_l2:
+    with col_lien2:
         st.link_button(
-            f"📍 Ouvrir la succursale ({adresse_cible if adresse_cible else code_recherche})",
-            url_final_site,
+            "🏷️ Lien des spéciaux",
+            url_speciaux,
             type="primary",
             use_container_width=True
         )
+

@@ -47,55 +47,90 @@ LIENS_OFFICIELS = {
 df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
-import os
-import urllib.parse
-import pandas as pd
-import streamlit as st
-from PIL import Image
-
-# Importation de vos fonctions géographiques depuis fonctions_geo.py
-from fonctions_geo import calculer_distance, charger_donnees
-
-# --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(
-    page_title="Planificateur Budget Épicerie",
-    page_icon="🍎",
-    layout="wide",
+# =========================================================================
+# SECTION À GAUCHE : BARRE LATÉRALE PROPRE + BOUTON GUIDE D'ACHAT
+# =========================================================================
+st.sidebar.markdown("<h2 style='font-size: 22px; color: #1E3A8A; margin-bottom: 10px;'>⚙️ Critères de recherche</h2>", unsafe_allow_html=True)
+saisie_utilisateur = st.sidebar.text_input(
+    "Entrez votre code postal (ex: G0M 1G0)", "G0M1G0"
+)
+code_recherche = saisie_utilisateur.replace(" ", "").upper()
+rayon_max = st.sidebar.slider(
+    "Rayon maximum de recherche (km)", 5, 100, 25, 5
 )
 
-# --- INITIALISATION SÉCURISÉE DES MÉMOIRES ---
-if "panier_achats" not in st.session_state:
-    st.session_state["panier_achats"] = []
+# LE BOUTON ROUGE EST PLACÉ ICI POUR OFFRIR UN LOOK ÉPURÉ SUR MOBILE
+st.sidebar.write("---")
+st.sidebar.link_button(
+    "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner / Pays d'Origine)",
+    "https://streamlit.app",
+    type="primary",
+    use_container_width=True,
+)
 
-if "banniere_manuelle" not in st.session_state:
-    st.session_state["banniere_manuelle"] = "SUPER C"
+st.sidebar.write("---")
 
-DOSSIER_BANNIERES = "bannieres"
+st.sidebar.markdown("<h3 style='font-size: 18px; color: #1E3A8A;'>📍 Commerces à proximité</h3>", unsafe_allow_html=True)
+if code_recherche:
+    point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
-# =========================================================================
-# 🌐 DICTIONNAIRE DES URLS OFFICIELLES DES SITES DE BANNIÈRES
-# =========================================================================
-LIENS_OFFICIELS = {
-    "SUPER C": "https://superc.ca",
-    "MAXI": "https://maxi.ca",
-    "IGA": "https://iga.net",
-    "PROVIGO": "https://provigo.ca",
-    "METRO": "https://metro.ca",
-    "MARCHÉ ADONIS": "https://groupeadonis.ca",
-    "MARCHÉ AMI": "https://marcheami.ca",
-    "MARCHÉ BONICHOIX": "https://bonichoix.com",
-    "MARCHÉ RICHELIEU": "https://marcherichelieu.ca",
-    "MARCHÉ TRADITION": "https://marchetradition.com",
-    "WALMART": "https://walmart.ca",
-    "COSTCO": "https://costco.ca",
-    "TIGRE GÉANT": "https://gianttiger.com",
-    "DOLLARAMA": "https://dollarama.com"
-}
+    if not point_origine.empty:
+        lat_centre = float(point_origine["Latitude"].iloc[0])
+        lon_centre = float(point_origine["Longitude"].iloc[0])
+        st.sidebar.caption(f"Position détectée : {point_origine['Ville'].iloc[0]}")
 
-# --- CHARGEMENT DES DONNÉES ---
-df_coords, df_magasins = charger_donnees()
-if df_coords is None or df_magasins is None:
-    st.stop()
+        df_magasins_gps = pd.merge(
+            df_magasins,
+            df_coords,
+            on="Code postal",
+            how="inner",
+            suffixes=("", "_Ref"),
+        )
+        df_magasins_gps["Distance_KM"] = calculer_distance(
+            lat_centre,
+            lon_centre,
+            df_magasins_gps["Latitude"],
+            df_magasins_gps["Longitude"],
+        )
+
+        resultats_filtres = df_magasins_gps[
+            df_magasins_gps["Distance_KM"] <= rayon_max
+        ].sort_values(by="Distance_KM")
+        
+        bannieres_disponibles = ["Toutes les bannières"] + sorted(
+            list(df_magasins["Nom_Commerce"].dropna().unique())
+        )
+        banniere_selectionnee = st.sidebar.selectbox(
+            "Filtrer par bannière :", bannieres_disponibles, index=bannieres_disponibles.index(st.session_state["banniere_manuelle"]) if st.session_state["banniere_manuelle"] in bannieres_disponibles else 0
+        )
+
+        if banniere_selectionnee != "Toutes les bannières":
+            st.session_state["banniere_manuelle"] = banniere_selectionnee
+            resultats_filtres = resultats_filtres[
+                resultats_filtres["Nom_Commerce"] == banniere_selectionnee
+            ]
+
+        banniere_active = st.session_state["banniere_manuelle"]
+
+        if not resultats_filtres.empty:
+            for index, rangee in resultats_filtres.iterrows():
+                nom_magasin = rangee["Nom_Commerce"]
+                distance = rangee["Distance_KM"]
+
+                st.sidebar.markdown(
+                    f"**{nom_magasin}** ({distance:.1f} km)<br/><small style='color: #6B7280;'>{rangee.get('Adresse_Rue', '')}</small>",
+                    unsafe_allow_html=True,
+                )
+                if st.sidebar.button(
+                    "📖 Consulter",
+                    key=f"voir_magasin_{index}",
+                    use_container_width=True,
+                ):
+                    st.session_state["banniere_manuelle"] = nom_magasin
+                    st.rerun()
+                st.sidebar.write("")
+        else:
+            st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
 # =========================================================================
 # EN-TÊTE PRINCIPAL LOOK APPLICATION MOBILE BANDEAU BLEU
 # =========================================================================
@@ -131,11 +166,9 @@ onglet_circulaire, onglet_saisie, onglet_facture = st.tabs([
 ])
 
 # -------------------------------------------------------------------------
-# ONGLET 1 : ACCÈS DIRECT SÉCURISÉ AUX BOUTONS + LISEUSE DE PHOTOS
+# ONGLET 1 : ACCÈS DIRECT SÉCURISÉ AUX BOUTONS SANS BLOCAGE + PHOTOS LOCALES
 # -------------------------------------------------------------------------
 with onglet_circulaire:
-    
-    # 1. Résolution dynamique de l'URL par magasin et code postal
     cle_recherche = str(banniere_active).upper().strip()
     url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
     code_postal_url = urllib.parse.quote(code_recherche)
@@ -153,19 +186,16 @@ with onglet_circulaire:
     else:
         url_final_site = url_base_site
 
-    # 2. PANNEAU DE LIENS OFFICIELS (Rétabli et sécurisé contre les blocages)
     with st.container(border=True):
         st.markdown(f"<h3 style='font-size: 18px; color: #1E3A8A; font-weight: bold; margin-top: 0px;'>🔗 Circulaire en ligne : {banniere_active}</h3>", unsafe_allow_html=True)
-        
         col_btn1, col_btn2 = st.columns(2)
         with col_btn1:
-            st.link_button("🌐 Ouvrir le site général", url_base_site, use_container_width=True)
+            st.link_button("🌐 Site général", url_base_site, use_container_width=True)
         with col_btn2:
             st.link_button(f"📍 Voir ma succursale", url_final_site, type="primary", use_container_width=True)
 
     st.write("")
 
-    # 3. Affichage de vos photos locales si présentes
     nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
     chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
 
@@ -210,7 +240,7 @@ with onglet_circulaire:
                     st.write("")
         else:
             with st.container(border=True):
-                st.info("Aucun feuillet visuel cette semaine. Cliquez sur le bouton rouge du haut pour ouvrir le site de l'épicerie !")
+                st.info("Aucun feuillet visuel téléversé. Utilisez le bouton pour ouvrir le site de l'épicerie !")
     else:
         with st.container(border=True):
             st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
@@ -276,3 +306,7 @@ with onglet_facture:
             )
             st.write("")
             if st.button("🗑️ Réinitialiser ma liste", use_container_width=True, key="btn_mobile_clear"):
+                st.session_state["panier_achats"] = []
+                st.rerun()
+        else:
+            st.info("Votre liste d'épicerie est vide. Parcourez l'onglet Circulaire pour commencer !")

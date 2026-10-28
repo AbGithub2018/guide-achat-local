@@ -48,9 +48,21 @@ LIENS_OFFICIELS = {
         "site": "https://metro.ca",
         "speciaux": "https://metro.ca/circulaire"
     },
+    "MARCHÉ BONICHOIX": {
+        "site": "https://www.bonichoix.com/",
+        "speciaux": "https://bonichoix.com"
+    },
     "MARCHÉ AMI": {
         "site": "https://marcheami.ca",
         "speciaux": "https://reebee.com"
+    },
+    "MARCHÉ RICHELIEU": {
+        "site": "https://marcherichelieu.ca",
+        "speciaux": "https://marcherichelieu.cafr/circulaire"
+    },
+    "MARCHÉ TRADITION": {
+        "site": "https://marchetradition.com",
+        "speciaux": "https://marchetradition.comfr/circulaire"
     },
     "WALMART": {
         "site": "https://walmart.ca",

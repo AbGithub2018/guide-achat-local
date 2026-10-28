@@ -7,7 +7,7 @@ from PIL import Image
 # Importation de vos fonctions géographiques depuis fonctions_geo.py
 from fonctions_geo import calculer_distance, charger_donnees
 
-# IMPORTATION DES LIENS DEPUIS LE DEUXIÈME FICHIER
+# IMPORTATION SÉCURISÉE DE LA DEUXIÈME PARTIE DES LIENS
 from gestion_circulaires import (
     liens_circulaires, 
     noms_affichage_circulaires, 
@@ -67,9 +67,9 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc["Latitude"])
-        lon_centre = float(point_origine.iloc["Longitude"])
-        st.sidebar.caption(f"Position détectée : {point_origine.iloc['Ville']}")
+        lat_centre = float(point_origine.iloc[0]["Latitude"])
+        lon_centre = float(point_origine.iloc[0]["Longitude"])
+        st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
 
         df_magasins_gps = pd.merge(
             df_magasins,
@@ -254,59 +254,3 @@ for i, (cle, url) in enumerate(liens_circulaires.items()):
     
     with colonnes_liens[i % 4]:
         st.markdown(code_bouton_html, unsafe_allow_html=True)
-# =========================================================================
-# DICTIONNAIRES ET BASE DE DONNÉES DES LIENS (CORRECTION DE L'ERREUR 533)
-# =========================================================================
-liens_circulaires = {
-    "super_c": "https://superc.ca",
-    "maxi": "https://maxi.ca",
-    "walmart": "https://walmart.ca",
-    "iga": "https://iga.net",
-    "metro": "https://metro.ca",
-    "tigre_geant": "https://gianttiger.com",
-    "provigo": "https://provigo.ca",
-    "costco": "https://costco.ca",
-    "dollarama": "https://dollarama.com",
-    "marche_adonis": "https://groupeadonis.com",
-    "marche_ami": "https://marcheami.ca",
-    "marche_bonichoix": "https://www.bonichoix.com/fr/notre-circulaire/",
-    "marche_richelieu": "https://marcherichelieu.com",
-    # On ajoute "https://href.li?" pour nettoyer la requête et supprimer le blocage 533
-    "marche_tradition": "https://href.li?https://www.marchestradition.com/fr/circulaire/"
-}
-
-noms_affichage_circulaires = {
-    "super_c": "Super C",
-    "maxi": "Maxi",
-    "walmart": "Walmart",
-    "iga": "IGA",
-    "metro": "Metro",
-    "tigre_geant": "Tigre Géant",
-    "provigo": "Provigo",
-    "costco": "Costco",
-    "dollarama": "Dollarama",
-    "marche_adonis": "Marché Adonis",
-    "marche_ami": "Marché Ami",
-    "marche_bonichoix": "Marché Bonichoix",
-    "marche_richelieu": "Marché Richelieu",
-    "marche_tradition": "Marché Tradition"
-}
-
-# =========================================================================
-# FONCTION POUR CRÉER LES BOUTONS HTML SÉCURISÉS
-# =========================================================================
-def generer_bouton_circulaire(nom_magasin, url_cible):
-    style_bouton = (
-        "display: inline-block; "
-        "width: 100%; "
-        "text-align: center; "
-        "padding: 0.5rem 1rem; "
-        "color: #31333F; "                  # Même couleur de texte que Streamlit
-        "background-color: #F0F2F6; "        # Même couleur de fond que Streamlit
-        "border: 1px solid rgba(49, 51, 63, 0.2); "
-        "border-radius: 0.5rem; "
-        "text-decoration: none; "
-        "font-weight: 500; "
-        "margin-bottom: 10px;"
-    )
-    return f'<a href="{url_cible}" target="_blank" rel="noreferrer" style="{style_bouton}">📖 {nom_magasin}</a>'

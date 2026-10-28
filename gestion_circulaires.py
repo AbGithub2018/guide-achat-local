@@ -13,10 +13,10 @@ liens_circulaires = {
     "dollarama": "https://dollarama.com",
     "marche_adonis": "https://groupeadonis.com",
     "marche_ami": "https://marcheami.ca",
-    "marche_bonichoix": "https://www.bonichoix.com/fr/notre-circulaire/",
+    "marche_bonichoix": "https://bonichoix.com",
     "marche_richelieu": "https://marcherichelieu.com",
-    # Passerelle invisible (href.li/?) pour contourner définitivement l'erreur 533 de Marché Tradition
-    "marche_tradition": "https://href.li"
+    # On ajoute "https://href.li?" pour nettoyer la requête et supprimer le blocage 533
+    "marche_tradition": "https://href.li?https://www.marchestradition.com/fr/circulaire/"
 }
 
 noms_affichage_circulaires = {

@@ -81,9 +81,9 @@ if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
-        lat_centre = float(point_origine.iloc[0]["Latitude"])
-        lon_centre = float(point_origine.iloc[0]["Longitude"])
-        st.sidebar.caption(f"Position détectée : {point_origine.iloc[0]['Ville']}")
+        lat_centre = float(point_origine.iloc["Latitude"])
+        lon_centre = float(point_origine.iloc["Longitude"])
+        st.sidebar.caption(f"Position détectée : {point_origine.iloc['Ville']}")
 
         df_magasins_gps = pd.merge(
             df_magasins,
@@ -201,7 +201,11 @@ with col_droite:
     code_postal_url = urllib.parse.quote(code_recherche)
     adresse_cible = st.session_state["adresse_magasin_actif"]
 
-    # Construction de la route d'URL dynamique adaptée aux paramètres de chaque serveur
+    # Création d'une alternative de repli robuste par recherche cartographique géolocalisée
+    texte_recherche_maps = f"{banniere_active} {adresse_cible} {code_recherche}".strip()
+    url_maps_precise = f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(texte_recherche_maps)}"
+
+    # Construction de la route d'URL dynamique adaptée aux structures d'URL de chaque serveur
     if "superc" in url_base_site:
         url_final_site = f"https://superc.ca{code_postal_url}"
     elif "maxi" in url_base_site:
@@ -212,12 +216,6 @@ with col_droite:
         url_final_site = f"https://metro.ca{code_postal_url}"
     elif "iga" in url_base_site:
         url_final_site = f"https://iga.net{code_postal_url}"
-    elif "bonichoix" in url_base_site:
-        url_final_site = f"https://bonichoix.com{code_postal_url}"
-    elif "marcherichelieu" in url_base_site:
-        url_final_site = f"https://marcherichelieu.ca{code_postal_url}"
-    elif "marchetradition" in url_base_site:
-        url_final_site = f"https://marchetradition.com{code_postal_url}"
     elif "walmart" in url_base_site:
         url_final_site = f"https://walmart.ca{code_postal_url}"
     elif "gianttiger" in url_base_site:
@@ -226,8 +224,9 @@ with col_droite:
         url_final_site = f"https://dollarama.com{code_postal_url}"
     elif "adonis" in url_base_site:
         url_final_site = f"https://groupeadonis.ca{code_postal_url}"
+    # Si le site officiel refuse la recherche par URL (Tradition, Bonichoix, Richelieu, Ami, Costco), on bascule sur Maps
     else:
-        url_final_site = f"{url_base_site}?search={code_postal_url}"
+        url_final_site = url_maps_precise
 
     # Affichage propre des deux boutons d'accès direct
     st.write("### 🔗 Accès direct au magasin sélectionné")

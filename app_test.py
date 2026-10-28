@@ -245,7 +245,7 @@ with col_droite:
         
     st.write("---")
 
-        else:
-            st.info("Aucune photo dans ce dossier pour le moment.")
+    else:
+        st.info("Aucune photo dans ce dossier pour le moment.")
     else:
         st.warning(f"Dossier introuvable : bannieres/{nom_sous_dossier}")

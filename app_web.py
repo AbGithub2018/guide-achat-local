@@ -718,6 +718,13 @@ else:
     st.info(f"📦 {type_saisie} **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
     st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
     
+    # 📸 AJOUT : Zone pour prendre la photo du nouveau produit
+    st.markdown("#### 📸 Prendre une photo du produit (Optionnel)")
+    image_cam = st.camera_input("Prenez le produit en photo (Face avant)", key=f"cam_{saisie_net.strip()}")
+    
+    if image_cam:
+        st.success("✅ Image capturée ! Elle sera associée à ce code UPC lors de l'enregistrement.")
+    
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
         nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
         cup_final = st.text_input("code_upc", value=saisie_net.strip() if saisie_net else "", disabled=True)
@@ -744,8 +751,16 @@ else:
 
         if bouton_creer:
             if nom_nouveau:
-                with st.spinner("Enregistrement de la nouvelle fiche produit..."):
+                with st.spinner("Enregistrement de la nouvelle fiche produit et de sa photo..."):
                     try:
+                        # 💾 AJOUT : Sauvegarde de la photo sous le nom du code UPC si une photo a été prise
+                        if image_cam:
+                            os.makedirs("images", exist_ok=True)
+                            nom_fichier_image = f"{cup_final.strip()}.jpg"
+                            chemin_sauvegarde = os.path.join("images", nom_fichier_image)
+                            with open(chemin_sauvegarde, "wb") as f:
+                                f.write(image_cam.getbuffer())
+
                         nouvelle_ligne = {
                             'code_upc': cup_final,
                             'nom': nom_nouveau.strip(),
@@ -803,6 +818,7 @@ if resultats is not None and not resultats.empty:
     else:
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
+
 
     bannières_config = {
         'prix_iga': ('🔴 IGA', '#d32f2f'), 

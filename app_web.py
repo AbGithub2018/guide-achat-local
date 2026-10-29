@@ -710,20 +710,46 @@ if not df_affichage.empty:
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
-else:
+
+# =====================================================================
+# 📸 AJOUT : ZONE PHOTO DISPONIBLE EN TOUT TEMPS (PRODUIT EXISTANT OU NOUVEAU)
+# =====================================================================
+# On détermine quel est le code UPC actif (soit celui tapé/scanné, soit celui cliqué dans le tableau)
+cup_actif = ""
+if resultats is not None and not resultats.empty:
+    cup_actif = str(resultats.iloc[0].get('code_upc', '')).strip()
+elif saisie_net and saisie_net.strip() not in ["", "****"]:
+    cup_actif = saisie_net.strip()
+
+# Si on a un code UPC sous la main, on affiche l'appareil photo en tout temps !
+if cup_actif and cup_actif != "nan":
+    st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
+    image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
+    
+    if image_cam:
+        try:
+            with st.spinner("Enregistrement de la photo..."):
+                os.makedirs("images", exist_ok=True)
+                nom_fichier_image = f"{cup_actif}.jpg"
+                chemin_sauvegarde = os.path.join("images", nom_fichier_image)
+                with open(chemin_sauvegarde, "wb") as f:
+                    f.write(image_cam.getbuffer())
+                st.success("🎉 Photo enregistrée avec succès ! Elle apparaîtra dans l'aperçu au prochain rechargement.")
+                time.sleep(1)
+                st.rerun()
+        except Exception as e:
+            st.error(f"Erreur lors de la sauvegarde de l'image : {e}")
+
+st.markdown("---")
+# =====================================================================
+
+if resultats is None or resultats.empty:
     if message_erreur_recherche:
         st.warning(message_erreur_recherche)
 
     type_saisie = "Le code-barres" if (saisie_net and saisie_net.isdigit()) else "Le produit"
     st.info(f"📦 {type_saisie} **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
     st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! 🇨🇦")
-    
-    # 📸 AJOUT : Zone pour prendre la photo du nouveau produit
-    st.markdown("#### 📸 Prendre une photo du produit (Optionnel)")
-    image_cam = st.camera_input("Prenez le produit en photo (Face avant)", key=f"cam_{saisie_net.strip()}")
-    
-    if image_cam:
-        st.success("✅ Image capturée ! Elle sera associée à ce code UPC lors de l'enregistrement.")
     
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
         nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
@@ -751,16 +777,8 @@ else:
 
         if bouton_creer:
             if nom_nouveau:
-                with st.spinner("Enregistrement de la nouvelle fiche produit et de sa photo..."):
+                with st.spinner("Enregistrement de la nouvelle fiche produit..."):
                     try:
-                        # 💾 AJOUT : Sauvegarde de la photo sous le nom du code UPC si une photo a été prise
-                        if image_cam:
-                            os.makedirs("images", exist_ok=True)
-                            nom_fichier_image = f"{cup_final.strip()}.jpg"
-                            chemin_sauvegarde = os.path.join("images", nom_fichier_image)
-                            with open(chemin_sauvegarde, "wb") as f:
-                                f.write(image_cam.getbuffer())
-
                         nouvelle_ligne = {
                             'code_upc': cup_final,
                             'nom': nom_nouveau.strip(),
@@ -818,6 +836,7 @@ if resultats is not None and not resultats.empty:
     else:
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
+
 
 
     bannières_config = {

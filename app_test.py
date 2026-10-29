@@ -47,6 +47,7 @@ LIENS_OFFICIELS = {
 df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
+
 # =========================================================================
 # SECTION À GAUCHE : BARRE LATÉRALE PROPRE + BOUTON GUIDE D'ACHAT
 # =========================================================================
@@ -144,12 +145,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- MESSAGE DE GUIDAGE MOBILE BIEN VISIBLE ---
+# --- NOUVEAU MESSAGE DE GUIDAGE POUR LE MODE CÔTE À CÔTE ---
 st.markdown(
     f"""
-    <div style="background-color: #FFFBEB; border-left: 5px solid #F59E0B; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
-        <p style="margin: 0; color: #B45309; font-size: 14px; font-weight: bold;">
-            📱 Mode Cellulaire : Cliquez d'abord sur le menu de gauche (bouton en haut à gauche) pour entrer votre code postal, ajuster la distance et ouvrir notre Guide d'Achat Local !
+    <div style="background-color: #E0F2FE; border-left: 5px solid #0284C7; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
+        <p style="margin: 0; color: #0369A1; font-size: 14px; font-weight: bold;">
+            💡 <strong>Astuce multi-fenêtres :</strong> Cliquez sur le bouton rouge dans la colonne de droite pour ouvrir la circulaire. Glissez cet onglet d'application à gauche de votre écran et la circulaire à droite pour travailler côte à côte !
         </p>
     </div>
     """,
@@ -157,18 +158,17 @@ st.markdown(
 )
 
 # =========================================================================
-# 📱 RÉORGANISATION EN ONGLETS POUR CELLULAIRE
+# 📱 RÉORGANISATION EN ONGLETS POUR CELLULAIRE (FUSION DES ANCIENS ONGLETS 1 & 2)
 # =========================================================================
-onglet_circulaire, onglet_saisie, onglet_facture = st.tabs([
-    f"📸 1. Regarder la Circulaire ({code_recherche})", 
-    "✍️ 2. Écrire mes Rabais", 
-    "🛍️ 3. Ma Facture"
+onglet_travail, onglet_facture = st.tabs([
+    f"✍️ 1. Préparer mes Rabais ({code_recherche})", 
+    "🛍️ 2. Ma Facture Finale"
 ])
 
 # -------------------------------------------------------------------------
-# ONGLET 1 : ACCÈS DIRECT SÉCURISÉ AUX BOUTONS SANS BLOCAGE + PHOTOS LOCALES
+# ONGLET 1 : LA ZONE DE TRAVAIL CÔTE-À-CÔTE (FORMULAIRE À GAUCHE / LIENS À DROITE)
 # -------------------------------------------------------------------------
-with onglet_circulaire:
+with onglet_travail:
     cle_recherche = str(banniere_active).upper().strip()
     url_base_site = LIENS_OFFICIELS.get(cle_recherche, "https://google.com")
     code_postal_url = urllib.parse.quote(code_recherche)
@@ -186,115 +186,117 @@ with onglet_circulaire:
     else:
         url_final_site = url_base_site
 
-    with st.container(border=True):
-        st.markdown(f"<h3 style='font-size: 18px; color: #1E3A8A; font-weight: bold; margin-top: 0px;'>🔗 Circulaire en ligne</h3>", unsafe_allow_html=True)
-        
-        # --- BLOC DU BOUTON UNIQUE DYNAMIQUE ET RECYCLABLE ---
-        html_bouton_dynamique = f"""
-        <div style="display: flex; justify-content: center; width: 100%; margin: 5px 0;">
-            <a href="{url_final_site}" target="succursale_unique" rel="opener" style="
-                text-decoration: none; 
-                padding: 12px 20px; 
-                background-color: #ff4b4b; 
-                color: white; 
-                border: 1px solid #ff4b4b;
-                border-radius: 6px; 
-                font-size: 15px;
-                font-family: sans-serif;
-                font-weight: bold;
-                display: inline-block;
-                text-align: center;
-                box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
-                width: 100%;">
-                📍 Ouvrir la circulaire {banniere_active.title()}
-            </a>
-        </div>
-        """
-        st.markdown(html_bouton_dynamique, unsafe_allow_html=True)
-        # --- FIN DU BLOC MODIFIÉ ---
+    # Création des deux colonnes côte à côte
+    col_gauche_formulaire, col_droite_circulaire = st.columns(2)
 
-    st.write("")
+    # --- COLONNE DE GAUCHE : LE FORMULAIRE DE SAISIE ---
+    with col_gauche_formulaire:
+        with st.container(border=True):
+            st.markdown(f"<h3 style='font-size: 18px; color: #1E3A8A; font-weight: 600; margin-top: 0px;'>✍️ Ajouter un article trouvé</h3>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-size: 14px; margin-bottom: 10px;'>Magasin actif : <strong>{banniere_active}</strong></p>", unsafe_allow_html=True)
 
-    nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
-    chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
+            categorie = st.selectbox(
+                "Sélectionner le rayon :",
+                ["🍎 Fruits et Légumes", "🥩 Viandes et Poissons", "🧀 Produits laitiers", "🍞 Boulangerie", "📦 Épicerie / Boîtes", "🧼 Entretien / Autre"],
+                key="select_cat_travail"
+            )
 
-    if os.path.exists(chemin_dossier_images):
-        fichiers_photos = [f for f in os.listdir(chemin_dossier_images) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+            nom_article = st.text_input("Nom de l'article :", placeholder="Ex: Banane, Beurre...", key="input_nom_travail")
+            prix_article = st.number_input("Prix en spécial ($) :", value=0.00, step=0.01, key="input_prix_travail")
 
-        if fichiers_photos:
-            st.markdown("<h4 style='font-size: 16px; margin-top: 10px;'>📸 Coupures de circulaires locales :</h4>", unsafe_allow_html=True)
-            grille_visuelle = st.columns(2)
-            for index, photo in enumerate(fichiers_photos):
-                image_aliment = Image.open(os.path.join(chemin_dossier_images, photo))
+            if st.button("✨ Enregistrer l'article", use_container_width=True, key="btn_save_travail"):
+                if nom_article:
+                    st.session_state["panier_achats"].append({
+                        "magasin": banniere_active,
+                        "catégorie": categorie,
+                        "produit": nom_article,
+                        "prix": prix_article,
+                    })
+                    st.toast(f"✅ {nom_article} enregistré !", icon="🛒")
+                    st.rerun()
+                else:
+                    st.warning("Veuillez entrer un nom d'article.")
 
-                with grille_visuelle[index % 2]:
-                    st.image(image_aliment, use_container_width=True)
+    # --- COLONNE DE DROITE : L'ACCÈS À LA CIRCULAIRE ---
+    with col_droite_circulaire:
+        with st.container(border=True):
+            st.markdown(f"<h3 style='font-size: 18px; color: #1E3A8A; font-weight: bold; margin-top: 0px;'>🔗 Lien de consultation</h3>", unsafe_allow_html=True)
+            
+            # Bouton unique intelligent et recyclable
+            html_bouton_dynamique = f"""
+            <div style="display: flex; justify-content: center; width: 100%; margin: 5px 0;">
+                <a href="{url_final_site}" target="succursale_unique" rel="opener" style="
+                    text-decoration: none; 
+                    padding: 12px 20px; 
+                    background-color: #ff4b4b; 
+                    color: white; 
+                    border: 1px solid #ff4b4b;
+                    border-radius: 6px; 
+                    font-size: 14px;
+                    font-family: sans-serif;
+                    font-weight: bold;
+                    display: inline-block;
+                    text-align: center;
+                    box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+                    width: 100%;">
+                    📍 Ouvrir la circulaire {banniere_active.title()}
+                </a>
+            </div>
+            """
+            st.markdown(html_bouton_dynamique, unsafe_allow_html=True)
 
-                    if st.button(f"➕ Ajouter", key=f"btn_photo_{index}", use_container_width=True, type="primary"):
-                        nom_complet_sans_ext, _ = os.path.splitext(str(photo))
-                        
-                        if "_" in nom_complet_sans_ext:
-                            parties = nom_complet_sans_ext.split("_", 1)
-                            premier_morceau = parties[0]
-                            reste_du_texte = parties[1]
+        # Affichage des coupures locales si elles existent
+        st.write("")
+        nom_sous_dossier = str(banniere_active).lower().replace(" ", "_").replace("é", "e").replace("è", "e").replace("à", "a")
+        chemin_dossier_images = os.path.join(DOSSIER_BANNIERES, nom_sous_dossier)
+
+        if os.path.exists(chemin_dossier_images):
+            fichiers_photos = [f for f in os.listdir(chemin_dossier_images) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+
+            if fichiers_photos:
+                st.markdown("<h4 style='font-size: 15px; margin-top: 10px;'>📸 Coupures de circulaires locales :</h4>", unsafe_allow_html=True)
+                grille_visuelle = st.columns(2)
+                for index, photo in enumerate(fichiers_photos):
+                    image_aliment = Image.open(os.path.join(chemin_dossier_images, photo))
+
+                    with grille_visuelle[index % 2]:
+                        st.image(image_aliment, use_container_width=True)
+
+                        if st.button(f"➕ Ajouter", key=f"btn_photo_{index}", use_container_width=True, type="primary"):
+                            nom_complet_sans_ext, _ = os.path.splitext(str(photo))
                             
-                            try:
-                                prix_automatique = float(premier_morceau)
-                                nom_automatique = reste_du_texte.replace("_", " ").capitalize()
-                            except ValueError:
+                            if "_" in nom_complet_sans_ext:
+                                parties = nom_complet_sans_ext.split("_", 1)
+                                premier_morceau = parties[0]
+                                reste_du_texte = parties[1]
+                                
+                                try:
+                                    prix_automatique = float(premier_morceau)
+                                    nom_automatique = reste_du_texte.replace("_", " ").capitalize()
+                                except ValueError:
+                                    prix_automatique = 0.00
+                                    nom_automatique = nom_complet_sans_ext.replace("_", " ").capitalize()
+                            else:
                                 prix_automatique = 0.00
                                 nom_automatique = nom_complet_sans_ext.replace("_", " ").capitalize()
-                        else:
-                            prix_automatique = 0.00
-                            nom_automatique = nom_complet_sans_ext.replace("_", " ").capitalize()
 
-                        st.session_state["panier_achats"].append({
-                            "magasin": banniere_active,
-                            "catégorie": "🍎 Circulaire Visuelle",
-                            "produit": nom_automatique,
-                            "prix": prix_automatique,
-                        })
-                        st.toast(f"✅ {nom_automatique} ajouté !", icon="🛒")
-                        st.rerun()
-                    st.write("")
+                            st.session_state["panier_achats"].append({
+                                "magasin": banniere_active,
+                                "catégorie": "🍎 Circulaire Visuelle",
+                                "produit": nom_automatique,
+                                "prix": prix_automatique,
+                            })
+                            st.toast(f"✅ {nom_automatique} ajouté !", icon="🛒")
+                            st.rerun()
+                        st.write("")
+            else:
+                with st.container(border=True):
+                    st.info("Aucun feuillet visuel téléversé. Utilisez le bouton rouge pour ouvrir le site externe !")
         else:
             with st.container(border=True):
-                st.info("Aucun feuillet visuel téléversé. Utilisez le bouton pour ouvrir le site de l'épicerie !")
-    else:
-        with st.container(border=True):
-            st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
+                st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
 # -------------------------------------------------------------------------
-# ONGLET 2 : FORMULAIRE DE SAISIE DE RABAIS
-# -------------------------------------------------------------------------
-with onglet_saisie:
-    with st.container(border=True):
-        st.markdown("<h3 style='font-size: 20px; color: #1E3A8A; font-weight: 600; margin-top: 0px;'>✍️ Ajouter un article trouvé</h3>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-size: 15px;'>Magasin sélectionné : <strong>{banniere_active}</strong></p>", unsafe_allow_html=True)
-
-        categorie = st.selectbox(
-            "Sélectionner le rayon :",
-            ["🍎 Fruits et Légumes", "🥩 Viandes et Poissons", "🧀 Produits laitiers", "🍞 Boulangerie", "📦 Épicerie / Boîtes", "🧼 Entretien / Autre"],
-            key="mobile_select_cat"
-        )
-
-        nom_article = st.text_input("Nom de l'article :", placeholder="Ex: Banane, Beurre...", key="input_nom")
-        prix_article = st.number_input("Prix en spécial ($) :", value=0.00, step=0.01, key="input_prix")
-
-        if st.button("✨ Enregistrer l'article", use_container_width=True, key="btn_mobile_save"):
-            if nom_article:
-                st.session_state["panier_achats"].append({
-                    "magasin": banniere_active,
-                    "catégorie": categorie,
-                    "produit": nom_article,
-                    "prix": prix_article,
-                })
-                st.toast("Article enregistré !", icon="✅")
-                st.rerun()
-            else:
-                st.warning("Veuillez entrer un nom d'article.")
-
-# -------------------------------------------------------------------------
-# ONGLET 3 : FACTURE SIMULÉE ET COMPARATEUR DE BANNIÈRES
+# ONGLET 2 : FACTURE SIMULÉE ET COMPARATEUR DE BANNIÈRES (ANCIEN ONGLET 3)
 # -------------------------------------------------------------------------
 with onglet_facture:
     with st.container(border=True):
@@ -327,4 +329,4 @@ with onglet_facture:
                 st.session_state["panier_achats"] = []
                 st.rerun()
         else:
-            st.info("Votre liste d'épicerie est vide. Parcourez l'onglet Circulaire pour commencer !")
+            st.info("Votre liste d'épicerie est vide. Parcourez l'onglet de préparation pour commencer !")

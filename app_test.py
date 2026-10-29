@@ -174,7 +174,7 @@ with onglet_circulaire:
     code_postal_url = urllib.parse.quote(code_recherche)
     
     if cle_recherche in ["MARCHÉ AMI", "MARCHÉ BONICHOIX", "MARCHÉ RICHELIEU", "MARCHÉ TRADITION", "COSTCO"]:
-        url_final_site = f"https://google.com/maps/search/?api=1&query={urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
+        url_final_site = f"https://google.com{urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
     elif "superc" in url_base_site or "metro" in url_base_site:
         url_final_site = f"{url_base_site}?search={code_postal_url}"
     elif "maxi" in url_base_site or "provigo" in url_base_site:
@@ -187,12 +187,31 @@ with onglet_circulaire:
         url_final_site = url_base_site
 
     with st.container(border=True):
-        st.markdown(f"<h3 style='font-size: 18px; color: #1E3A8A; font-weight: bold; margin-top: 0px;'>🔗 Circulaire en ligne : {banniere_active}</h3>", unsafe_allow_html=True)
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            st.link_button("🌐 Site général", url_base_site, use_container_width=True)
-        with col_btn2:
-            st.link_button(f"📍 Voir ma succursale", url_final_site, type="primary", use_container_width=True)
+        st.markdown(f"<h3 style='font-size: 18px; color: #1E3A8A; font-weight: bold; margin-top: 0px;'>🔗 Circulaire en ligne</h3>", unsafe_allow_html=True)
+        
+        # --- BLOC DU BOUTON UNIQUE DYNAMIQUE ET RECYCLABLE ---
+        html_bouton_dynamique = f"""
+        <div style="display: flex; justify-content: center; width: 100%; margin: 5px 0;">
+            <a href="{url_final_site}" target="succursale_unique" rel="opener" style="
+                text-decoration: none; 
+                padding: 12px 20px; 
+                background-color: #ff4b4b; 
+                color: white; 
+                border: 1px solid #ff4b4b;
+                border-radius: 6px; 
+                font-size: 15px;
+                font-family: sans-serif;
+                font-weight: bold;
+                display: inline-block;
+                text-align: center;
+                box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+                width: 100%;">
+                📍 Ouvrir la circulaire {banniere_active.title()}
+            </a>
+        </div>
+        """
+        st.markdown(html_bouton_dynamique, unsafe_allow_html=True)
+        # --- FIN DU BLOC MODIFIÉ ---
 
     st.write("")
 
@@ -244,7 +263,6 @@ with onglet_circulaire:
     else:
         with st.container(border=True):
             st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
-
 # -------------------------------------------------------------------------
 # ONGLET 2 : FORMULAIRE DE SAISIE DE RABAIS
 # -------------------------------------------------------------------------

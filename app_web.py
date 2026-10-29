@@ -85,7 +85,7 @@ st.html("""
     }
 </style>
 """)
-  def sauvegarder_historique(df_histoire):
+def sauvegarder_historique(df_histoire):
     """Enregistre l'historique des modifications de prix dans le bon onglet 'Historique_Prix'."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)

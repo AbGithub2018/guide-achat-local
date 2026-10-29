@@ -768,7 +768,7 @@ if image_cam:
             # Téléversement en direct vers GitHub
             envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
             
-            if envoi_gh.status_code not in [200, 201]:
+            if envoi_gh.status_code not in:
                 raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
 
             # --- ÉCRITURE DE L'ACTION DANS L'HISTORIQUE ---
@@ -799,8 +799,9 @@ if image_cam:
             time.sleep(1.5)
             st.rerun()
             
-        except Exception as e:
-            st.error(f"Erreur lors de la sauvegarde sur GitHub : {e}")
+    except Exception as e:
+        st.error(f"Erreur lors de la sauvegarde sur GitHub : {e}")
+
 
 
 

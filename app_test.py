@@ -133,6 +133,7 @@ if code_recherche:
         else:
             st.sidebar.warning("Aucun commerce trouvé dans ce rayon.")
 # =========================================================================
+# =========================================================================
 # EN-TÊTE PRINCIPAL LOOK APPLICATION MOBILE BANDEAU BLEU
 # =========================================================================
 st.markdown(
@@ -273,7 +274,7 @@ with onglet_travail:
                                 try:
                                     prix_automatique = float(premier_morceau)
                                     nom_automatique = reste_du_texte.replace("_", " ").capitalize()
-                                  except ValueError:
+                                except ValueError:
                                     prix_automatique = 0.00
                                     nom_automatique = nom_complet_sans_ext.replace("_", " ").capitalize()
                             else:
@@ -295,6 +296,7 @@ with onglet_travail:
         else:
             with st.container(border=True):
                 st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
+
 # -------------------------------------------------------------------------
 # ONGLET 2 : FACTURE SIMULÉE ET COMPARATEUR DE BANNIÈRES
 # -------------------------------------------------------------------------

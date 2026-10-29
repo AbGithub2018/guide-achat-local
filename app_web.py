@@ -735,7 +735,23 @@ if image_cam:
     try:
         with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
             nom_fichier_image = f"{cup_actif}.jpg"
-            contenu_image = image_cam.getbuffer().tobytes()
+            
+            # --- COMPRESSION DE L'IMAGE AVANT ENVOI ---
+            from PIL import Image
+            import io
+            
+            # 1. Ouvrir l'image de la caméra
+            img = Image.open(image_cam)
+            
+            # 2. Redimensionner à une taille raisonnable (max 800 pixels de large)
+            img.thumbnail((800, 800))
+            
+            # 3. Sauvegarder en mémoire avec une compression JPEG de 70%
+            tampon_memoire = io.BytesIO()
+            img.save(tampon_memoire, format="JPEG", quality=70, optimize=True)
+            contenu_image = tampon_memoire.getvalue()
+            # ------------------------------------------
+
             
             # Configuration de vos accès GitHub réels
             UTILISATEUR_GH = "abgithub2018"

@@ -741,7 +741,7 @@ if cup_actif and cup_actif != "nan":
                 DEPOT_GH = "guide-achat-local"
                 TOKEN_GH = st.secrets["GITHUB_TOKEN"]
                 
-                url_api_github = f"https://github.com{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
+                url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
                 headers_gh = {
                     "Authorization": f"token {TOKEN_GH}",
                     "Accept": "application/vnd.github.v3+json"

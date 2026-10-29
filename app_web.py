@@ -631,61 +631,48 @@ def charger_villes_sidebar():
         df_muni = pd.read_csv("municipalités.csv", sep=";", encoding="latin-1")
     return df_muni
 
-    # 3. Rendu visuel dans votre barre latérale (Sidebar)
-    try:
-        df_villes = charger_villes_sidebar()
-        df_villes.columns = df_villes.columns.str.strip()
-        
-        # Extraction de la liste unique et triée des villes du Québec
-        liste_villes_quebec = sorted(df_villes["Nom de la municipalité"].dropna().unique())
-        
-        # Création de la section graphique dans votre menu de gauche
-        st.sidebar.markdown("---")
-        st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 20px; font-weight: bold;'>🗺️ Épiceries à proximité</h2>")
-        st.sidebar.write("Affichez instantanément les supermarchés de votre région :")
-        
-        # Menu déroulant de sélection
-        ville_choisie = st.sidebar.selectbox(
-            "Sélectionnez votre municipalité :", 
-            options=liste_villes_quebec, 
-            key="cle_sidebar_municipalite_choisie"
-        )
-
-        if ville_choisie:
-            # Recherche de la ligne correspondant à la municipalité sélectionnée
-            infos_commune = df_villes[df_villes["Nom de la municipalité"] == ville_choisie].iloc[0]
-            
-            # Traduction des coordonnées géographiques avec vos variables du test
-            lat = dms_a_decimal_sidebar(infos_commune["Latitude"], est_longitude=False)
-            lon = dms_a_decimal_sidebar(infos_commune["Longitude"], est_longitude=True)
-            
-            if lat and lon:
-                terme_recherche = urllib.parse.quote("épiceries")
-                
-                # VOTRE LIEN EXACT DU TEST :
-                lien_maps = f"https://google.com{terme_recherche}/@{lat},{lon},13z"
-                
-                # Bouton d'action étiré dans la barre de gauche
-                st.sidebar.link_button(f"🚀 Ouvrir Google Maps", lien_maps, use_container_width=True)
-            else:
-                st.sidebar.error("Impossible de charger les coordonnées de cette ville.")
-
-    except Exception as erreur_carte:
-        st.sidebar.warning(f"Le module de recherche géographique est indisponible.")
-        st.sidebar.error(f"Détail de l'erreur : {erreur_carte}")
-
-    # === LE BLOC JURIDIQUE SÉCURISÉ EST PLACÉ ICI EN TOUTE FIN DE SIDEBAR ===
+# 3. Rendu visuel dans votre barre latérale (Sidebar)
+try:
+    df_villes = charger_villes_sidebar()
+    df_villes.columns = df_villes.columns.str.strip()
+    
+    # Extraction de la liste unique et triée des villes du Québec
+    liste_villes_quebec = sorted(df_villes["Nom de la municipalité"].dropna().unique())
+    
+    # Création de la section graphique dans votre menu de gauche
     st.sidebar.markdown("---")
-    with st.sidebar.expander("⚖️ Mentions légales & Transparence"):
-        st.markdown("""
-        **Avis de non-responsabilité**
-        
-        Cette application est une initiative citoyenne bénévole, indépendante et sans but lucratif pour soutenir les consommateurs québécois.
-        
-        * **Propriété :** Les marques de commerce et logos appartiennent à leurs propriétaires respectifs. Les codes UPC et noms de produits sont inclus à des fins d'indexation factuelle et informative. Les images proviennent de la base collaborative libre d'Open Food Facts ou de la communauté.
-        * **Prix :** Les données de prix proviennent du mode collaboratif (*crowdsourcing*). Bien qu'une modération soit effectuée sur les nouvelles entrées, l'exactitude des prix en direct n'est pas garantie en succursale.
-        """)
+    st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 20px; font-weight: bold;'>🗺️ Épiceries à proximité</h2>")
+    st.sidebar.write("Affichez instantanément les supermarchés de votre région :")
+    
+    # Menu déroulant de sélection
+    ville_choisie = st.sidebar.selectbox(
+        "Sélectionnez votre municipalité :", 
+        options=liste_villes_quebec, 
+        key="cle_sidebar_municipalite_choisie"
+    )
 
+    if ville_choisie:
+        # Recherche de la ligne correspondant à la municipalité sélectionnée
+        infos_commune = df_villes[df_villes["Nom de la municipalité"] == ville_choisie].iloc[0]
+        
+        # Traduction des coordonnées géographiques avec vos variables du test
+        lat = dms_a_decimal_sidebar(infos_commune["Latitude"], est_longitude=False)
+        lon = dms_a_decimal_sidebar(infos_commune["Longitude"], est_longitude=True)
+        
+        if lat and lon:
+            terme_recherche = urllib.parse.quote("épiceries")
+            
+            # VOTRE LIEN EXACT DU TEST :
+            lien_maps = f"https://www.google.com/maps/search/{terme_recherche}/@{lat},{lon},13z"
+            
+            # Bouton d'action étiré dans la barre de gauche
+            st.sidebar.link_button(f"🚀 Ouvrir Google Maps", lien_maps, use_container_width=True)
+        else:
+            st.sidebar.error("Impossible de charger les coordonnées de cette ville.")
+
+except Exception as erreur_carte:
+    st.sidebar.warning(f"Le module de recherche géographique est indisponible.")
+    st.sidebar.error(f"Détail de l'erreur : {erreur_carte}")
 
 # =====================================================================
 

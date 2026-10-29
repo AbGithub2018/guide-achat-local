@@ -774,7 +774,7 @@ if cup_actif and cup_actif != "nan":
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
             
             # Lien internet public et permanent de votre photo hébergée sur GitHub
-            lien_public_github = f"https://githubusercontent.com{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"
+            url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
             
             ligne_photo_h = pd.DataFrame([{
                 'horodatage': horodatage_actuel,

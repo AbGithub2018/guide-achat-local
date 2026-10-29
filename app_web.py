@@ -768,7 +768,7 @@ if image_cam:
             # Téléversement en direct vers GitHub
             envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
             
-            if envoi_gh.status_code not in:
+            if envoi_gh.status_code not in: [200, 201]
                 raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
 
             # --- ÉCRITURE DE L'ACTION DANS L'HISTORIQUE ---

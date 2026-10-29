@@ -753,6 +753,15 @@ if cup_actif and cup_actif != "nan":
             
             sauvegarder_historique(ligne_photo_h)
             
+            # --- CORRECTION DE LA BOUCLE INFINIE ---
+            # On force le vidage de la mémoire pour éviter que la photo ne se ré-enregistre au rechargement
+            for key in list(st.session_state.keys()):
+                if "cam" in key or "photo" in key:
+                    try:
+                        del st.session_state[key]
+                    except KeyError:
+                        pass
+            
             # --- STABILISATION ET RECHARGEMENT ---
             st.success("📸 Photo enregistrée avec succès ! Elle apparaîtra dans l'aperçu au prochain rechargement.")
             time.sleep(1.5)
@@ -760,6 +769,7 @@ if cup_actif and cup_actif != "nan":
             
         except Exception as e:
             st.error(f"Erreur lors de la sauvegarde de l'image : {e}")
+
 
 
 st.markdown("---")

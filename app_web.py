@@ -939,7 +939,7 @@ if resultats is not None and not resultats.empty:
 
             st.session_state['dernier_horodatage'] = horodatage_actuel
             st.success("Mise à jour réussie dans vos 2 onglets cloud !")
-            time.sleep(0.5)
+            time.sleep(1.5)
             st.rerun()
 
         except Exception as e:

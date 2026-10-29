@@ -675,6 +675,16 @@ except Exception as erreur_carte:
     st.sidebar.error(f"Détail de l'erreur : {erreur_carte}")
 
 # =====================================================================
+st.sidebar.markdown("---")
+with st.sidebar.expander("⚖️ Mentions légales & Transparence"):
+    st.markdown("""
+    **Avis de non-responsabilité**
+    
+    Cette application est une initiative citoyenne bénévole, indépendante et sans but lucratif pour soutenir les consommateurs québécois.
+    
+    * **Propriété :** Les marques de commerce et logos appartiennent à leurs propriétaires respectifs. Les codes UPC et noms de produits sont inclus à des fins d'indexation factuelle et informative. Les images proviennent de la base collaborative libre d'Open Food Facts ou de la communauté.
+    * **Prix :** Les données de prix proviennent du mode collaboratif (*crowdsourcing*). Bien qu'une modération soit effectuée sur les nouvelles entrées, l'exactitude des prix en direct n'est pas garantie en succursale.
+    """)
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),

@@ -553,10 +553,10 @@ if resultats is not None and not resultats.empty:
         
     if bouton_enregistrer:
         try:
-            horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M:%S")
+            horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
             nom_image = ""
             if fichier_photo is not None:
-                nom_image = f"{upc_dynamique}_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                    nom_image = f"{upc_dynamique}_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.jpg"
                 if not os.path.exists("images"): os.makedirs("images")
                 with open(os.path.join("images", nom_image), "wb") as f: f.write(fichier_photo.getbuffer())
 
@@ -627,7 +627,7 @@ else:
             if nom_nouveau:
                 with st.spinner("Enregistrement prioritaire dans l'historique..."):
                     try:
-                        horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M:%S")
+                        horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
                         upc_net = cup_final.strip()
                         nom_image = ""
                         

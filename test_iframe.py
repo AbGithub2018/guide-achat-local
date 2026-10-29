@@ -1,17 +1,24 @@
 import streamlit as st
 
-st.title("Test d'ouverture d'onglet unique")
-st.write("Ce bouton va ouvrir Super C. Si vous revenez ici et cliquez à nouveau, il réutilisera le même onglet au lieu d'en ouvrir un deuxième.")
+st.title("Test d'ouverture d'onglet unique (Version JavaScript)")
+st.write("Ce bouton utilise JavaScript pour recycler la même fenêtre.")
 
-# URL de test (Super C)
+# URL de test
 url_super_c = "https://superc.ca"
 
-# Bouton HTML stylisé imitant votre bouton rouge original
-# L'astuce réside dans target="fenetre_circulaire_unique"
-bouton_html = f"""
+# Bouton avec fonction JavaScript intégrée au clic
+bouton_js_html = f"""
 <div style="display: flex; justify-content: center; margin-top: 20px;">
-    <a href="{url_super_c}" target="fenetre_circulaire_unique" style="
-        text-decoration: none; 
+    <button onclick="
+        if (!window.monOngletCirculaire || window.monOngletCirculaire.closed) {{
+            window.monOngletCirculaire = window.open('{url_super_c}', 'circulaire_unique');
+        }} else {{
+            window.monOngletCirculaire.location.href = '{url_super_c}';
+            window.monOngletCirculaire.focus();
+        }}
+    " style="
+        cursor: pointer;
+        border: none;
         padding: 12px 24px; 
         background-color: #ff4b4b; 
         color: white; 
@@ -23,10 +30,10 @@ bouton_html = f"""
         box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
         width: 80%;
         max-width: 400px;">
-        📍 Voir ma succursale (Test Onglet Unique)
-    </a>
+        📍 Voir ma succursale (Test JS)
+    </button>
 </div>
 """
 
-# Injection du HTML dans l'application Streamlit
-st.markdown(bouton_html, unsafe_allow_html=True)
+# Injection du code
+st.markdown(bouton_js_html, unsafe_allow_html=True)

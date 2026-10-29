@@ -730,51 +730,46 @@ if cup_actif and cup_actif != "nan":
     st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
     image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
     
-    if image_cam:
-        try:
-            with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
-                nom_fichier_image = f"{cup_actif}.jpg"
-                contenu_image = image_cam.getbuffer().tobytes()
-                
-                # Configuration de vos accès GitHub réels
-                UTILISATEUR_GH = "AbGithub2018"
-                DEPOT_GH = "guide-achat-local"
-                TOKEN_GH = st.secrets["GITHUB_TOKEN"]
-                
-                url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
-                headers_gh = {
-                    "Authorization": f"token {TOKEN_GH}",
-                    "Accept": "application/vnd.github.v3+json"
-                }
-                
-                # Vérifier si l'image existe déjà sur GitHub pour la mettre à jour, sinon la créer
-                import base64
-                reponse_verif = requests.get(url_api_github, headers=headers_gh)
-                sha_fichier = None
-                if reponse_verif.status_code == 200:
-                    sha_fichier = reponse_verif.json().get("sha")
-                
-                # Encoder la photo en texte Base64 (exigé par l'API GitHub)
-                image_base64 = base64.b64encode(contenu_image).decode("utf-8")
-                
-# Vérification si l'image existe déjà pour récupérer son SHA (évite l'erreur 409)
-reponse_get = requests.get(url_api_github, headers=headers_gh)
-sha_fichier = None
-if reponse_get.status_code == 200:
-    sha_fichier = reponse_get.json().get("sha")
-                
-                donnees_envoi = {
-                    "message": f"📷 Ajout de la photo pour le produit {cup_actif} via mobile",
-                    "content": image_base64
-                }
-                if sha_fichier:
-                    donnees_envoi["sha"] = sha_fichier
-                
-                # Téléversement en direct vers GitHub
-                envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
-                
-                if envoi_gh.status_code not in [200, 201]:
-                    raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
+   
+if image_cam:
+    try:
+        with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
+            nom_fichier_image = f"{cup_actif}.jpg"
+            contenu_image = image_cam.getbuffer().tobytes()
+            
+            # Configuration de vos accès GitHub réels
+            UTILISATEUR_GH = "abgithub2018"
+            DEPOT_GH = "guide-achat-local"
+            TOKEN_GH = st.secrets["GITHUB_TOKEN"]
+            
+            url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
+            headers_gh = {
+                "Authorization": f"token {TOKEN_GH}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            # Vérifier si l'image existe déjà sur GitHub pour récupérer son SHA (évite l'erreur 409)
+            import base64
+            reponse_get = requests.get(url_api_github, headers=headers_gh)
+            sha_fichier = None
+            if reponse_get.status_code == 200:
+                sha_fichier = reponse_get.json().get("sha")
+            
+            # Encoder la photo en texte Base64 (exigé par l'API GitHub)
+            image_base64 = base64.b64encode(contenu_image).decode("utf-8")
+            
+            donnees_envoi = {
+                "message": f"📷 Ajout de la photo pour le produit {cup_actif} via mobile",
+                "content": image_base64
+            }
+            if sha_fichier:
+                donnees_envoi["sha"] = sha_fichier
+            
+            # Téléversement en direct vers GitHub
+            envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
+            
+            if envoi_gh.status_code not in:
+                raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
 
             # --- ÉCRITURE DE L'ACTION DANS L'HISTORIQUE ---
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")

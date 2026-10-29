@@ -780,7 +780,7 @@ if reponse_get.status_code == 200:
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
             
             # Lien internet public et permanent de votre photo hébergée sur GitHub
-            url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
+            lien_public_github = f"https://raw.githubusercontent.com/{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"
             
             ligne_photo_h = pd.DataFrame([{
                 'horodatage': horodatage_actuel,

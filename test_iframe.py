@@ -1,24 +1,16 @@
 import streamlit as st
 
-st.title("Test d'ouverture d'onglet unique (Version JavaScript)")
-st.write("Ce bouton utilise JavaScript pour recycler la même fenêtre.")
+st.title("Test final d'onglet unique")
+st.write("Cette méthode utilise du HTML standard épuré pour contourner les blocages de scripts.")
 
 # URL de test
 url_super_c = "https://superc.ca"
 
-# Bouton avec fonction JavaScript intégrée au clic
-bouton_js_html = f"""
+# Utilisation d'un lien hypertexte pur stylisé avec rel="opener"
+bouton_final_html = f"""
 <div style="display: flex; justify-content: center; margin-top: 20px;">
-    <button onclick="
-        if (!window.monOngletCirculaire || window.monOngletCirculaire.closed) {{
-            window.monOngletCirculaire = window.open('{url_super_c}', 'circulaire_unique');
-        }} else {{
-            window.monOngletCirculaire.location.href = '{url_super_c}';
-            window.monOngletCirculaire.focus();
-        }}
-    " style="
-        cursor: pointer;
-        border: none;
+    <a href="{url_super_c}" target="panier_epicerie_unique" rel="opener" style="
+        text-decoration: none; 
         padding: 12px 24px; 
         background-color: #ff4b4b; 
         color: white; 
@@ -30,10 +22,9 @@ bouton_js_html = f"""
         box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
         width: 80%;
         max-width: 400px;">
-        📍 Voir ma succursale (Test JS)
-    </button>
+        📍 Voir ma succursale (Test Final)
+    </a>
 </div>
 """
 
-# Injection du code
-st.markdown(bouton_js_html, unsafe_allow_html=True)
+st.markdown(bouton_final_html, unsafe_allow_html=True)

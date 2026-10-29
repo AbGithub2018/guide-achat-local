@@ -732,15 +732,49 @@ if cup_actif and cup_actif != "nan":
     
     if image_cam:
         try:
-            with st.spinner("Enregistrement de la photo..."):
-                os.makedirs("images", exist_ok=True)
+            with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
                 nom_fichier_image = f"{cup_actif}.jpg"
-                chemin_sauvegarde = os.path.join("images", nom_fichier_image)
-                with open(chemin_sauvegarde, "wb") as f:
-                    f.write(image_cam.getbuffer())
-                    
+                contenu_image = image_cam.getbuffer().tobytes()
+                
+                # Configuration de vos accès GitHub réels
+                UTILISATEUR_GH = "AbGithub2018"
+                DEPOT_GH = "guide-achat-local"
+                TOKEN_GH = st.secrets["GITHUB_TOKEN"]
+                
+                url_api_github = f"https://github.com{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
+                headers_gh = {
+                    "Authorization": f"token {TOKEN_GH}",
+                    "Accept": "application/vnd.github.v3+json"
+                }
+                
+                # Vérifier si l'image existe déjà sur GitHub pour la mettre à jour, sinon la créer
+                import base64
+                reponse_verif = requests.get(url_api_github, headers=headers_gh)
+                sha_fichier = None
+                if reponse_verif.status_code == 200:
+                    sha_fichier = reponse_verif.json().get("sha")
+                
+                # Encoder la photo en texte Base64 (exigé par l'API GitHub)
+                image_base64 = base64.b64encode(contenu_image).decode("utf-8")
+                
+                donnees_envoi = {
+                    "message": f"📷 Ajout de la photo pour le produit {cup_actif} via mobile",
+                    "content": image_base64
+                }
+                if sha_fichier:
+                    donnees_envoi["sha"] = sha_fichier
+                
+                # Téléversement en direct vers GitHub
+                envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
+                
+                if envoi_gh.status_code not in:
+                    raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
+
             # --- ÉCRITURE DE L'ACTION DANS L'HISTORIQUE ---
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
+            
+            # Lien internet public et permanent de votre photo hébergée sur GitHub
+            lien_public_github = f"https://githubusercontent.com{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"
             
             ligne_photo_h = pd.DataFrame([{
                 'horodatage': horodatage_actuel,
@@ -748,27 +782,25 @@ if cup_actif and cup_actif != "nan":
                 'distribution': 'N/A',
                 'prix': '',
                 'source': 'modification_photo_cell',
-                'photo': nom_fichier_image
+                'photo': lien_public_github
             }])
             
             sauvegarder_historique(ligne_photo_h)
             
-            # --- CORRECTION DE LA BOUCLE INFINIE ---
-            # On force le vidage de la mémoire pour éviter que la photo ne se ré-enregistre au rechargement
+            # --- NETTOYAGE ET REMISE À ZÉRO DE LA CAMÉRA ---
             for key in list(st.session_state.keys()):
                 if "cam" in key or "photo" in key:
-                    try:
-                        del st.session_state[key]
-                    except KeyError:
-                        pass
+                    try: del st.session_state[key]
+                    except KeyError: pass
             
             # --- STABILISATION ET RECHARGEMENT ---
-            st.success("📸 Photo enregistrée avec succès ! Elle apparaîtra dans l'aperçu au prochain rechargement.")
+            st.success("🎉 Succès ! La photo a été stockée de manière permanente sur votre GitHub et enregistrée dans l'historique Sheets.")
             time.sleep(1.5)
             st.rerun()
             
         except Exception as e:
-            st.error(f"Erreur lors de la sauvegarde de l'image : {e}")
+            st.error(f"Erreur lors de la sauvegarde sur GitHub : {e}")
+
 
 
 

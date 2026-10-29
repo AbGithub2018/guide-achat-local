@@ -738,11 +738,29 @@ if cup_actif and cup_actif != "nan":
                 chemin_sauvegarde = os.path.join("images", nom_fichier_image)
                 with open(chemin_sauvegarde, "wb") as f:
                     f.write(image_cam.getbuffer())
-                st.success("🎉 Photo enregistrée avec succès ! Elle apparaîtra dans l'aperçu au prochain rechargement.")
-                time.sleep(1)
-                st.rerun()
+                    
+            # --- ÉCRITURE DE L'ACTION DANS L'HISTORIQUE ---
+            horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
+            
+            ligne_photo_h = pd.DataFrame([{
+                'horodatage': horodatage_actuel,
+                'code_upc': str(cup_actif).strip(),
+                'distribution': 'N/A',
+                'prix': '',
+                'source': 'modification_photo_cell',
+                'photo': nom_fichier_image
+            }])
+            
+            sauvegarder_historique(ligne_photo_h)
+            
+            # --- STABILISATION ET RECHARGEMENT ---
+            st.success("📸 Photo enregistrée avec succès ! Elle apparaîtra dans l'aperçu au prochain rechargement.")
+            time.sleep(1.5)
+            st.rerun()
+            
         except Exception as e:
             st.error(f"Erreur lors de la sauvegarde de l'image : {e}")
+
 
 st.markdown("---")
 # =====================================================================

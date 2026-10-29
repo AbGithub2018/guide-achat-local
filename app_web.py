@@ -757,6 +757,12 @@ if cup_actif and cup_actif != "nan":
                 # Encoder la photo en texte Base64 (exigé par l'API GitHub)
                 image_base64 = base64.b64encode(contenu_image).decode("utf-8")
                 
+# Vérification si l'image existe déjà pour récupérer son SHA (évite l'erreur 409)
+reponse_get = requests.get(url_api_github, headers=headers_gh)
+sha_fichier = None
+if reponse_get.status_code == 200:
+    sha_fichier = reponse_get.json().get("sha")
+                
                 donnees_envoi = {
                     "message": f"📷 Ajout de la photo pour le produit {cup_actif} via mobile",
                     "content": image_base64

@@ -145,20 +145,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- NOUVEAU MESSAGE DE GUIDAGE POUR LE MODE CÔTE À CÔTE ---
-st.markdown(
-    f"""
-    <div style="background-color: #E0F2FE; border-left: 5px solid #0284C7; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
-        <p style="margin: 0; color: #0369A1; font-size: 14px; font-weight: bold;">
-            💡 <strong>Astuce multi-fenêtres :</strong> Cliquez sur le bouton rouge dans la colonne de droite pour ouvrir la circulaire. Glissez cet onglet d'application à gauche de votre écran et la circulaire à droite pour travailler côte à côte !
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
 # =========================================================================
-# 📱 RÉORGANISATION EN ONGLETS POUR CELLULAIRE (FUSION DES ANCIENS ONGLETS 1 & 2)
+# 📱 RÉORGANISATION EN ONGLETS POUR CELLULAIRE
 # =========================================================================
 onglet_travail, onglet_facture = st.tabs([
     f"✍️ 1. Préparer mes Rabais ({code_recherche})", 
@@ -217,7 +205,7 @@ with onglet_travail:
                 else:
                     st.warning("Veuillez entrer un nom d'article.")
 
-    # --- COLONNE DE DROITE : L'ACCÈS À LA CIRCULAIRE ---
+    # --- COLONNE DE DROITE : L'ACCÈS À LA CIRCULAIRE + MESSAGE D'ASTUCE ---
     with col_droite_circulaire:
         with st.container(border=True):
             st.markdown(f"<h3 style='font-size: 18px; color: #1E3A8A; font-weight: bold; margin-top: 0px;'>🔗 Lien de consultation</h3>", unsafe_allow_html=True)
@@ -244,6 +232,18 @@ with onglet_travail:
             </div>
             """
             st.markdown(html_bouton_dynamique, unsafe_allow_html=True)
+
+            # Intégration de l'astuce côte à côte juste sous le bouton rouge
+            st.markdown(
+                """
+                <div style="background-color: #F0F9FF; border-left: 4px solid #0284C7; padding: 8px 12px; border-radius: 4px; margin-top: 10px;">
+                    <p style="margin: 0; color: #0369A1; font-size: 12px; line-height: 1.4;">
+                        💡 <strong>Astuce Côte-à-Côte :</strong> Décrochez le nouvel onglet de la circulaire et glissez-le sur la moitié droite de votre écran (ou faites <code>Windows</code> + <code>➡️</code>) pour voir les aubaines et écrire vos rabais en même temps !
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         # Affichage des coupures locales si elles existent
         st.write("")
@@ -273,7 +273,7 @@ with onglet_travail:
                                 try:
                                     prix_automatique = float(premier_morceau)
                                     nom_automatique = reste_du_texte.replace("_", " ").capitalize()
-                                except ValueError:
+                                  except ValueError:
                                     prix_automatique = 0.00
                                     nom_automatique = nom_complet_sans_ext.replace("_", " ").capitalize()
                             else:
@@ -296,7 +296,7 @@ with onglet_travail:
             with st.container(border=True):
                 st.warning(f"Répertoire d'images introuvable : {DOSSIER_BANNIERES}/{nom_sous_dossier}")
 # -------------------------------------------------------------------------
-# ONGLET 2 : FACTURE SIMULÉE ET COMPARATEUR DE BANNIÈRES (ANCIEN ONGLET 3)
+# ONGLET 2 : FACTURE SIMULÉE ET COMPARATEUR DE BANNIÈRES
 # -------------------------------------------------------------------------
 with onglet_facture:
     with st.container(border=True):

@@ -63,8 +63,7 @@ st.html("""
         color: white !important;
     }
 
-    
-    div[data-testid="stColumns"] {
+        div[data-testid="stColumns"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
@@ -101,8 +100,6 @@ def sauvegarder_historique(df_histoire):
         
     except Exception as e:
         st.error(f"⚠️ Impossible de mettre à jour l'historique cloud : {e}")
-
-
 
 def charger_donnees():
     """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et pré-calcule les catégories."""
@@ -350,7 +347,6 @@ def deviner_categorie(nom_produit):
         return ("Fruits et Légumes", "Légumes frais (légumes-feuilles, racines, fines herbes)")
 
     return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
-
 
     upc_propre = str(nom_produit).strip().split('.').lstrip('0')
     upc_boissons = ["701648010221", "623682117653"]
@@ -729,8 +725,7 @@ elif saisie_net and saisie_net.strip() not in ["", "****"]:
 if cup_actif and cup_actif != "nan":
     st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
     image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
-    
-   
+ 
 if image_cam:
     try:
         with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
@@ -751,7 +746,6 @@ if image_cam:
             img.save(tampon_memoire, format="JPEG", quality=70, optimize=True)
             contenu_image = tampon_memoire.getvalue()
             # ------------------------------------------
-
             
             # Configuration de vos accès GitHub réels
             UTILISATEUR_GH = "abgithub2018"
@@ -817,10 +811,6 @@ if image_cam:
             
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde sur GitHub : {e}")
-
-
-
-
 
 st.markdown("---")
 # =====================================================================
@@ -918,8 +908,6 @@ if resultats is not None and not resultats.empty:
     else:
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
-
-
 
     bannières_config = {
         'prix_iga': ('🔴 IGA', '#d32f2f'), 

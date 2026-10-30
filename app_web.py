@@ -63,8 +63,7 @@ st.html("""
         color: white !important;
     }
 
-    
-    div[data-testid="stColumns"] {
+        div[data-testid="stColumns"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
@@ -92,13 +91,15 @@ def sauvegarder_historique(df_histoire):
         try:
             df_existant = conn.read(worksheet="Historique_Prix", ttl=0)
         except Exception:
-            df_existant = pd.DataFrame(columns=['horodatage', 'code_upc', 'distribution', 'prix', 'source'])
+            # CORRECTION DE LA LIGNE 95 ICI :
+            df_existant = pd.DataFrame(columns=['horodatage', 'code_upc', 'distribution', 'prix', 'source', 'photo'])
         
+        # ALIGNEMENT DES LIGNES COMPORTANT L'ENVOI :
         df_total = pd.concat([df_existant, df_histoire], ignore_index=True)
         conn.update(worksheet="Historique_Prix", data=df_total)
+        
     except Exception as e:
         st.error(f"⚠️ Impossible de mettre à jour l'historique cloud : {e}")
-
 
 def charger_donnees():
     """Se connecte automatiquement au Google Sheet, harmonise le pays Québec et pré-calcule les catégories."""
@@ -346,7 +347,6 @@ def deviner_categorie(nom_produit):
         return ("Fruits et Légumes", "Légumes frais (légumes-feuilles, racines, fines herbes)")
 
     return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
-
 
     upc_propre = str(nom_produit).strip().split('.').lstrip('0')
     upc_boissons = ["701648010221", "623682117653"]
@@ -710,7 +710,112 @@ if not df_affichage.empty:
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
-else:
+
+# =====================================================================
+# 📸 AJOUT : ZONE PHOTO DISPONIBLE EN TOUT TEMPS (PRODUIT EXISTANT OU NOUVEAU)
+# =====================================================================
+# On détermine quel est le code UPC actif (soit celui tapé/scanné, soit celui cliqué dans le tableau)
+cup_actif = ""
+if resultats is not None and not resultats.empty:
+    cup_actif = str(resultats.iloc[0].get('code_upc', '')).strip()
+elif saisie_net and saisie_net.strip() not in ["", "****"]:
+    cup_actif = saisie_net.strip()
+
+# Si on a un code UPC sous la main, on affiche l'appareil photo en tout temps !
+if cup_actif and cup_actif != "nan":
+    st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
+    image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
+ 
+if image_cam:
+    try:
+        with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
+            nom_fichier_image = f"{cup_actif}.jpg"
+            
+            # --- COMPRESSION DE L'IMAGE AVANT ENVOI ---
+            from PIL import Image
+            import io
+            
+            # 1. Ouvrir l'image de la caméra
+            img = Image.open(image_cam)
+            
+            # 2. Redimensionner à une taille raisonnable (max 800 pixels de large)
+            img.thumbnail((800, 800))
+            
+            # 3. Sauvegarder en mémoire avec une compression JPEG de 70%
+            tampon_memoire = io.BytesIO()
+            img.save(tampon_memoire, format="JPEG", quality=70, optimize=True)
+            contenu_image = tampon_memoire.getvalue()
+            # ------------------------------------------
+            
+            # Configuration de vos accès GitHub réels
+            UTILISATEUR_GH = "abgithub2018"
+            DEPOT_GH = "guide-achat-local"
+            TOKEN_GH = st.secrets["GITHUB_TOKEN"]
+            
+            url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
+            headers_gh = {
+                "Authorization": f"token {TOKEN_GH}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            # Vérifier si l'image existe déjà sur GitHub pour récupérer son SHA (évite l'erreur 409)
+            import base64
+            reponse_get = requests.get(url_api_github, headers=headers_gh)
+            sha_fichier = None
+            if reponse_get.status_code == 200:
+                sha_fichier = reponse_get.json().get("sha")
+            
+            # Encoder la photo en texte Base64 (exigé par l'API GitHub)
+            image_base64 = base64.b64encode(contenu_image).decode("utf-8")
+            
+            donnees_envoi = {
+                "message": f"📷 Ajout de la photo pour le produit {cup_actif} via mobile",
+                "content": image_base64
+            }
+            if sha_fichier:
+                donnees_envoi["sha"] = sha_fichier
+            
+            # Téléversement en direct vers GitHub
+            envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
+            
+            if envoi_gh.status_code not in [200, 201]:
+                raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
+
+            # --- ÉCRITURE DE L'ACTION DANS L'HISTORIQUE ---
+            horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
+            
+            # Lien internet public et permanent de votre photo hébergée sur GitHub
+            lien_public_github = f"https://raw.githubusercontent.com/{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"
+            
+            ligne_photo_h = pd.DataFrame([{
+                'horodatage': horodatage_actuel,
+                'code_upc': str(cup_actif).strip(),
+                'distribution': 'N/A',
+                'prix': '',
+                'source': 'modification_photo_cell',
+                'photo': lien_public_github
+            }])
+            
+            sauvegarder_historique(ligne_photo_h)
+            
+            # --- NETTOYAGE ET REMISE À ZÉRO DE LA CAMÉRA ---
+            for key in list(st.session_state.keys()):
+                if "cam" in key or "photo" in key:
+                    try: del st.session_state[key]
+                    except KeyError: pass
+            
+            # --- STABILISATION ET RECHARGEMENT ---
+            st.success("🎉 Succès ! La photo a été stockée de manière permanente sur votre GitHub et enregistrée dans l'historique Sheets.")
+            time.sleep(1.5)
+            st.rerun()
+            
+    except Exception as e:
+        st.error(f"Erreur lors de la sauvegarde sur GitHub : {e}")
+
+st.markdown("---")
+# =====================================================================
+
+if resultats is None or resultats.empty:
     if message_erreur_recherche:
         st.warning(message_erreur_recherche)
 
@@ -900,12 +1005,11 @@ if resultats is not None and not resultats.empty:
 
             st.session_state['dernier_horodatage'] = horodatage_actuel
             st.success("Mise à jour réussie dans vos 2 onglets cloud !")
-            time.sleep(0.5)
+            time.sleep(1.5)
             st.rerun()
 
         except Exception as e:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-# --- SYNCHRONISATION AUTOMATIQUE GOOGLE SHEETS VERS SUPABASE (CORRIGÉ JSON) ---
-import numpy as np
+

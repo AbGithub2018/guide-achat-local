@@ -717,18 +717,19 @@ if not df_affichage.empty:
 # On détermine quel est le code UPC actif (soit celui tapé/scanné, soit celui cliqué dans le tableau)
 cup_actif = ""
 if resultats is not None and not resultats.empty:
-    # CORRECTION ICI : Utilisation de la syntaxe correcte de Pandas .iloc
+    # CORRECTION CRITIQUE : Utilisation de .iloc[0] pour viser la première ligne du tableau
     cup_actif = str(resultats.iloc[0]['code_upc']).strip()
 elif saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_actif = saisie_net.strip()
 
-# Initialisation pour corriger le NameError
+# Initialisation pour corriger définitivement le NameError original
 image_cam = None
 
 # Si on a un code UPC sous la main, on affiche l'appareil photo en tout temps !
 if cup_actif and cup_actif != "nan":
     st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
     image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
+
 
 
     st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")

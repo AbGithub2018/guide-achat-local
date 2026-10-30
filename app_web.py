@@ -1024,5 +1024,4 @@ if resultats is not None and not resultats.empty:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
 st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
-# --- SYNCHRONISATION AUTOMATIQUE GOOGLE SHEETS VERS SUPABASE (CORRIGÉ JSON) ---
-import numpy as np
+

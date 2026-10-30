@@ -714,6 +714,9 @@ if not df_affichage.empty:
 # =====================================================================
 # 📸 AJOUT : ZONE PHOTO DISPONIBLE EN TOUT TEMPS (PRODUIT EXISTANT OU NOUVEAU)
 # =====================================================================
+# INITIALISATION DE SÉCURITÉ POUR ÉVITER LE NAMEERROR
+image_cam = None
+
 # On détermine quel est le code UPC actif (soit celui tapé/scanné, soit celui cliqué dans le tableau)
 cup_actif = ""
 if resultats is not None and not resultats.empty:
@@ -778,7 +781,7 @@ if image_cam:
             # Téléversement en direct vers GitHub
             envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
             
-            if envoi_gh.status_code not in [200, 201]:
+            if envoi_gh.status_code not in:
                 raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
 
             # --- ÉCRITURE DE L'ACTION DANS L'HISTORIQUE ---
@@ -803,6 +806,7 @@ if image_cam:
                 if "cam" in key or "photo" in key:
                     try: del st.session_state[key]
                     except KeyError: pass
+
             
             # --- STABILISATION ET RECHARGEMENT ---
             st.success("🎉 Succès ! La photo a été stockée de manière permanente sur votre GitHub et enregistrée dans l'historique Sheets.")

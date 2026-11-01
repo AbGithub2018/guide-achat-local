@@ -407,33 +407,36 @@ sous_categorie_choisie = st.sidebar.selectbox("Filtrer par Sous-catégorie :", o
 banniere = st.session_state['banniere_active']
 if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
-# ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# 1. On encode l'image locale en format texte de manière sécurisée
-import base64
-try:
-    with open("logo_quebec.png", "rb") as image_file:
-        encoded_image = base64.b64encode(image_file.read()).decode()
-    logo_html = f'<img src="data:image/png;base64,{encoded_image}" style="width: 46px; height: 46px; object-fit: contain; border-radius: 8px;" alt="Logo Québec">'
-except FileNotFoundError:
-    # Au cas où le fichier n'est pas trouvé lors du premier test
-    logo_html = '<span style="font-size: 35px;">⚜️</span>'
+    # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
+    # 1. On encode l'image locale en format texte de manière sécurisée
+    import base64
+    try:
+        with open("logo_quebec.png", "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode()
+        # Modification des styles CSS ci-dessous pour forcer la haute définition nette :
+        logo_html = f'''<img src="data:image/png;base64,{encoded_image}" 
+                          style="height: 46px; width: auto; max-width: 60px; object-fit: contain; border-radius: 8px; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;" 
+                          alt="Logo Québec">'''
+    except FileNotFoundError:
+        # Au cas où le fichier n'est pas trouvé lors du premier test
+        logo_html = '<span style="font-size: 35px;">⚜️</span>'
 
-# 2. On affiche le titre et l'encadré collaboratif
-st.html(f"""
-<h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px;'>
-    {logo_html}
-    <span>MON GUIDE D'ACHAT LOCAL 🍁</span>
-</h1>
+    # 2. On affiche le titre et l'encadré collaboratif
+    st.html(f"""
+    <h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px;'>
+        {logo_html}
+        <span>MON GUIDE D'ACHAT LOCAL 🍁</span>
+    </h1>
 
-<div style="background-color: #e3f2fd; border-left: 6px solid #0d47a1; padding: 20px; border-radius: 8px; margin-top: 15px; margin-bottom: 15px; font-family: sans-serif;">
-    <h3 style="color: #0d47a1; margin: 0 0 10px 0; font-size: 24px; font-weight: bold;">Version d'essai et Collaboratrice</h3>
-    <p style="color: #0d47a1; margin: 0; font-size: 18px; line-height: 1.5; font-weight: 500;">
-        Cette application est actuellement en <strong>phase de test</strong> pour optimiser ses performances. 
-        Pour faire évoluer cet outil conçu pour vous, <strong>votre collaboration est essentielle !</strong> 
-        N'hésitez pas à ajouter de nouveaux produits, à corriger les prix ou à prendre des photos pour enrichir notre base de données locale.
-    </p>
-</div>
-""")
+    <div style="background-color: #e3f2fd; border-left: 6px solid #0d47a1; padding: 20px; border-radius: 8px; margin-top: 15px; margin-bottom: 15px; font-family: sans-serif;">
+        <h3 style="color: #0d47a1; margin: 0 0 10px 0; font-size: 24px; font-weight: bold;">Version d'essai et Collaboratrice</h3>
+        <p style="color: #0d47a1; margin: 0; font-size: 18px; line-height: 1.5; font-weight: 500;">
+            Cette application est actuellement en <strong>phase de test</strong> pour optimiser ses performances. 
+            Pour faire évoluer cet outil conçu pour vous, <strong>votre collaboration est essentielle !</strong> 
+            N'hésitez pas à ajouter de nouveaux produits, à corriger les prix ou à prendre des photos pour enrichir notre base de données locale.
+        </p>
+    </div>
+    """)
 
 st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
 st.link_button("🛒 Cliquer pour Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://achatquebec-circulaires.streamlit.app", use_container_width=True)

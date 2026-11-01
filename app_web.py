@@ -409,11 +409,15 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
 st.html("""
-<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>
-    <span style="font-size: 45px; margin-right: 15px; vertical-align: middle;">🪯</span>MON GUIDE D'ACHAT LOCAL 🍁
+<h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px;'>
+    <svg xmlns="http://w3.org" viewBox="0 0 100 100" style="width: 45px; height: 45px;">
+        <rect width="100" height="100" rx="22" fill="#0056b3"/>
+        <path d="M50,20 C47,32 42,38 35,46 C45,46 48,42 50,36 C52,42 55,46 65,46 C58,38 53,32 50,20 Z M30,55 C35,55 39,52 44,46 C38,46 37,41 33,41 C34,47 43,55 50,55 C57,55 66,47 67,41 C63,41 62,46 56,46 C61,52 65,55 70,55 C64,65 59,73 50,73 C41,73 36,65 30,55 Z M50,55 C48,58 46,65 46,73 C46,78 48,81 50,83 C52,81 54,78 54,73 C54,65 52,58 50,55 Z" fill="#ffffff"/>
+    </svg>
+    <span>MON GUIDE D'ACHAT LOCAL 🍁</span>
 </h1>
 """)
-st.html("""
+
 <div style="background-color: #e3f2fd; border-left: 6px solid #0d47a1; padding: 20px; border-radius: 8px; margin-top: 15px; margin-bottom: 15px; font-family: sans-serif;">
     <h3 style="color: #0d47a1; margin: 0 0 10px 0; font-size: 24px; font-weight: bold;">🚀 Version d'essai & Collaboratrice</h3>
     <p style="color: #0d47a1; margin: 0; font-size: 18px; line-height: 1.5; font-weight: 500;">

@@ -883,7 +883,7 @@ if resultats is None or resultats.empty:
                         df_total = pd.concat([st.session_state['df_produits'], pd.DataFrame([nouvelle_ligne])], ignore_index=True)
                         conn.update(worksheet="Sheet1", data=df_total)
                         st.session_state['df_produits'] = df_total
-                        
+                        st.cache_data.clear()
                         st.success(f"🎉 Un grand merci ! Le produit '{nom_nouveau}' a été ajouté avec succès.")
                         st.balloons()
                         time.sleep(1)

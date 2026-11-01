@@ -409,12 +409,12 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# Dessin vectoriel pur (SVG) de la fleur de lys officielle du Québec
-logo_html = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 40px; width: auto; vertical-align: middle; background-color: #0033a0; padding: 6px; border-radius: 8px;">
-  <path fill="#0033a0" d="M50 15c1.5 8 5 16 9.5 22.5 3.5 5 7.5 9 12 11.5-6.5.5-13.5-2.5-19.5-7.5-1-1-1.5-1-2 0-6 5-13 8-19.5 7.5 4.5-2.5 8.5-6.5 12-11.5 4.5-6.5 8-14.5 9.5-22.5zm0 32.5c1.5 1 2.5 1 4 0 6.5-4 15-4.5 22-2.5-1 .5-2 1.5-3 2.5-4.5 4.5-7 11.5-7.5 19 0 .5-.5 1-1 1h-5.5c-2.5-4-6.5-6.5-9-10.5-1-1.5-1.5-1.5-2.5 0-2.5 4-6.5 6.5-9 10.5h-5.5c-.5 0-1-.5-1-1-.5-7.5-3-14.5-7.5-19-1-1-2-2-3-2.5 7-2 15.5-1.5 22 2.5zm-8 21.5h16v4H42zM50 5c3 13.5 9 25.5 17.5 35 4.5 5 9.5 9 15 11.5.5 0 .5.5.5.5 0 .5-.5.5-.5.5-9.5.5-18.5-4-25.5-11-1-1-1.5-1-2.5 0-7 7-16 11.5-25.5 11-.5 0-.5 0-.5-.5s0-.5.5-.5c5.5-2.5 10.5-6.5 15-11.5C41 30.5 47 18.5 50 5z"/>
+# UTILISATION DE TRIPLES GUILLEMETS DOUBLES COCHÉS POUR ÉVITER LE BUG PYTHON
+logo_html = """
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 40px; width: auto; vertical-align: middle; background-color: #0033a0; padding: 6px; border-radius: 8px; display: inline-block;">
+  <path fill="#ffffff" d="M50 15c1.5 8 5 16 9.5 22.5 3.5 5 7.5 9 12 11.5-6.5.5-13.5-2.5-19.5-7.5-1-1-1.5-1-2 0-6 5-13 8-19.5 7.5 4.5-2.5 8.5-6.5 12-11.5 4.5-6.5 8-14.5 9.5-22.5zm0 32.5c1.5 1 2.5 1 4 0 6.5-4 15-4.5 22-2.5-1 .5-2 1.5-3 2.5-4.5 4.5-7 11.5-7.5 19 0 .5-.5 1-1 1h-5.5c-2.5-4-6.5-6.5-9-10.5-1-1.5-1.5-1.5-2.5 0-2.5 4-6.5 6.5-9 10.5h-5.5c-.5 0-1-.5-1-1-.5-7.5-3-14.5-7.5-19-1-1-2-2-3-2.5 7-2 15.5-1.5 22 2.5zm-8 21.5h16v4H42zM50 5c3 13.5 9 25.5 17.5 35 4.5 5 9.5 9 15 11.5.5 0 .5.5.5.5 0 .5-.5.5-.5.5-9.5.5-18.5-4-25.5-11-1-1-1.5-1-2.5 0-7 7-16 11.5-25.5 11-.5 0-.5 0-.5-.5s0-.5.5-.5c5.5-2.5 10.5-6.5 15-11.5C41 30.5 47 18.5 50 5z"/>
 </svg>
-'''
+"""
 
 # Rendu de l'entête
 st.html(f"""

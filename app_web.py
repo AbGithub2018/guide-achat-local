@@ -596,6 +596,7 @@ with st.sidebar.expander("🔑 Administration"):
             df_nettoye = df_actuel[df_actuel[code_upc].astype(str) != str(cup_a_supprimer)]
             conn.update(data=df_nettoye)
             if 'df_produits' in st.session_state: del st.session_state['df_produits']
+            st.cache_data.clear()
             st.success("Produit supprimé !"), time.sleep(1), st.rerun()
             # =====================================================================
 # 🗺️ ZONE CARTOGRAPHIQUE : LOCALISATEUR D'ÉPICERIES DU QUÉBEC

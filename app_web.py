@@ -409,6 +409,17 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
 st.html("<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>⚜️ MON GUIDE D'ACHAT LOCAL 🍁</h1>")
+st.html("""
+<div style="background-color: #e3f2fd; border-left: 6px solid #0d47a1; padding: 20px; border-radius: 8px; margin-top: 15px; margin-bottom: 15px; font-family: sans-serif;">
+    <h3 style="color: #0d47a1; margin: 0 0 10px 0; font-size: 24px; font-weight: bold;">🚀 Version d'essai & Collaboratrice</h3>
+    <p style="color: #0d47a1; margin: 0; font-size: 18px; line-height: 1.5; font-weight: 500;">
+        Cette application est actuellement en <strong>phase de test</strong> pour optimiser ses performances. 
+        Pour faire évoluer cet outil conçu pour vous, <strong>votre collaboration est essentielle !</strong> 
+        N'hésitez pas à ajouter de nouveaux produits, à corriger les prix ou à prendre des photos pour enrichir notre base de données locale. 🤝⚜️
+    </p>
+</div>
+""")
+
 st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
 st.link_button("🛒 Cliquer pour Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://achatquebec-circulaires.streamlit.app", use_container_width=True)
 st.html("<div style='text-align: center; margin-top: 15px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>👇 Poursuivez plus bas pour chercher l'origine d'un produit ou collaborer à notre liste de +10,500 articles !</p></div>")

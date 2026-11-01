@@ -457,22 +457,23 @@ st.html(f"""
 """)
 
 st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
-# Remplacement du bouton par un bouton HTML personnalisé avec mots-clés mis en valeur
+# Remplacement du bouton par la version HTML ajustée (textes agrandis et marges de sécurité)
 st.html(
     """
-    <a href="https://achatquebec-circulaires.streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
+    <a href="https://streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
         <div style="
             background-color: #FF3B30; 
             color: white; 
             text-align: center; 
-            padding: 12px 10px; 
+            padding: 12px 16px; /* Augmenté à 16px pour laisser une marge de sécurité propre sur les côtés */
             border-radius: 8px; 
             font-family: sans-serif;
-            line-height: 1.4;
+            line-height: 1.5;
             box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
         ">
-            🛒 Accéder au <span style="font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">Planificateur de budget</span> 
-            <span style="font-size: 14px; opacity: 0.9; display: inline-block; margin-left: 5px;">(circulaires & calcul du panier)</span>
+            <span style="font-size: 16px; opacity: 0.95;">🛒 Accéder au</span> 
+            <span style="font-size: 19px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">Planificateur de budget</span> 
+            <span style="font-size: 15px; opacity: 0.95; display: inline-block; margin-left: 5px;">(circulaires & calcul du panier)</span>
         </div>
     </a>
     """

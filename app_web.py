@@ -460,7 +460,7 @@ st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bo
 # Remplacement du bouton par un bouton HTML personnalisé avec mots-clés mis en valeur
 st.html(
     """
-    <a href="https://streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
+    <a href="https://achatquebec-circulaires.streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
         <div style="
             background-color: #FF3B30; 
             color: white; 
@@ -471,7 +471,7 @@ st.html(
             line-height: 1.4;
             box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
         ">
-            🛒 Accéder au <span style="font-size: 19px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">Planificateur de budget</span> 
+            🛒 Accéder au <span style="font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">Planificateur de budget</span> 
             <span style="font-size: 14px; opacity: 0.9; display: inline-block; margin-left: 5px;">(circulaires & calcul du panier)</span>
         </div>
     </a>

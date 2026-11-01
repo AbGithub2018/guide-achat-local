@@ -400,9 +400,9 @@ if 'entreprise_province_etat' in df_filtre.columns:
 
 st.sidebar.markdown("---")
 
-categorie_choisie = st.sidebar.selectbox("Filtrer par Catégorie d'aliments :", options=list(CATEGORIES_PROJET.keys()), index=0)
+categorie_choisie = st.sidebar.selectbox("Filtrer par catégorie d'aliments :", options=list(CATEGORIES_PROJET.keys()), index=0)
 sous_cat_disponibles = CATEGORIES_PROJET[categorie_choisie]
-sous_categorie_choisie = st.sidebar.selectbox("Filtrer par Sous-catégorie :", options=sous_cat_disponibles, index=0)
+sous_categorie_choisie = st.sidebar.selectbox("Filtrer par sous-catégorie :", options=sous_cat_disponibles, index=0)
 
 import base64
 import streamlit as st

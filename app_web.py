@@ -409,13 +409,14 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# Utilisation d'un lien hautement disponible pour le logo de la fleur de lys du Québec
-logo_url = "https://icons8.com"
-logo_html = f'''<img src="{logo_url}" 
-                  style="height: 46px; width: auto; max-width: 60px; object-fit: contain; vertical-align: middle;" 
-                  alt="Logo Québec">'''
+# Dessin vectoriel pur (SVG) de la fleur de lys officielle du Québec
+logo_html = '''
+<svg xmlns="http://w3.org" viewBox="0 0 100 100" style="height: 46px; width: auto; vertical-align: middle;">
+  <path fill="#0033a0" d="M50 15c1.5 8 5 16 9.5 22.5 3.5 5 7.5 9 12 11.5-6.5.5-13.5-2.5-19.5-7.5-1-1-1.5-1-2 0-6 5-13 8-19.5 7.5 4.5-2.5 8.5-6.5 12-11.5 4.5-6.5 8-14.5 9.5-22.5zm0 32.5c1.5 1 2.5 1 4 0 6.5-4 15-4.5 22-2.5-1 .5-2 1.5-3 2.5-4.5 4.5-7 11.5-7.5 19 0 .5-.5 1-1 1h-5.5c-2.5-4-6.5-6.5-9-10.5-1-1.5-1.5-1.5-2.5 0-2.5 4-6.5 6.5-9 10.5h-5.5c-.5 0-1-.5-1-1-.5-7.5-3-14.5-7.5-19-1-1-2-2-3-2.5 7-2 15.5-1.5 22 2.5zm-8 21.5h16v4H42zM50 5c3 13.5 9 25.5 17.5 35 4.5 5 9.5 9 15 11.5.5 0 .5.5.5.5 0 .5-.5.5-.5.5-9.5.5-18.5-4-25.5-11-1-1-1.5-1-2.5 0-7 7-16 11.5-25.5 11-.5 0-.5 0-.5-.5s0-.5.5-.5c5.5-2.5 10.5-6.5 15-11.5C41 30.5 47 18.5 50 5z"/>
+</svg>
+'''
 
-# Rendu de l'entête avec le logo HD officiel
+# Rendu de l'entête
 st.html(f"""
 <h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;'>
     {logo_html}
@@ -423,7 +424,6 @@ st.html(f"""
 </h1>
 """)
 
-# Vos paragraphes explicatifs, boutons et appels à l'action
 st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
 
 st.link_button("🛒 Cliquer pour Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://streamlit.app", use_container_width=True)

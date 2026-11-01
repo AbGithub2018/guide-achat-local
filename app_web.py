@@ -465,7 +465,7 @@ if c_all.button("🔄 Toutes", use_container_width=True): st.session_state['bann
 # ZONE DE RECHERCHE ET SCANNER
 # =====================================================================
 resultats, message_erreur_recherche = None, None
-choix_mode = st.radio("👉 MODE DE RECHERCHE :", ["⌨️ Recherche manuelle", "📸 Scanner un Code-Barres"], horizontal=True, label_visibility="collapsed")
+choix_mode = st.radio("👉 Mode de recherche :", ["⌨️ Recherche manuelle", "📸 Scanner un code-barres"], horizontal=True, label_visibility="collapsed")
 saisie_net = ""
 
 if "cup" in st.query_params: 

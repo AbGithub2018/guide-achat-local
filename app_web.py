@@ -404,13 +404,9 @@ categorie_choisie = st.sidebar.selectbox("Filtrer par Catégorie d'aliments :", 
 sous_cat_disponibles = CATEGORIES_PROJET[categorie_choisie]
 sous_categorie_choisie = st.sidebar.selectbox("Filtrer par Sous-catégorie :", options=sous_cat_disponibles, index=0)
 
-banniere = st.session_state['banniere_active']
-if banniere != "Tous" and 'distribution' in df_filtre.columns:
-    df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
-
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# Version encodée pour contourner les restrictions d'affichage de Streamlit
-logo_html = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjogIzAwMzNhMDsgYm9yZGVyLXJhZGl1czogOHB4OyI+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTUwIDE1YzEuNSA4IDUgMTYgOS41IDIyLjUgMy41IDUgNy41IDkgMTIgMTEuNS02LjUuNS0xMy41LTIuNS0xOS41LTcuNS0xLTEtMS41LTEtMiAwLTYgNS0xMyA4LTE5LjUgNy41IDQuNS0yLjUgOC41LTYuNSAxMi0xMS41IDQuNS02LjUgOC0xNC41IDkuNS0yMi41em0wIDMyLjVjMS41IDEgMi41IDEgNCAwIDYuNS00IDE1LTQuNSAyMi0yLjUtMSAuNS0yIDEuNS0zIDIuNS00LjUgNC41LTcgMTEuNS03LjUgMTkgMCAuNS0uNSAxLTEgMWgtNS41Yy0yLjUtNC02LjUtNi41LTktMTAuNS0xLTEuNS0xLjUtMS41LTIuNSAwLTIuNSA0LTYuNSA2LjUtOSAxMC41aC01LjVjLS41IDAtMS0uNS0xLTEtLjUtNy41LTMtMTQuNS03LjUtMTktMS0xLTItMi0zLTIuNSA3LTIgMTUuNS0xLjUgMjIgMi41em0tOCAyMS41aDE2djRINDJ6TTUwIDVjMyAxMy41IDkgMjUuNSAxNy41IDM1IDQuNSA1IDkuNSA5IDE1IDExLjUuNSAwIC41LjUuNS41IDAgLjUtLjUuNS0uNS41LTkuNS41LTE4LjUtNC0yNS41LTExLTEtMS0xLjUtMS0yLjUgMC03IDctMTYgMTEuNS0yNS41IDExLS41IDAtLjUgMC0uNS0uNXMwLS41LjUtLjVjNS41LTIuNSAxMC41LTYuNSAxNS0xMS41QzQxIDMwLjUgNDcgMTguNSA1MCA1eiIvPjwvc3ZnPg==" style="height: 40px; width: auto; vertical-align: middle; padding: 6px; border-radius: 8px;" />'
+# Version corrigée avec le tracé officiel de la fleur de lys du Québec
+logo_html = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjogIzAwMzNhMDsgYm9yZGVyLXJhZGl1czogOHB4OyI+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTUwIDIzYy0yLjUgOC03LjUgMTUtMTMgMjBsLTIgMmM4IDIgMTYtMSAydi01YzAtNy00LTEyLTEwLTE0IDYgMiA5IDcgOSAxNHY1YzYtMSA5LTUgMTAtMTN6bTAgNDdjLTIuNS04LTcuNS0xNS0xMy0yMGwtMi0yYzggLTIgMTYgMSAydiA1YzAgNy00IDEyLTEwIDE0IDYtMiA5LTcgOS0xNHYtNWM2IDEgOSA1IDEwIDEzem0wIDBjMi41LTggNy41LTE1IDEzLTIwbDItMmMtOCAtMi0xNiAxLTJ2IDVjMCA3IDQgMTIgMTAgMTQtNi0yLTktNy05LTE0di01Yy02IDEtOSA1LTEwIDEzem0wLTIzYzIuNS04IDcuNS0xNSAxMy0yMGwyLTJjLTggMi0xNi0xLTJ2NWMwIDctNCAxMi0xMCAxNCA2LTIgOS03IDktMTR2LTVjLTYgMS05IDUtMTAgMTN6bS0yNSAzaDUwdjRINjV6Ii8+PC9zdmc+" style="height: 40px; width: auto; vertical-align: middle; padding: 6px; border-radius: 8px;" />'
 
 # Rendu de l'entête
 st.html(f"""

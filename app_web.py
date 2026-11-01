@@ -447,7 +447,7 @@ st.link_button("🛒 Accéder au planificateur de budget (circulaires & calcul d
 
 st.html("<div style='text-align: center; margin-top: 25px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>🔍 Recherchez l'origine d'un produit parmi plus de 10 500 articles !</p></div>")
 
-st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
+st.markdown("### 🛒 Sélectionnez votre supermarché habituel :")
 c_iga, c_maxi = st.columns(2)
 if c_iga.button("🔴 IGA", use_container_width=True): st.session_state['banniere_active'] = "IGA"; st.rerun()
 if c_maxi.button("🟡 Maxi", use_container_width=True): st.session_state['banniere_active'] = "Maxi"; st.rerun()

@@ -409,9 +409,8 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
 st.html("""
-<h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px;'>
-    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSIyMCIgZmlsbD0iIzAwMzM2NiIvPjxwYXRoIGQ9Ik01MCAxNUM0NSAyNSA0MCAzMCAzNSA0NUM0NSA0NSA0OCA0MCA1MCAzNUM1MiA0MCA1NSA0NSA2NSA0NUM2MCAzMCA1NSAyNSA1MCAxNU0zMCA1NUMzNSA1NSA0MCA1MiA0NSA0NUM0MCA0NSA0MCA0MCAzNSA0MEMzNSA0NSA0NSA1NSA1MCA1NUM1NSA1NSA2NSA0NSA2NSA0MEM2MCA0MCA2MCA0NSA1NSA0NUM2MCA1MiA2NSA1NSA3MCA1NUM2NSA2NSA2MCA3NSA1MCA3NUM0MCA3NSAzNSA2NSAzMCA1NU01MCA1NUM0OCA1OCA0NSA2NSA0NSA3NUM0NSA4MCA0OCA4MyA1MCA4NUM1MiA4MyA1NSA4MCA1NSA3NUM1NSA2NSA1MiA1OCA1MCA1NU00NSA3NUg1NVY3N0g0NVY3NVoiIGZpbGw9IiNmZmZmZmYiLz48L3N2Zz4=" style="width: 48px; height: 48px;" alt="Logo Québec">
-    MON GUIDE D'ACHAT LOCAL 🍁
+<h1 style='text-align: center; color: #003366; font-family: sans-serif;'>
+    <span style="font-size: 45px; margin-right: 15px; vertical-align: middle;">🪯</span>MON GUIDE D'ACHAT LOCAL 🍁
 </h1>
 """)
 st.html("""

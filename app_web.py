@@ -410,7 +410,7 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
 st.html("""
 <h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px;'>
-    <img src="https://wikimedia.org" style="width: 45px; height: 45px;" alt="Québec Blue Lys">
+    <img src="https://wikimedia.org" style="width: 45px; height: 45px; border-radius: 8px;" alt="Logo Québec">
     MON GUIDE D'ACHAT LOCAL 🍁
 </h1>
 """)

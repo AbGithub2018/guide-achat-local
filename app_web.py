@@ -1006,7 +1006,7 @@ if resultats is not None and not resultats.empty:
             if nouvelles_lignes:
                 df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
                 sauvegarder_historique(df_nouvel_historique) # 🚀 Écrit physiquement dans 'Historique_Prix'
-
+            st.cache_data.clear()
             st.session_state['dernier_horodatage'] = horodatage_actuel
             st.success("Mise à jour réussie dans vos 2 onglets cloud !")
             time.sleep(1.5)

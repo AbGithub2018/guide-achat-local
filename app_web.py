@@ -405,8 +405,19 @@ sous_cat_disponibles = CATEGORIES_PROJET[categorie_choisie]
 sous_categorie_choisie = st.sidebar.selectbox("Filtrer par Sous-catégorie :", options=sous_cat_disponibles, index=0)
 
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# Version corrigée avec le tracé officiel, certifié et parfait de la fleur de lys du Québec
-logo_html = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICMwMDMzYTA7IGJvcmRlci1yYWRpdXM6IDhweDsiPjxwYXRoIGZpbGw9IiNmZmZmZmYiIGQ9Ik04IDE0YzAgMSAxIDIgMSAycy0xLTItMS0ydjFjMCAxIDEgMSAxIDFzLTEtMi0xLTJ2MWMwIDEgMSAxIDEgMXMtMS0zLTEtM2gtNHYtM2gzdi0yYy0xIDAtMiAxLTIgMXMxIDEtMSAxdi0xaDN2LTRjMCAxLTEgMi0xIDJzLTEtMi0xLTJoMWMwIDEtMSAxLTEgMXMtMS0xLTEtMXYxaDN2NGMwIDEtMSAyLTEgMnMtMS0yLTktMmgxYzAgMS0xIDEtMSAxcy0xLTEtMS0xdjNoM3YzbC00LS4wMDFjMCAxIDEgMSAxIDFzLTEtMi0xLTJ2MWMwIDEgMSAxIDEgMXMtMS0yLTEtMnYxaDQtLjAwMXoiLz48L3N2Zz4=" style="height: 40px; width: auto; vertical-align: middle; padding: 6px; border-radius: 8px;" />'
+# Version finale dessinée manuellement avec une fleur de lys géométrique parfaite
+logo_html = """
+<svg xmlns="http://w3.org" viewBox="0 0 100 100" style="height: 40px; width: auto; vertical-align: middle; background-color: #0033a0; padding: 6px; border-radius: 8px; display: inline-block;">
+  <!-- Pétale central vertical -->
+  <path fill="#ffffff" d="M50 20 C42 40, 45 65, 50 80 C55 65, 58 40, 50 20 Z" />
+  <!-- Pétale gauche -->
+  <path fill="#ffffff" d="M50 55 C30 45, 15 55, 25 70 C38 72, 46 65, 50 55 Z" />
+  <!-- Pétale droit -->
+  <path fill="#ffffff" d="M50 55 C70 45, 85 55, 75 70 C62 72, 54 65, 50 55 Z" />
+  <!-- Barre horizontale du bas -->
+  <rect x="25" y="74" width="50" height="6" rx="3" fill="#ffffff" />
+</svg>
+"""
 
 # Rendu de l'entête
 st.html(f"""

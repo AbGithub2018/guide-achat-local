@@ -404,22 +404,18 @@ categorie_choisie = st.sidebar.selectbox("Filtrer par Catégorie d'aliments :", 
 sous_cat_disponibles = CATEGORIES_PROJET[categorie_choisie]
 sous_categorie_choisie = st.sidebar.selectbox("Filtrer par Sous-catégorie :", options=sous_cat_disponibles, index=0)
 
-# ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# Version finale dessinée manuellement avec une fleur de lys géométrique parfaite
-logo_html = """
-<svg xmlns="http://w3.org" viewBox="0 0 100 100" style="height: 40px; width: auto; vertical-align: middle; background-color: #0033a0; padding: 6px; border-radius: 8px; display: inline-block;">
-  <!-- Pétale central vertical -->
-  <path fill="#ffffff" d="M50 20 C42 40, 45 65, 50 80 C55 65, 58 40, 50 20 Z" />
-  <!-- Pétale gauche -->
-  <path fill="#ffffff" d="M50 55 C30 45, 15 55, 25 70 C38 72, 46 65, 50 55 Z" />
-  <!-- Pétale droit -->
-  <path fill="#ffffff" d="M50 55 C70 45, 85 55, 75 70 C62 72, 54 65, 50 55 Z" />
-  <!-- Barre horizontale du bas -->
-  <rect x="25" y="74" width="50" height="6" rx="3" fill="#ffffff" />
-</svg>
-"""
+import base64
 
-# Rendu de l'entête
+# ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
+
+# 1. Lecture et encodage automatique de votre image locale "logo_quebec.png"
+with open("logo_quebec.png", "rb") as image_file:
+    encoded_string = base64.b64encode(image_file.read()).decode()
+
+# On ajuste la hauteur à 46px pour qu'elle s'aligne proprement avec le texte
+logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: 46px; width: auto; vertical-align: middle;" />'
+
+# 2. Rendu de l'entête
 st.html(f"""
 <h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;'>
     {logo_html}

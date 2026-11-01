@@ -409,8 +409,8 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# Utilisation du logo officiel vectoriel haute définition (transparent et net)
-logo_url = "https://wikimedia.org"
+# Utilisation d'un lien hautement disponible pour le logo de la fleur de lys du Québec
+logo_url = "https://icons8.com"
 logo_html = f'''<img src="{logo_url}" 
                   style="height: 46px; width: auto; max-width: 60px; object-fit: contain; vertical-align: middle;" 
                   alt="Logo Québec">'''

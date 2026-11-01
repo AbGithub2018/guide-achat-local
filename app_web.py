@@ -387,7 +387,6 @@ st.sidebar.html("<h2 style='color: #003366; font-family: sans-serif; font-size: 
 
 if 'entreprise_pays' in df.columns:
     liste_pays = ["Tous"] + sorted([str(p).strip() for p in df['entreprise_pays'].unique() if pd.notna(p) and str(p).strip() != "" and str(p).lower() != "nan"])
-    # Changement ici : le titre passe en taille 16px et en gras
     choix_pays = st.sidebar.selectbox("Filtrer par pays propriétaire :", liste_pays)
     df_filtre = df[df['entreprise_pays'] == choix_pays] if choix_pays != "Tous" else df.copy()
 else:
@@ -395,12 +394,25 @@ else:
 
 if 'entreprise_province_etat' in df_filtre.columns:
     liste_prov = ["Toutes"] + sorted([str(p).strip() for p in df_filtre['entreprise_province_etat'].unique() if pd.notna(p) and str(p).strip() != "" and str(p).lower() != "nan"])
-    # Changement ici : le titre passe en taille 16px et en gras
     choix_prov = st.sidebar.selectbox("Filtrer par province ou état :", liste_prov)
     if choix_prov != "Toutes":
         df_filtre = df_filtre[df_filtre['entreprise_province_etat'] == choix_prov]
 
 st.sidebar.markdown("---")
+
+# CETTE LIGNE VA AGRANDIR TOUS LES ENTÊTES DE LA BARRE LATÉRALE (Y COMPRIS LES CATÉGORIES PLUS BAS)
+st.sidebar.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] label p {
+        font-size: 16px !important;
+        font-weight: bold !important;
+        color: #1E3A8A !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 categorie_choisie = st.sidebar.selectbox("Filtrer par catégorie d'aliments :", options=list(CATEGORIES_PROJET.keys()), index=0)
 sous_cat_disponibles = CATEGORIES_PROJET[categorie_choisie]

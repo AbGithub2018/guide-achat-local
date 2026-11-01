@@ -409,12 +409,8 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# UTILISATION DE TRIPLES GUILLEMETS DOUBLES COCHÉS POUR ÉVITER LE BUG PYTHON
-logo_html = """
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="height: 40px; width: auto; vertical-align: middle; background-color: #0033a0; padding: 6px; border-radius: 8px; display: inline-block;">
-  <path fill="#ffffff" d="M50 15c1.5 8 5 16 9.5 22.5 3.5 5 7.5 9 12 11.5-6.5.5-13.5-2.5-19.5-7.5-1-1-1.5-1-2 0-6 5-13 8-19.5 7.5 4.5-2.5 8.5-6.5 12-11.5 4.5-6.5 8-14.5 9.5-22.5zm0 32.5c1.5 1 2.5 1 4 0 6.5-4 15-4.5 22-2.5-1 .5-2 1.5-3 2.5-4.5 4.5-7 11.5-7.5 19 0 .5-.5 1-1 1h-5.5c-2.5-4-6.5-6.5-9-10.5-1-1.5-1.5-1.5-2.5 0-2.5 4-6.5 6.5-9 10.5h-5.5c-.5 0-1-.5-1-1-.5-7.5-3-14.5-7.5-19-1-1-2-2-3-2.5 7-2 15.5-1.5 22 2.5zm-8 21.5h16v4H42zM50 5c3 13.5 9 25.5 17.5 35 4.5 5 9.5 9 15 11.5.5 0 .5.5.5.5 0 .5-.5.5-.5.5-9.5.5-18.5-4-25.5-11-1-1-1.5-1-2.5 0-7 7-16 11.5-25.5 11-.5 0-.5 0-.5-.5s0-.5.5-.5c5.5-2.5 10.5-6.5 15-11.5C41 30.5 47 18.5 50 5z"/>
-</svg>
-"""
+# Version encodée pour contourner les restrictions d'affichage de Streamlit
+logo_html = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjogIzAwMzNhMDsgYm9yZGVyLXJhZGl1czogOHB4OyI+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTUwIDE1YzEuNSA4IDUgMTYgOS41IDIyLjUgMy41IDUgNy41IDkgMTIgMTEuNS02LjUuNS0xMy41LTIuNS0xOS41LTcuNS0xLTEtMS41LTEtMiAwLTYgNS0xMyA4LTE5LjUgNy41IDQuNS0yLjUgOC41LTYuNSAxMi0xMS41IDQuNS02LjUgOC0xNC41IDkuNS0yMi41em0wIDMyLjVjMS41IDEgMi41IDEgNCAwIDYuNS00IDE1LTQuNSAyMi0yLjUtMSAuNS0yIDEuNS0zIDIuNS00LjUgNC41LTcgMTEuNS03LjUgMTkgMCAuNS0uNSAxLTEgMWgtNS41Yy0yLjUtNC02LjUtNi41LTktMTAuNS0xLTEuNS0xLjUtMS41LTIuNSAwLTIuNSA0LTYuNSA2LjUtOSAxMC41aC01LjVjLS41IDAtMS0uNS0xLTEtLjUtNy41LTMtMTQuNS03LjUtMTktMS0xLTItMi0zLTIuNSA3LTIgMTUuNS0xLjUgMjIgMi41em0tOCAyMS41aDE2djRINDJ6TTUwIDVjMyAxMy41IDkgMjUuNSAxNy41IDM1IDQuNSA1IDkuNSA5IDE1IDExLjUuNSAwIC41LjUuNS41IDAgLjUtLjUuNS0uNS41LTkuNS41LTE4LjUtNC0yNS41LTExLTEtMS0xLjUtMS0yLjUgMC03IDctMTYgMTEuNS0yNS41IDExLS41IDAtLjUgMC0uNS0uNXMwLS41LjUtLjVjNS41LTIuNSAxMC41LTYuNSAxNS0xMS41QzQxIDMwLjUgNDcgMTguNSA1MCA1eiIvPjwvc3ZnPg==" style="height: 40px; width: auto; vertical-align: middle; padding: 6px; border-radius: 8px;" />'
 
 # Rendu de l'entête
 st.html(f"""
@@ -425,7 +421,6 @@ st.html(f"""
 """)
 
 st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
-
 st.link_button("🛒 Cliquer pour Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://streamlit.app", use_container_width=True)
 
 st.html("<div style='text-align: center; margin-top: 15px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>👇 Poursuivez plus bas pour chercher l'origine d'un produit ou collaborer à notre liste de +10,500 articles !</p></div>")

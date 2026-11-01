@@ -405,6 +405,7 @@ sous_cat_disponibles = CATEGORIES_PROJET[categorie_choisie]
 sous_categorie_choisie = st.sidebar.selectbox("Filtrer par Sous-catégorie :", options=sous_cat_disponibles, index=0)
 
 import base64
+import streamlit as st
 
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
 
@@ -412,22 +413,39 @@ import base64
 with open("logo_quebec.png", "rb") as image_file:
     encoded_string = base64.b64encode(image_file.read()).decode()
 
-# On ajuste la hauteur à 46px pour qu'elle s'aligne proprement avec le texte
-logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: 46px; width: auto; vertical-align: middle;" />'
+# On ajuste la hauteur du logo de manière fluide (max 46px, plus petit sur mobile)
+logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: clamp(30px, 5vw, 46px); width: auto; flex-shrink: 0;" />'
 
-# 2. Rendu de l'entête
+# 2. Rendu de l'entête adaptatif (Responsive)
 st.html(f"""
-<h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;'>
+<div style="
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: clamp(8px, 2vw, 15px); 
+    margin-bottom: 20px; 
+    width: 100%; 
+    text-align: center;
+">
     {logo_html}
-    <span>MON GUIDE D'ACHAT LOCAL 🍁</span>
-</h1>
+    <h1 style="
+        color: #003366; 
+        font-family: sans-serif; 
+        font-size: clamp(1.3rem, 4.5vw, 2.5rem); 
+        margin: 0; 
+        padding: 0; 
+        line-height: 1.2;
+    ">
+        MON GUIDE D'ACHAT LOCAL
+    </h1>
+    <span style="font-size: clamp(1.3rem, 4.5vw, 2.5rem); flex-shrink: 0;">🍁</span>
+</div>
 """)
 
 st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
 st.link_button("🛒 Cliquer pour Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://achatquebec-circulaires.streamlit.app", use_container_width=True)
 
 st.html("<div style='text-align: center; margin-top: 15px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>👇 Poursuivez plus bas pour chercher l'origine d'un produit ou collaborer à notre liste de +10,500 articles !</p></div>")
-
 st.markdown("### 🏪 Choix rapide de votre bannière d'épicerie :")
 c_iga, c_maxi = st.columns(2)
 if c_iga.button("🔴 IGA", use_container_width=True): st.session_state['banniere_active'] = "IGA"; st.rerun()

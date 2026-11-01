@@ -460,7 +460,7 @@ st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bo
 # Remplacement du bouton par la version HTML ajustée (textes agrandis et marges de sécurité)
 st.html(
     """
-    <a href="https://streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
+    <a href="https://achatquebec-circulaires.streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
         <div style="
             background-color: #FF3B30; 
             color: white; 

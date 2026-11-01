@@ -409,22 +409,13 @@ if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-# 1. Encodage du nouveau logo haute définition
-import base64
-import os
+# Utilisation du logo officiel vectoriel haute définition (transparent et net)
+logo_url = "https://wikimedia.org"
+logo_html = f'''<img src="{logo_url}" 
+                  style="height: 46px; width: auto; max-width: 60px; object-fit: contain; vertical-align: middle;" 
+                  alt="Logo Québec">'''
 
-IMAGE_PATH = "logo_quebec.png"
-if os.path.exists(IMAGE_PATH):
-    with open(IMAGE_PATH, "rb") as image_file:
-        encoded_image = base64.b64encode(image_file.read()).decode()
-    # Style optimisé pour garder l'image nette (sans étirement flou)
-    logo_html = f'''<img src="data:image/png;base64,{encoded_image}" 
-                      style="height: 46px; width: auto; max-width: 60px; object-fit: contain; border-radius: 8px; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;" 
-                      alt="Logo Québec">'''
-else:
-    logo_html = '<span style="font-size: 35px;">⚜️</span>'
-
-# 2. Rendu de l'entête avec le logo HD intégré à gauche du titre
+# Rendu de l'entête avec le logo HD officiel
 st.html(f"""
 <h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;'>
     {logo_html}
@@ -432,10 +423,10 @@ st.html(f"""
 </h1>
 """)
 
-# 3. Vos paragraphes explicatifs, boutons et appels à l'action
+# Vos paragraphes explicatifs, boutons et appels à l'action
 st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
 
-st.link_button("🛒 Cliquer pour Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://achatquebec-circulaires.streamlit.app", use_container_width=True)
+st.link_button("🛒 Cliquer pour Accéder au Planificateur de Budget (Circulaires / Calcul du Panier)", "https://streamlit.app", use_container_width=True)
 
 st.html("<div style='text-align: center; margin-top: 15px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>👇 Poursuivez plus bas pour chercher l'origine d'un produit ou collaborer à notre liste de +10,500 articles !</p></div>")
 

@@ -408,12 +408,20 @@ banniere = st.session_state['banniere_active']
 if banniere != "Tous" and 'distribution' in df_filtre.columns:
     df_filtre = df_filtre[df_filtre['distribution'].str.lower().str.contains(banniere.replace('_', ' ').lower(), na=False)]
 # ZONE PRINCIPALE : RENDU DES TITRES ET CHOIX DE BANNIÈRES
-st.html("""
+# 1. On encode l'image locale en format texte de manière sécurisée
+import base64
+try:
+    with open("logo_quebec.png", "rb") as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode()
+    logo_html = f'<img src="data:image/png;base64,{encoded_image}" style="width: 46px; height: 46px; object-fit: contain; border-radius: 8px;" alt="Logo Québec">'
+except FileNotFoundError:
+    # Au cas où le fichier n'est pas trouvé lors du premier test
+    logo_html = '<span style="font-size: 35px;">⚜️</span>'
+
+# 2. On affiche le titre et l'encadré collaboratif
+st.html(f"""
 <h1 style='text-align: center; color: #003366; font-family: sans-serif; display: flex; align-items: center; justify-content: center; gap: 15px;'>
-    <svg xmlns="http://w3.org" viewBox="0 0 100 100" style="width: 45px; height: 45px;">
-        <rect width="100" height="100" rx="22" fill="#0056b3"/>
-        <path d="M50,20 C47,32 42,38 35,46 C45,46 48,42 50,36 C52,42 55,46 65,46 C58,38 53,32 50,20 Z M30,55 C35,55 39,52 44,46 C38,46 37,41 33,41 C34,47 43,55 50,55 C57,55 66,47 67,41 C63,41 62,46 56,46 C61,52 65,55 70,55 C64,65 59,73 50,73 C41,73 36,65 30,55 Z M50,55 C48,58 46,65 46,73 C46,78 48,81 50,83 C52,81 54,78 54,73 C54,65 52,58 50,55 Z" fill="#ffffff"/>
-    </svg>
+    {logo_html}
     <span>MON GUIDE D'ACHAT LOCAL 🍁</span>
 </h1>
 

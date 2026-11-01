@@ -462,6 +462,35 @@ st.link_button("🛒 Accéder au planificateur de budget (circulaires & calcul d
 st.html("<div style='text-align: center; margin-top: 25px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>🔍 Recherchez l'origine d'un produit parmi plus de 10 500 articles !</p></div>")
 
 st.markdown("### 🛒 Sélectionnez votre supermarché habituel :")
+
+# CODE CSS : Rend les boutons compacts et force l'alignement côte à côte sur cellulaire
+st.html(
+    """
+    <style>
+    /* Réduit la largeur maximale de ces boutons pour enlever le grand vide au centre */
+    [data-testid="stHorizontalBlock"] .stButton button {
+        max-width: 180px !important;
+        margin: 0 auto !important;
+        display: block !important;
+    }
+    /* Empêche Streamlit de casser les lignes de boutons sur les écrans de téléphones */
+    @media (max-width: 640px) {
+        [data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 10px !important;
+        }
+        [data-testid="stColumn"] {
+            width: 100% !important;
+            flex: 1 1 0% !important;
+            min-width: 0px !important;
+        }
+    }
+    </style>
+    """
+)
+
 c_iga, c_maxi = st.columns(2)
 if c_iga.button("🔴 IGA", use_container_width=True): st.session_state['banniere_active'] = "IGA"; st.rerun()
 if c_maxi.button("🟡 Maxi", use_container_width=True): st.session_state['banniere_active'] = "Maxi"; st.rerun()

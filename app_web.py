@@ -474,7 +474,8 @@ if "cup" in st.query_params:
 if choix_mode == "⌨️ Recherche manuelle":
     if "cup_scanne" in st.session_state: 
         st.session_state["cup_scanne"] = ""  # Nettoie le scanner invisible
-    saisie = st.text_input("👉 TAPEZ UN NOM DE PRODUIT OU UN code_upc :", value=saisie_net if saisie_net else "", key="recherche_cup")    
+    saisie = st.text_input("👉 Saisissez un nom de produit ou un code UPC :", value=saisie_net if saisie_net else "", key="recherche_cup")
+  
     if saisie: 
         saisie_net = saisie.strip()
     if "cup" in st.query_params: 

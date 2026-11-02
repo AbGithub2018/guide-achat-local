@@ -965,7 +965,7 @@ st.html(f"<p style='font-family: sans-serif; font-size: 19px; margin: 0;'>Devene
 with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
         nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
         cup_final = st.text_input("code_upc", value=saisie_net.strip() if saisie_net else "", disabled=True)
-        entreprise = st.text_input("Entreprise propriétaire / Marque (ex: Unico)")
+        entreprise = st.text_input("Entreprise propriétaire / Marque (ex: Agropur)")
         province = st.text_input("Province / État (ex: Québec)")
         pays = st.text_input("Pays", value="Canada")
         distribution = st.text_input("Réseau d'épicerie (ex: IGA, Maxi, Metro, Super C)")

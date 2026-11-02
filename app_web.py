@@ -830,7 +830,7 @@ if not df_affichage.empty:
         hide_index=True, 
         selection_mode="single-row", 
         on_select="rerun", 
-        height=200,  # <-- Taille parfaite et compacte pour le cellulaire
+        height=300,  # <-- Taille parfaite et compacte pour le cellulaire
         key="tableau_consommateur"
     )
 

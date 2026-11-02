@@ -925,7 +925,7 @@ if resultats is None or resultats.empty:
 
     type_saisie = "Le code-barres" if (saisie_net and saisie_net.isdigit()) else "Le produit"
     st.info(f"📦 {type_saisie} **{saisie_net}** semble être un nouveau produit pas encore répertorié.")
-    st.write("Devenez le premier à l'ajouter pour la communauté Achat Québec ! Qc")
+    st.html("<p style='font-family: sans-serif; font-size: 16px; margin: 0;'>Devenez le premier à l'ajouter pour la communauté Achat Québec ! <img src='https://wikimedia.org' style='height: 15px; width: auto; vertical-align: middle; margin-left: 5px; border: 1px solid #e0e0e0; border-radius: 2px; display: inline-block;'></p>")
     
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
         nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")

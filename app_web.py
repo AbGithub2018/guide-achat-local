@@ -831,6 +831,7 @@ if not df_affichage.empty:
         selection_mode="single-row", 
         on_select="rerun", 
         key="tableau_consommateur"
+        height=250  # <-- 🚀 Ajout ici pour réduire la taille sur cellulaire (environ 5-6 lignes)
     )
 
     # 🚀 CORRECTION : Extraction sécurisée de l'entier unique à l'intérieur de la liste de sélection

@@ -830,13 +830,13 @@ if not df_affichage.empty:
         hide_index=True, 
         selection_mode="single-row", 
         on_select="rerun", 
-        height=250,  # <-- La virgule ici est obligatoire et corrige l'erreur
+        height=300,  # <-- Taille parfaite et compacte pour le cellulaire
         key="tableau_consommateur"
     )
 
-    # 🚀 CORRECTION : Extraction sécurisée de l'entier unique à l'intérieur de la liste de sélection
+    # 🚀 EXTRACTION SÉCURISÉE : Récupération de l'index de la ligne cliquée
     if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]  # <-- Le [0] extrait le chiffre et règle le TypeError
+        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]  # <-- Le [0] est bien présent ici
         
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()

@@ -525,34 +525,58 @@ if c_dol.button("💵 Dollarama", use_container_width=True): st.session_state['b
 if c_pro.button("🟢 Provigo", use_container_width=True): st.session_state['banniere_active'] = "Provigo"; st.rerun()
 if c_all.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"; st.rerun()
 # =====================================================================
-# ZONE DE RECHERCHE ET SCANNER
-# =====================================================================
+# ZONE DE RECHERCHE ET SCANNER # ===================================================================== 
 resultats, message_erreur_recherche = None, None
-choix_mode = st.radio("👉 Mode de recherche :", ["⌨️ Recherche manuelle  ou", "📸 Scanner un code-barres"], horizontal=True, label_visibility="collapsed")
-saisie_net = ""
 
+# 1. On initialise proprement notre état de recherche manuelle s'il n'existe pas
+if "saisie_manuelle" not in st.session_state:
+    st.session_state["saisie_manuelle"] = ""
+
+choix_mode = st.radio(
+    "👉 Mode de recherche :", 
+    ["manuel", "scan"], 
+    horizontal=True, 
+    label_visibility="collapsed",
+    format_func=lambda x: "⌨️ Recherche manuelle ou" if x == "manuel" else "📸 Scanner un code-barres"
+)
+
+# 2. Gestion de la valeur par défaut (Query params)
+saisie_net = "" 
 if "cup" in st.query_params: 
     saisie_net = str(st.query_params["cup"]).strip()
+    st.session_state["saisie_manuelle"] = saisie_net
 
-if choix_mode == "⌨️ Recherche manuelle":
+# 3. Affichage conditionnel des modes
+if choix_mode == "manuel": 
     if "cup_scanne" in st.session_state: 
-        st.session_state["cup_scanne"] = ""  # Nettoie le scanner invisible
-    saisie = st.text_input("👉 Saisissez un nom de produit ou un code UPC :", value=saisie_net if saisie_net else "", key="recherche_cup")
-  
-    if saisie: 
-        saisie_net = saisie.strip()
-    if "cup" in st.query_params: 
-        st.query_params.clear()
+        st.session_state["cup_scanne"] = "" # Nettoie le scanner
         
-elif choix_mode == "📸 Scanner un Code-Barres":
-    from streamlit_qrcode_scanner import qrcode_scanner
-    if "cup_scanne" not in st.session_state:
-        st.session_state["cup_scanne"] = ""
-        
-    code_detecte = qrcode_scanner(key="scanner_officiel_live")
-    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]:
-        st.session_state["cup_scanne"] = str(code_detecte).strip()
-        st.rerun()
+    # On lie directement le text_input au session_state
+    saisie = st.text_input(
+        "👉 Saisissez un nom de produit ou un code UPC :", 
+        value=st.session_state["saisie_manuelle"], 
+        key="recherche_cup"
+    ) 
+    st.session_state["saisie_manuelle"] = saisie.strip()
+    saisie_net = st.session_state["saisie_manuelle"]
+    
+    if saisie_net and "cup" in st.query_params: 
+        st.query_params.clear() 
+
+elif choix_mode == "scan": 
+    from streamlit_qrcode_scanner import qrcode_scanner 
+    if "cup_scanne" not in st.session_state: 
+        st.session_state["cup_scanne"] = "" 
+    code_detecte = qrcode_scanner(key="scanner_officiel_live") 
+    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
+        st.session_state["cup_scanne"] = str(code_detecte).strip() 
+        st.rerun() 
+    if st.session_state["cup_scanne"]: 
+        saisie_net = st.session_state["cup_scanne"] 
+        if st.button("🔄 Effacer le scan actuel"): 
+            st.session_state["cup_scanne"] = "" 
+            st.rerun()
+
         
     if st.session_state["cup_scanne"]:
         saisie_net = st.session_state["cup_scanne"]

@@ -972,15 +972,17 @@ with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
         
         st.write("---")
         st.write("**Entrez les prix constatés en magasin (optionnel) :**")
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         with col1: prix_iga = st.text_input("Prix IGA ($)", value="")
         with col2: prix_maxi = st.text_input("Prix Maxi ($)", value="")
         with col3: prix_metro = st.text_input("Prix Metro ($)", value="")
+            
+        col4, col5, col6 = st.columns(3)
         with col4: prix_superc = st.text_input("Prix Super C ($)", value="")
-    
-        col5, col6, col7, col8 = st.columns(4)
         with col5: prix_walmart = st.text_input("Prix Walmart ($)", value="")
         with col6: prix_tigre = st.text_input("Prix Tigre Géant ($)", value="")
+        
+        col7, col8 = st.columns(2)
         with col7: prix_dollarama = st.text_input("Prix Dollarama ($)", value="")
         with col8: prix_provigo = st.text_input("Prix Provigo ($)", value="")
 

@@ -457,7 +457,8 @@ st.html(f"""
 """)
 
 # =====================================================================
-# BANNIÈRE TOUT-EN-UN : PLANIFICATEUR DE BUDGET
+# =====================================================================
+# BANNIÈRE TOUT-EN-UN : PLANIFICATEUR DE BUDGET (LIEN ET ICÔNE CORRIGÉS)
 # =====================================================================
 st.html(
     """
@@ -471,10 +472,15 @@ st.html(
             font-family: sans-serif;
             line-height: 1.6;
             box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
-            transition: transform 0.2s ease;
         ">
-            <div style="font-size: 20px; font-weight: bold; margin-bottom: 6px;">
-                🛒 Votre panier au plus bas, en direct de vos commerces locaux
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <!-- Icône de panier vectorielle en blanc pur -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                    <circle cx="9" cy="21" r="1" fill="white"></circle>
+                    <circle cx="20" cy="21" r="1" fill="white"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span>Votre panier au plus bas, en direct de vos commerces locaux</span>
             </div>
             <div style="font-size: 15px; opacity: 0.90; font-weight: 500;">
                 Ouvrir le Planificateur de Budget (circulaires & calcul du panier) ➔

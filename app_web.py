@@ -930,7 +930,7 @@ if resultats is None or resultats.empty:
 with open("drapeau_qc.png", "rb") as f:
     img_data = base64.b64encode(f.read()).decode("utf-8")
 
-st.html(f"<p style='font-family: sans-serif; font-size: 14px; margin: 0;'>Devenez le premier à l'ajouter pour la communauté Achat Québec ! <img src='data:image/png;base64,{img_data}' style='height: 14px; width: auto; vertical-align: middle; margin-left: 5px; border: 1px solid #e0e0e0; border-radius: 2px; display: inline-block;'></p>")
+st.html(f"<p style='font-family: sans-serif; font-size: 18px; margin: 0;'>Devenez le premier à l'ajouter pour la communauté Achat Québec ! <img src='data:image/png;base64,{img_data}' style='height: 14px; width: auto; vertical-align: middle; margin-left: 5px; border: 1px solid #e0e0e0; border-radius: 2px; display: inline-block;'></p>")
 with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
         nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
         cup_final = st.text_input("code_upc", value=saisie_net.strip() if saisie_net else "", disabled=True)

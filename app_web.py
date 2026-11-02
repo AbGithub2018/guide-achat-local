@@ -456,8 +456,9 @@ st.html(f"""
 </div>
 """)
 
-st.html("<p style='font-size: 24px; font-weight: bold; color: #003366; margin-bottom: 10px;'>💡 Calculez le coût estimé de votre facture en direct selon les circulaires et les commerces les plus proches de votre code postal.</p>")
-# Remplacement du bouton par la version HTML ajustée (textes agrandis et marges de sécurité)
+# =====================================================================
+# BANNIÈRE TOUT-EN-UN : PLANIFICATEUR DE BUDGET
+# =====================================================================
 st.html(
     """
     <a href="https://achatquebec-circulaires.streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
@@ -465,15 +466,19 @@ st.html(
             background-color: #FF3B30; 
             color: white; 
             text-align: center; 
-            padding: 12px 16px; /* Augmenté à 16px pour laisser une marge de sécurité propre sur les côtés */
-            border-radius: 8px; 
+            padding: 18px 20px; 
+            border-radius: 12px; 
             font-family: sans-serif;
-            line-height: 1.5;
-            box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+            line-height: 1.6;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease;
         ">
-            <span style="font-size: 16px; opacity: 0.95;">🛒 Accéder au</span> 
-            <span style="font-size: 19px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">Planificateur de budget</span> 
-            <span style="font-size: 15px; opacity: 0.95; display: inline-block; margin-left: 5px;">(circulaires & calcul du panier)</span>
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 6px;">
+                🛒 Votre panier au plus bas, en direct de vos commerces locaux
+            </div>
+            <div style="font-size: 15px; opacity: 0.90; font-weight: 500;">
+                Ouvrir le Planificateur de Budget (circulaires & calcul du panier) ➔
+            </div>
         </div>
     </a>
     """

@@ -1115,5 +1115,7 @@ if resultats is not None and not resultats.empty:
         except Exception as e:
             st.error(f"❌ Erreur lors de la sauvegarde : {e}")
 
-st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere.upper()}**")
+# Version sécurisée pour afficher l'enseigne active sans faire planter l'application
+banniere_a_afficher = st.session_state.get('banniere_active', 'Tous')
+st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere_a_afficher.upper()}**")
 

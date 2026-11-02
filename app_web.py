@@ -579,16 +579,10 @@ elif choix_mode == "scan":
         st.rerun() 
     if st.session_state["cup_scanne"]: 
         saisie_net = st.session_state["cup_scanne"] 
-        if st.button("🔄 Effacer le scan actuel"): 
+        if st.button("🔄 Effacer le scan actuel", key="bouton_nettoyer_scan_unique"): 
             st.session_state["cup_scanne"] = "" 
             st.rerun()
 
-        
-    if st.session_state["cup_scanne"]:
-        saisie_net = st.session_state["cup_scanne"]
-        if st.button("🔄 Effacer le scan actuel"):
-            st.session_state["cup_scanne"] = ""
-            st.rerun()
 # RECHERCHE AMÉLIORÉE ET INTEGRATION DES FILTRES
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()

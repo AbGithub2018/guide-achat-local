@@ -49,38 +49,52 @@ def determiner_provenance_prefixe(code_upc):
         return "Autre provenance internationale"
 
 
-def executer_analyse_vers_nouvelle_feuille():
+def executer_analyse_sans_connecteur(url_partage_sheet):
     """
-    Lit la Sheet1, calcule les provenances et écrit les résultats
-    dans un onglet séparé nommé 'Resultats_UPC'.
+    Lit la Sheet1 via son URL de partage public, calcule les provenances
+    et prépare le tableau final.
     """
-    # CORRECTION : On spécifie bien le type de connexion gsheets standard de Streamlit
-    conn = st.connection("gsheets", type="sheets")
+    # Étape essentielle : On transforme l'URL de partage en lien de téléchargement direct CSV
+    url_csv = url_partage_sheet.replace("/edit?usp=sharing", "/export?format=csv&gid=0")
     
-    # Lecture de la feuille principale 'Sheet1'
-    # On force la colonne code_upc à rester du texte pour ne pas perdre les 0 au début
-    df_origine = conn.read(worksheet="Sheet1", ttl=0, dtype={"code_upc": str})
+    # Lecture de la feuille principale 'Sheet1' sans avoir besoin de la bibliothèque gsheets
+    df_origine = pd.read_csv(url_csv, dtype={"code_upc": str})
     
+    # S'assurer que la colonne existe
+    if 'code_upc' not in df_origine.columns:
+        raise ValueError("La colonne 'code_upc' est introuvable dans Sheet1. Vérifiez l'orthographe.")
+        
     # Création du tableau de résultats propre
     df_resultats = pd.DataFrame()
     df_resultats['code_upc'] = df_origine['code_upc']
     df_resultats['provenance_automatique'] = df_origine['code_upc'].apply(determiner_provenance_prefixe)
     
-    # Envoi des données dans le nouvel onglet 'Resultats_UPC'
-    conn.update(worksheet="Resultats_UPC", data=df_resultats)
-    return "L'onglet 'Resultats_UPC' a été mis à jour avec succès !"
+    return df_resultats
 
 
 # --- Interface visuelle pour activer le script ---
 if __name__ == "__main__":
     st.title("Générateur de Provenance UPC")
-    st.write("Ce script extrait les codes de **Sheet1** et génère les résultats dans l'onglet **Resultats_UPC**.")
+    st.write("Ce script extrait les codes de **Sheet1** et génère les résultats pour l'onglet **Resultats_UPC**.")
     
-    if st.button("Lancer l'analyse et créer la feuille de résultats"):
+    # Collez ici l'URL de partage de votre Google Sheet 'produits_enrichis'
+    # (Celle que vous obtenez en cliquant sur le bouton bleu "Partager" dans Google)
+    url_fiche = st.text_input(
+        "Entrez l'URL de partage de votre Google Sheet :",
+        value="https://google.com"
+    )
+    
+    if st.button("Lancer l'analyse des codes"):
         with st.spinner("Analyse des codes-barres en cours..."):
             try:
-                statut = executer_analyse_vers_nouvelle_feuille()
-                st.success(statut)
+                df_final = executer_analyse_sans_connecteur(url_fiche)
+                st.success("Analyse terminée avec succès !")
+                
+                # Affiche un aperçu des résultats directement dans votre Streamlit pour valider
+                st.write("### Aperçu des résultats calculés :")
+                st.dataframe(df_final.head(10))
+                
+                st.info("💡 Étape finale : Copiez ces lignes ou téléchargez-les pour les coller dans votre 3e onglet 'Resultats_UPC'.")
+                
             except Exception as e:
-                st.error(f"Une erreur est survenue lors de la connexion : {e}")
-                st.info("Vérifiez que votre fichier secrets.toml contient bien les accès de votre Google Sheet.")
+                st.error(f"Une erreur est survenue lors de la lecture : {e}")

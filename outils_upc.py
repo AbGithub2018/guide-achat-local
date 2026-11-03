@@ -60,7 +60,8 @@ def executer_analyse_vers_nouvelle_feuille():
     Lit la Sheet1, calcule les provenances et écrit les résultats
     directement dans le 3e onglet 'Resultats_UPC'.
     """
-    # Établit la connexion en utilisant VOS configurations GSheetsConnection
+    # MODIFICATION ICI : On force l'utilisation de la configuration nommée "gsheets" 
+    # pour récupérer automatiquement le lien du fichier défini dans vos secrets de production.
     conn = st.connection("gsheets", type=GSheetsConnection)
     
     # Lecture de la feuille principale 'Sheet1'

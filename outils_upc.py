@@ -1,6 +1,12 @@
 # Fichier : outils_upc.py
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import urllib.parse
+import time
+import requests
+import re
+import os
+from streamlit_gsheets import GSheetsConnection
 
 def determiner_provenance_prefixe(code_upc):
     """
@@ -49,52 +55,44 @@ def determiner_provenance_prefixe(code_upc):
         return "Autre provenance internationale"
 
 
-def executer_analyse_sans_connecteur(url_partage_sheet):
+def executer_analyse_vers_nouvelle_feuille():
     """
-    Lit la Sheet1 via son URL de partage public, calcule les provenances
-    et prépare le tableau final.
+    Lit la Sheet1, calcule les provenances et écrit les résultats
+    directement dans le 3e onglet 'Resultats_UPC'.
     """
-    # Étape essentielle : On transforme l'URL de partage en lien de téléchargement direct CSV
-    url_csv = url_partage_sheet.replace("/edit?usp=sharing", "/export?format=csv&gid=0")
+    # Établit la connexion en utilisant VOS configurations GSheetsConnection
+    conn = st.connection("gsheets", type=GSheetsConnection)
     
-    # Lecture de la feuille principale 'Sheet1' sans avoir besoin de la bibliothèque gsheets
-    df_origine = pd.read_csv(url_csv, dtype={"code_upc": str})
+    # Lecture de la feuille principale 'Sheet1'
+    df_origine = conn.read(worksheet="Sheet1", ttl=0, dtype={"code_upc": str})
     
     # S'assurer que la colonne existe
     if 'code_upc' not in df_origine.columns:
         raise ValueError("La colonne 'code_upc' est introuvable dans Sheet1. Vérifiez l'orthographe.")
-        
-    # Création du tableau de résultats propre
+    
+    # Création du tableau de résultats propre (sans modifier Sheet1)
     df_resultats = pd.DataFrame()
     df_resultats['code_upc'] = df_origine['code_upc']
     df_resultats['provenance_automatique'] = df_origine['code_upc'].apply(determiner_provenance_prefixe)
     
+    # Envoi AUTOMATIQUE des données dans le 3e onglet 'Resultats_UPC'
+    conn.update(worksheet="Resultats_UPC", data=df_resultats)
     return df_resultats
 
 
-# --- Interface visuelle pour activer le script ---
-if __name__ == "__main__":
-    st.title("Générateur de Provenance UPC")
-    st.write("Ce script extrait les codes de **Sheet1** et génère les résultats pour l'onglet **Resultats_UPC**.")
-    
-    # Collez ici l'URL de partage de votre Google Sheet 'produits_enrichis'
-    # (Celle que vous obtenez en cliquant sur le bouton bleu "Partager" dans Google)
-    url_fiche = st.text_input(
-        "Entrez l'URL de partage de votre Google Sheet :",
-        value="https://google.com"
-    )
-    
-    if st.button("Lancer l'analyse des codes"):
-        with st.spinner("Analyse des codes-barres en cours..."):
-            try:
-                df_final = executer_analyse_sans_connecteur(url_fiche)
-                st.success("Analyse terminée avec succès !")
-                
-                # Affiche un aperçu des résultats directement dans votre Streamlit pour valider
-                st.write("### Aperçu des résultats calculés :")
-                st.dataframe(df_final.head(10))
-                
-                st.info("💡 Étape finale : Copiez ces lignes ou téléchargez-les pour les coller dans votre 3e onglet 'Resultats_UPC'.")
-                
-            except Exception as e:
-                st.error(f"Une erreur est survenue lors de la lecture : {e}")
+# --- Interface visuelle du script ---
+st.title("Générateur de Provenance UPC")
+st.write("Ce script extrait les codes de **Sheet1** et met à jour automatiquement l'onglet **Resultats_UPC**.")
+
+if st.button("Lancer l'analyse automatique"):
+    with st.spinner("Connexion à Google Sheets et calcul des codes..."):
+        try:
+            df_final = executer_analyse_vers_nouvelle_feuille()
+            st.success("🎉 L'onglet 'Resultats_UPC' a été mis à jour avec succès dans votre Google Sheet !")
+            
+            # Affichage de validation à l'écran
+            st.write("### Aperçu des données enregistrées :")
+            st.dataframe(df_final.head(10))
+            
+        except Exception as e:
+            st.error(f"Une erreur est survenue : {e}")

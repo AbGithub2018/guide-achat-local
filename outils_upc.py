@@ -1,19 +1,15 @@
 # Fichier : outils_upc.py
 import streamlit as st
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
+import re
 
 def determiner_provenance_prefixe(code_upc):
-    """
-    Analyse les 3 premiers chiffres d'un code UPC 
-    pour trouver le pays du siège social de la marque.
-    """
-    # Force la conversion en chaîne et nettoie les données manquantes (NaN)
+    """Analyse les 3 premiers chiffres pour trouver le pays."""
     if pd.isna(code_upc):
         return "Inconnu / Code vide"
         
-    code_propre = str(code_upc).strip().split('.')[0] # Élimine le cas des .0 si le code a été lu comme un float
-    code_propre = code_propre.replace(" ", "").replace("-", "")
+    # Nettoyage complet : garde uniquement les chiffres
+    code_propre = "".join(filter(str.isdigit, str(code_upc)))
     
     if not code_propre or len(code_propre) < 3:
         return "Inconnu / Code invalide"
@@ -24,7 +20,7 @@ def determiner_provenance_prefixe(code_upc):
     try:
         prefixe = int(code_propre[:3])
     except ValueError:
-        return "Code invalide (lettres)"
+        return "Code invalide"
     
     # Plages officielles de préfixes mondiaux GS1
     if 0 <= prefixe <= 19 or 30 <= prefixe <= 39 or 50 <= prefixe <= 139:
@@ -54,52 +50,55 @@ def determiner_provenance_prefixe(code_upc):
     else:
         return "Autre provenance internationale"
 
+def extraire_id_sheet(url):
+    """Extrait proprement l'identifiant unique du Google Sheet."""
+    match = re.search(r"/d/([a-zA-A0-9-_]+)", url)
+    if match:
+        return match.group(1)
+    return None
 
-def executer_analyse_vers_nouvelle_feuille(url_sheet):
-    """
-    Lit la Sheet1, calcule les provenances et écrit les résultats
-    directement dans le 3e onglet 'Resultats_UPC'.
-    """
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    
-    # Lecture forcée de la Sheet1
-    df_origine = conn.read(spreadsheet=url_sheet, worksheet="Sheet1", ttl=0, dtype=str)
-    
-    # Nettoyage des noms de colonnes pour éviter les espaces invisibles
-    df_origine.columns = df_origine.columns.str.strip()
-    
-    if 'code_upc' not in df_origine.columns:
-        raise ValueError(f"La colonne 'code_upc' est introuvable. Colonnes détectées : {list(df_origine.columns)}")
-    
-    # Création du tableau de résultats propre
-    df_resultats = pd.DataFrame()
-    df_resultats['code_upc'] = df_origine['code_upc']
-    df_resultats['provenance_automatique'] = df_origine['code_upc'].apply(determiner_provenance_prefixe)
-    
-    # Envoi direct des résultats dans le 3e onglet 'Resultats_UPC'
-    conn.update(spreadsheet=url_sheet, worksheet="Resultats_UPC", data=df_resultats)
-    return df_resultats
-
-
-# --- Interface visuelle du script ---
+# --- Interface visuelle ---
 st.title("Générateur de Provenance UPC")
-st.write("Ce script extrait les codes de **Sheet1** et met à jour automatiquement l'onglet **Resultats_UPC**.")
+st.write("Ce script analyse les codes de votre colonne **code_upc** sans modifier votre fichier d'origine.")
 
-# Ajout d'un champ dans l'interface pour coller l'URL proprement
-url_votre_sheet = st.text_input("Collez l'URL de votre Google Sheet ici :", placeholder="https://google.com...")
+url_votre_sheet = st.text_input("Collez l'URL de votre Google Sheet ici :")
 
-if st.button("Lancer l'analyse automatique"):
-    if not url_votre_sheet or "docs.google.com" not in url_votre_sheet:
-        st.error("Veuillez entrer une URL de Google Sheet valide.")
+if st.button("Lancer l'analyse des codes"):
+    id_sheet = extraire_id_sheet(url_votre_sheet)
+    
+    if not id_sheet:
+        st.error("Veuillez entrer une URL Google Sheets valide.")
     else:
-        with st.spinner("Connexion sécurisée à votre Google Sheet et calcul des codes..."):
+        with st.spinner("Lecture du fichier et analyse des provenances..."):
             try:
-                df_final = executer_analyse_vers_nouvelle_feuille(url_votre_sheet)
-                st.success("🎉 L'onglet 'Resultats_UPC' a été mis à jour avec succès dans votre Google Sheet !")
+                # URL pour lire l'onglet Sheet1 au format CSV proprement
+                csv_url = f"https://google.com{id_sheet}/gviz/tq?tqx=out:csv&sheet=Sheet1"
                 
-                # Affichage de validation à l'écran
-                st.write("### Aperçu des données enregistrées :")
-                st.dataframe(df_final.head(10))
+                # Lecture des données en forçant le format texte (string) pour préserver les 0 au début des codes
+                df_origine = pd.read_csv(csv_url, dtype=str)
+                df_origine.columns = df_origine.columns.str.strip()
                 
+                if 'code_upc' not in df_origine.columns:
+                    st.error(f"La colonne 'code_upc' est introuvable dans votre onglet Sheet1. Colonnes détectées : {list(df_origine.columns)}")
+                else:
+                    # Calcul des résultats
+                    df_resultats = pd.DataFrame()
+                    df_resultats['code_upc'] = df_origine['code_upc']
+                    df_resultats['provenance_automatique'] = df_origine['code_upc'].apply(determiner_provenance_prefixe)
+                    
+                    st.success("🎉 Analyse terminée avec succès !")
+                    
+                    # Affichage du résultat à l'écran
+                    st.write("### Aperçu des résultats à copier :")
+                    st.dataframe(df_resultats)
+                    
+                    # Option de téléchargement
+                    csv_telechargement = df_resultats.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="📥 Télécharger les résultats en fichier CSV",
+                        data=csv_telechargement,
+                        file_name="resultats_upc.csv",
+                        mime="text/csv"
+                    )
             except Exception as e:
-                st.error(f"Une erreur est survenue : {e}")
+                st.error(f"Impossible d'accéder au fichier. Erreur technique : {e}")

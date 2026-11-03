@@ -1,7 +1,6 @@
 # Fichier : outils_upc.py
 import streamlit as st
 import pandas as pd
-import re
 
 def determiner_provenance_prefixe(code_upc):
     """Analyse les 3 premiers chiffres pour trouver le pays."""
@@ -50,55 +49,66 @@ def determiner_provenance_prefixe(code_upc):
     else:
         return "Autre provenance internationale"
 
-def extraire_id_sheet(url):
-    """Extrait proprement l'identifiant unique du Google Sheet."""
-    match = re.search(r"/d/([a-zA-A0-9-_]+)", url)
-    if match:
-        return match.group(1)
-    return None
-
 # --- Interface visuelle ---
 st.title("Générateur de Provenance UPC")
-st.write("Ce script analyse les codes de votre colonne **code_upc** sans modifier votre fichier d'origine.")
+st.write("Téléchargez votre fichier exporté pour analyser la colonne **code_upc**.")
 
-url_votre_sheet = st.text_input("Collez l'URL de votre Google Sheet ici :")
+# Zone de glisser-déposer pour le fichier
+fichier_uploade = st.file_uploader("Glissez votre fichier Google Sheet (exporté en Excel .xlsx ou CSV) ici :", type=["xlsx", "csv"])
 
-if st.button("Lancer l'analyse des codes"):
-    id_sheet = extraire_id_sheet(url_votre_sheet)
-    
-    if not id_sheet:
-        st.error("Veuillez entrer une URL Google Sheets valide.")
-    else:
-        with st.spinner("Lecture du fichier et analyse des provenances..."):
+if fichier_uploade is not None:
+    try:
+        # Détection automatique du format (Excel ou CSV)
+        if fichier_uploade.name.endswith('.xlsx'):
+            # Lit l'onglet 'Sheet1' spécifiquement
+            df_origine = pd.read_excel(fichier_uploade, sheet_name="Sheet1", dtype=str)
+        else:
+            df_origine = pd.read_csv(fichier_uploade, dtype=str)
+            
+        # Nettoyage des espaces dans les noms de colonnes
+        df_origine.columns = df_origine.columns.str.strip()
+        
+        if 'code_upc' not in df_origine.columns:
+            st.error(f"La colonne 'code_upc' est introuvable. Colonnes détectées dans le fichier : {list(df_origine.columns)}")
+        else:
+            # Calcul des résultats
+            df_resultats = pd.DataFrame()
+            df_resultats['code_upc'] = df_origine['code_upc']
+            df_resultats['nom'] = df_origine['nom'] if 'nom' in df_origine.columns else ""
+            df_resultats['provenance_automatique'] = df_origine['code_upc'].apply(determiner_provenance_prefixe)
+            
+            st.success("🎉 Analyse terminée avec succès !")
+            
+            # Affichage du résultat à l'écran
+            st.write("### Aperçu des résultats :")
+            st.dataframe(df_resultats)
+            
+            # Création du bouton de téléchargement direct en Excel pour votre confort
+            @st.cache_data
+            def convertir_en_excel(df):
+                import io
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                    df.to_excel(writer, index=False, sheet_name='Resultats_UPC')
+                return output.getvalue()
+                
             try:
-                # URL pour lire l'onglet Sheet1 au format CSV proprement
-                csv_url = f"https://google.com{id_sheet}/gviz/tq?tqx=out:csv&sheet=Sheet1"
+                data_excel = convertir_en_excel(df_resultats)
+                st.download_button(
+                    label="📥 Télécharger le fichier Excel complété",
+                    data=data_excel,
+                    file_name="resultats_upc.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            except Exception:
+                # Secours en CSV si xlsxwriter n'est pas installé
+                csv_data = df_resultats.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 Télécharger les résultats (Format CSV)",
+                    data=csv_data,
+                    file_name="resultats_upc.csv",
+                    mime="text/csv"
+                )
                 
-                # Lecture des données en forçant le format texte (string) pour préserver les 0 au début des codes
-                df_origine = pd.read_csv(csv_url, dtype=str)
-                df_origine.columns = df_origine.columns.str.strip()
-                
-                if 'code_upc' not in df_origine.columns:
-                    st.error(f"La colonne 'code_upc' est introuvable dans votre onglet Sheet1. Colonnes détectées : {list(df_origine.columns)}")
-                else:
-                    # Calcul des résultats
-                    df_resultats = pd.DataFrame()
-                    df_resultats['code_upc'] = df_origine['code_upc']
-                    df_resultats['provenance_automatique'] = df_origine['code_upc'].apply(determiner_provenance_prefixe)
-                    
-                    st.success("🎉 Analyse terminée avec succès !")
-                    
-                    # Affichage du résultat à l'écran
-                    st.write("### Aperçu des résultats à copier :")
-                    st.dataframe(df_resultats)
-                    
-                    # Option de téléchargement
-                    csv_telechargement = df_resultats.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        label="📥 Télécharger les résultats en fichier CSV",
-                        data=csv_telechargement,
-                        file_name="resultats_upc.csv",
-                        mime="text/csv"
-                    )
-            except Exception as e:
-                st.error(f"Impossible d'accéder au fichier. Erreur technique : {e}")
+    except Exception as e:
+        st.error(f"Erreur lors de la lecture du fichier : {e}")

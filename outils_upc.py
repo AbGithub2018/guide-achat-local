@@ -1,11 +1,6 @@
 # Fichier : outils_upc.py
 import streamlit as st
 import pandas as pd
-import urllib.parse
-import time
-import requests
-import re
-import os
 from streamlit_gsheets import GSheetsConnection
 
 def determiner_provenance_prefixe(code_upc):
@@ -13,7 +8,12 @@ def determiner_provenance_prefixe(code_upc):
     Analyse les 3 premiers chiffres d'un code UPC 
     pour trouver le pays du siège social de la marque.
     """
-    code_propre = str(code_upc).strip().replace(" ", "").replace("-", "")
+    # Force la conversion en chaîne et nettoie les données manquantes (NaN)
+    if pd.isna(code_upc):
+        return "Inconnu / Code vide"
+        
+    code_propre = str(code_upc).strip().split('.')[0] # Élimine le cas des .0 si le code a été lu comme un float
+    code_propre = code_propre.replace(" ", "").replace("-", "")
     
     if not code_propre or len(code_propre) < 3:
         return "Inconnu / Code invalide"
@@ -55,21 +55,21 @@ def determiner_provenance_prefixe(code_upc):
         return "Autre provenance internationale"
 
 
-def executer_analyse_vers_nouvelle_feuille():
+def executer_analyse_vers_nouvelle_feuille(url_sheet):
     """
     Lit la Sheet1, calcule les provenances et écrit les résultats
     directement dans le 3e onglet 'Resultats_UPC'.
     """
-    # Intégration de l'URL avec votre identifiant unique de fichier
-    url_votre_sheet = "https://google.com"
-    
     conn = st.connection("gsheets", type=GSheetsConnection)
     
     # Lecture forcée de la Sheet1
-    df_origine = conn.read(spreadsheet=url_votre_sheet, worksheet="Sheet1", ttl=0, dtype={"code_upc": str})
+    df_origine = conn.read(spreadsheet=url_sheet, worksheet="Sheet1", ttl=0, dtype=str)
+    
+    # Nettoyage des noms de colonnes pour éviter les espaces invisibles
+    df_origine.columns = df_origine.columns.str.strip()
     
     if 'code_upc' not in df_origine.columns:
-        raise ValueError("La colonne 'code_upc' est introuvable dans Sheet1. Vérifiez l'orthographe.")
+        raise ValueError(f"La colonne 'code_upc' est introuvable. Colonnes détectées : {list(df_origine.columns)}")
     
     # Création du tableau de résultats propre
     df_resultats = pd.DataFrame()
@@ -77,7 +77,7 @@ def executer_analyse_vers_nouvelle_feuille():
     df_resultats['provenance_automatique'] = df_origine['code_upc'].apply(determiner_provenance_prefixe)
     
     # Envoi direct des résultats dans le 3e onglet 'Resultats_UPC'
-    conn.update(spreadsheet=url_votre_sheet, worksheet="Resultats_UPC", data=df_resultats)
+    conn.update(spreadsheet=url_sheet, worksheet="Resultats_UPC", data=df_resultats)
     return df_resultats
 
 
@@ -85,15 +85,21 @@ def executer_analyse_vers_nouvelle_feuille():
 st.title("Générateur de Provenance UPC")
 st.write("Ce script extrait les codes de **Sheet1** et met à jour automatiquement l'onglet **Resultats_UPC**.")
 
+# Ajout d'un champ dans l'interface pour coller l'URL proprement
+url_votre_sheet = st.text_input("Collez l'URL de votre Google Sheet ici :", placeholder="https://google.com...")
+
 if st.button("Lancer l'analyse automatique"):
-    with st.spinner("Connexion sécurisée à votre Google Sheet et calcul des codes..."):
-        try:
-            df_final = executer_analyse_vers_nouvelle_feuille()
-            st.success("🎉 L'onglet 'Resultats_UPC' a été mis à jour avec succès dans votre Google Sheet !")
-            
-            # Affichage de validation à l'écran
-            st.write("### Aperçu des données enregistrées :")
-            st.dataframe(df_final.head(10))
-            
-        except Exception as e:
-            st.error(f"Une erreur est survenue : {e}")
+    if not url_votre_sheet or "docs.google.com" not in url_votre_sheet:
+        st.error("Veuillez entrer une URL de Google Sheet valide.")
+    else:
+        with st.spinner("Connexion sécurisée à votre Google Sheet et calcul des codes..."):
+            try:
+                df_final = executer_analyse_vers_nouvelle_feuille(url_votre_sheet)
+                st.success("🎉 L'onglet 'Resultats_UPC' a été mis à jour avec succès dans votre Google Sheet !")
+                
+                # Affichage de validation à l'écran
+                st.write("### Aperçu des données enregistrées :")
+                st.dataframe(df_final.head(10))
+                
+            except Exception as e:
+                st.error(f"Une erreur est survenue : {e}")

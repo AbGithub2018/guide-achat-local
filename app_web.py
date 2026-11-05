@@ -342,27 +342,35 @@ if choix_mode == "manuel":
     if saisie_net and "cup" in st.query_params: 
         st.query_params.clear() 
     elif choix_mode == "scan": 
-        # Si un produit a été sélectionné dans le tableau, on ferme le scanner
-        if resultats is not None and not resultats.empty:
-            st.success("✅ Produit sélectionné avec succès ! Le scanner est fermé.")
+        # On s'assure d'avoir notre interrupteur pour savoir si le clic a eu lieu
+        if "clic_tableau_fait" not in st.session_state:
+            st.session_state["clic_tableau_fait"] = False
+
+        # Si l'utilisateur a sélectionné un produit dans la liste, on FERME le scanner
+        if st.session_state["clic_tableau_fait"]:
+            st.success("✅ Produit sélectionné ! Le scanner est fermé pour libérer l'appareil photo.")
             saisie_net = st.session_state["cup_scanne"]
             if st.button("🔄 Scanner un autre produit"):
-                # Réinitialise la sélection pour pouvoir scanner à nouveau
-                if "tableau_consommateur" in st.session_state:
-                    st.session_state["tableau_consommateur"] = {"selection": {"rows": []}}
+                # Réinitialisation complète pour le prochain produit
+                st.session_state["clic_tableau_fait"] = False
                 st.session_state["cup_scanne"] = ""
+                if "tableau_consommateur" in st.session_state:
+                    st.session_state["tableau_consommateur"] = {"selection": {"rows":}}
                 st.rerun()
         else:
-            # Sinon, si aucun produit n'est sélectionné, le scanner s'affiche normalement
+            # Sinon, on affiche le scanner normalement pour trouver le code-barres
             from streamlit_qrcode_scanner import qrcode_scanner 
             if "cup_scanne" not in st.session_state: 
                 st.session_state["cup_scanne"] = "" 
-            code_detecte = qrcode_scanner(key="scanner_officiel_live") 
-            if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
-                st.session_state["cup_scanne"] = str(code_detecte).strip() 
-                st.rerun()
-            if st.session_state["cup_scanne"]: 
-                saisie_net = st.session_state["cup_scanne"]
+                
+            if st.session_state["cup_scanne"] == "":
+                code_detecte = qrcode_scanner(key="scanner_officiel_live") 
+                if code_detecte and str(code_detecte).strip() != "": 
+                    st.session_state["cup_scanne"] = str(code_detecte).strip() 
+                    st.rerun()
+            
+            saisie_net = st.session_state["cup_scanne"]
+
 
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()

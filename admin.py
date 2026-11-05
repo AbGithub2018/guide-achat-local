@@ -202,6 +202,10 @@ with onglet_photos:
                             
                             # --- ÉTAPE 3 : Application de la modification si trouvé ---
                             if idx_produit is not None:
+                                # SÉCURITÉ : On force la colonne 'photo' en type texte pour éviter l'erreur de type
+                                if 'photo' in df_sheet1.columns:
+                                    df_sheet1['photo'] = df_sheet1['photo'].astype(object)
+                                
                                 df_sheet1.loc[idx_produit, 'photo'] = url_photo
                                 conn.update(worksheet="Sheet1", data=df_sheet1)
                                 st.success(f"Image mise à jour avec succès via {methode_trouvee} !")
@@ -211,6 +215,7 @@ with onglet_photos:
                                 conn.update(worksheet="Historique_Prix", data=df_historique)
                             else:
                                 st.error(f"⚠️ Impossible de trouver '{cup_p}' dans le catalogue (ni dans code_upc, ni dans nom).")
+
                             
                             st.cache_data.clear()
                             time.sleep(1)

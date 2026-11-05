@@ -553,6 +553,7 @@ if not df_affichage.empty:
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
+            st.session_state["cup_scanne"] = ""
 
 image_cam = None
 cup_actif = ""

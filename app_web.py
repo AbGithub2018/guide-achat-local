@@ -590,7 +590,12 @@ elif saisie_net and saisie_net.strip() not in ["", "****"]:
 
 if cup_actif and cup_actif != "nan":
     st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
-    image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
+    image_cam = st.file_uploader(
+        "Appuyez ici pour prendre le produit en photo", 
+        type=["jpg", "jpeg", "png"], 
+        key=f"cam_globale_{cup_actif}"
+    )
+
 
 if image_cam:
     try:

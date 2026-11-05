@@ -603,10 +603,13 @@ if image_cam:
             nom_fichier_image = f"{cup_actif}.jpg"
             img = Image.open(image_cam)
             img = ImageOps.exif_transpose(img)
+            if img.width > img.height:
+                img = img.rotate(-90, expand=True)
             img.thumbnail((800, 800))
             tampon_memoire = io.BytesIO()
             img.save(tampon_memoire, format="JPEG", quality=70, optimize=True)
             contenu_image = tampon_memoire.getvalue()
+
             
             UTILISATEUR_GH = "abgithub2018"
             DEPOT_GH = "guide-achat-local"

@@ -580,7 +580,7 @@ if image_cam:
             if sha_fichier: donnees_envoi["sha"] = sha_fichier
             
             envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
-            if envoi_gh.status_code not in: raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
+            if envoi_gh.status_code != 200 and envoi_gh.status_code != 201: raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
 
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
             lien_public_github = f"https://githubusercontent.com{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"

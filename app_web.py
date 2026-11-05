@@ -611,7 +611,7 @@ if image_cam:
             DEPOT_GH = "guide-achat-local"
             TOKEN_GH = st.secrets["GITHUB_TOKEN"]
             
-            url_api_github = f"https://github.com{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
+            url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
             headers_gh = {"Authorization": f"token {TOKEN_GH}", "Accept": "application/vnd.github.v3+json"}
             
             reponse_get = requests.get(url_api_github, headers=headers_gh)
@@ -626,7 +626,7 @@ if image_cam:
             if envoi_gh.status_code != 200 and envoi_gh.status_code != 201: raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
 
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
-            lien_public_github = f"https://githubusercontent.com{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"
+            lien_public_github = f"https://raw.githubusercontent.com/{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"
             
             ligne_photo_h = pd.DataFrame([{
                 'horodatage': horodatage_actuel,

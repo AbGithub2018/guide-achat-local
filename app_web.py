@@ -342,9 +342,7 @@ if "cup" in st.query_params:
         if saisie_net and "cup" in st.query_params: 
             st.query_params.clear() 
             
-    elif choix_mode == "scan": 
-        from streamlit_qrcode_scanner import qrcode_scanner 
-        
+        elif choix_mode == "scan": 
         if "cup_scanne" not in st.session_state: 
             st.session_state["cup_scanne"] = "" 
         if "scan_termine" not in st.session_state:
@@ -352,6 +350,7 @@ if "cup" in st.query_params:
             
         # ÉTAPE A : Si aucun code n'est scanné, on affiche le scanner
         if st.session_state["cup_scanne"] == "":
+            from streamlit_qrcode_scanner import qrcode_scanner 
             code_detecte = qrcode_scanner(key="scanner_officiel_live") 
             if code_detecte and str(code_detecte).strip() != "": 
                 st.session_state["cup_scanne"] = str(code_detecte).strip() 
@@ -374,6 +373,7 @@ if "cup" in st.query_params:
                 st.session_state["cup_scanne"] = "" 
                 st.session_state["scan_termine"] = False
                 st.rerun()
+
 
 
 

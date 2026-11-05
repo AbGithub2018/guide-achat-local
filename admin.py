@@ -133,67 +133,92 @@ with onglet_nouveaux:
                         st.rerun()
 
 # =====================================================================
+# =====================================================================
 # GESTION DES PHOTOS UNIQUEMENT (Onglet 3)
 # =====================================================================
 with onglet_photos:
     if df_historique.empty:
         st.info("L'historique est complètement vide.")
     else:
-        # On cible uniquement les scans de produits existants
+        # 1. Nettoyage et sécurisation des colonnes pivots pour le filtrage
+        action_securisee = df_historique['source'].fillna("").astype(str)
+        cup_historique_nettoye = df_historique['code_upc'].fillna("").astype(str).str.strip()
+        
+        # Filtre : modification_photo_cell et non traité
         df_photos_attente = df_historique[
-            (df_historique['distribution'] == 'modification_photo_cell') & 
-            (~df_historique['source'].str.startswith("APPROUVE_", na=False)) & 
-            (~df_historique['source'].str.startswith("REFUSE_", na=False))
+            (action_securisee == 'modification_photo_cell') & 
+            (cup_historique_nettoye != "") &
+            (~action_securisee.str.startswith("APPROUVE_")) & 
+            (~action_securisee.str.startswith("REFUSE_"))
         ]
         
         if df_photos_attente.empty:
             st.success("🎉 Aucune modification de photo en attente de validation.")
         else:
-            st.warning(f"Il y a {len(df_photos_attente)} photo(s) soumise(s) à valider pour des produits existants.")
+            st.warning(f"Il y a {len(df_photos_attente)} photo(s) soumise(s) à valider.")
             
             for idx, ligne_p in df_photos_attente.iterrows():
+                # cup_p contient la valeur saisie (ex: "51500051962" ou "sundae syrup")
                 cup_p = str(ligne_p['code_upc']).strip()
                 url_photo = str(ligne_p['photo']).strip()
                 horodatage_p = str(ligne_p['horodatage'])
-                source_p = str(ligne_p['source'])
                 
                 with st.container(border=True):
                     st.markdown(f"### 📸 Demande de mise à jour photo")
                     col_p_info, col_p_visuel = st.columns(2)
                     
                     with col_p_info:
-                        st.markdown(f"**Code-barres du produit (UPC) :** `{cup_p}`")
+                        st.markdown(f"**Recherche principale (UPC / Nom) :** `{cup_p}`")
                         st.markdown(f"**Soumis le :** {horodatage_p}")
-                        st.markdown(f"**Source de la demande :** {source_p}")
                         st.write("")
                         
                         c_p_valider, c_p_rejeter = st.columns(2)
                         
-                        # LOGIQUE BOUTON ACCEPTER LA PHOTO
+                        # LOGIQUE BOUTON ACCEPTER
                         if c_p_valider.button("✅ Valider & Appliquer", key=f"btn_val_photo_{idx}", use_container_width=True):
-                            # On cherche si le produit existe bien dans Sheet1
-                            if 'code_upc' in df_sheet1.columns:
-                                idx_produit = df_sheet1[df_sheet1['code_upc'].astype(str).str.strip() == cup_p].index
-                                
-                                if not idx_produit.empty:
-                                    # Mise à jour de la colonne 'photo' dans Sheet1 pour ce produit
-                                    df_sheet1.loc[idx_produit, 'photo'] = url_photo
-                                    conn.update(worksheet="Sheet1", data=df_sheet1)
-                                    st.success("Image mise à jour dans le catalogue !")
-                                else:
-                                    st.error("Ce produit n'a pas été trouvé dans l'onglet principal 'Sheet1'.")
+                            idx_produit = None
+                            methode_trouvee = ""
                             
-                            # Marquer comme approuvé dans l'historique
-                            df_historique.loc[idx, 'source'] = f"APPROUVE_PHOTO: {source_p}"
-                            conn.update(worksheet="Historique_Prix", data=df_historique)
+                            # Préparation des colonnes de Sheet1 pour une comparaison propre
+                            df_sheet1_prive = df_sheet1.copy()
+                            if 'code_upc' in df_sheet1_prive.columns:
+                                df_sheet1_prive['code_upc_clean'] = df_sheet1_prive['code_upc'].fillna("").astype(str).str.strip()
+                            if 'nom' in df_sheet1_prive.columns:
+                                df_sheet1_prive['nom_clean'] = df_sheet1_prive['nom'].fillna("").astype(str).str.strip().str.lower()
+                            
+                            # --- ÉTAPE 1 : Recherche principale par Code UPC ---
+                            if 'code_upc_clean' in df_sheet1_prive.columns:
+                                match_upc = df_sheet1_prive[df_sheet1_prive['code_upc_clean'] == cup_p].index
+                                if not match_upc.empty:
+                                    idx_produit = match_upc
+                                    methode_trouvee = "le code UPC"
+                            
+                            # --- ÉTAPE 2 : Recherche secondaire par Nom (si UPC n'a rien donné) ---
+                            if idx_produit is None and 'nom_clean' in df_sheet1_prive.columns:
+                                match_nom = df_sheet1_prive[df_sheet1_prive['nom_clean'] == cup_p.lower()].index
+                                if not match_nom.empty:
+                                    idx_produit = match_nom
+                                    methode_trouvee = "le nom du produit"
+                            
+                            # --- ÉTAPE 3 : Application de la modification si trouvé ---
+                            if idx_produit is not None:
+                                df_sheet1.loc[idx_produit, 'photo'] = url_photo
+                                conn.update(worksheet="Sheet1", data=df_sheet1)
+                                st.success(f"Image mise à jour avec succès via {methode_trouvee} !")
+                                
+                                # Enregistrement de la décision dans l'historique
+                                df_historique.loc[idx, 'source'] = "APPROUVE_PHOTO"
+                                conn.update(worksheet="Historique_Prix", data=df_historique)
+                            else:
+                                st.error(f"⚠️ Impossible de trouver '{cup_p}' dans le catalogue (ni dans code_upc, ni dans nom).")
                             
                             st.cache_data.clear()
                             time.sleep(1)
                             st.rerun()
                             
-                        # LOGIQUE BOUTON REJETER LA PHOTO
+                        # LOGIQUE BOUTON REJETER
                         if c_p_rejeter.button("❌ Rejeter la photo", key=f"btn_rej_photo_{idx}", use_container_width=True):
-                            df_historique.loc[idx, 'source'] = f"REFUSE_PHOTO: {source_p}"
+                            df_historique.loc[idx, 'source'] = "REFUSE_PHOTO"
                             conn.update(worksheet="Historique_Prix", data=df_historique)
                             st.error("Changement de photo refusé.")
                             time.sleep(1)
@@ -201,9 +226,10 @@ with onglet_photos:
                                 
                     with col_p_visuel:
                         if url_photo and url_photo.startswith("http"):
-                            st.image(url_photo, caption="Nouvel aperçu scanné", use_container_width=True)
+                            st.image(url_photo, caption=f"Aperçu pour : {cup_p}", use_container_width=True)
                         else:
                             st.error("⚠️ Aucun lien d'image valide pour ce scan.")
+
 
 # =====================================================================
 # GESTION DES MODIFICATIONS DE PRIX

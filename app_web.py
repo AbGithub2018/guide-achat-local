@@ -115,10 +115,11 @@ def charger_donnees():
             def epurer_nom_entreprise(nom):
                 if pd.isna(nom) or str(nom).lower() in ['nan', 'none', '']:
                     return ""
-                nom_propre = str(nom).split(',')
+                nom_propre = str(nom).split(',')[0]
                 motifs_suffixes = r'\b(inc\b\.?|limitée\b|limitee\b|ltd\b\.?|company\b|cie\b\.?)'
                 nom_propre = re.sub(motifs_suffixes, '', nom_propre, flags=re.IGNORECASE)
                 return nom_propre.strip()
+
             df_initial['entreprise_proprietaire'] = df_initial['entreprise_proprietaire'].apply(epurer_nom_entreprise)
 
         if 'nom' in df_initial.columns:

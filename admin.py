@@ -202,19 +202,31 @@ with onglet_photos:
                             
                             # --- ÉTAPE 3 : Application de la modification si trouvé ---
                             if idx_produit is not None:
-                                # SÉCURITÉ : On force la colonne 'photo' en type texte pour éviter l'erreur de type
-                                if 'photo' in df_sheet1.columns:
-                                    df_sheet1['photo'] = df_sheet1['photo'].astype(object)
-                                
-                                df_sheet1.loc[idx_produit, 'photo'] = url_photo
-                                conn.update(worksheet="Sheet1", data=df_sheet1)
-                                st.success(f"Image mise à jour avec succès via {methode_trouvee} !")
-                                
-                                # Enregistrement de la décision dans l'historique
-                                df_historique.loc[idx, 'source'] = "APPROUVE_PHOTO"
-                                conn.update(worksheet="Historique_Prix", data=df_historique)
+                                try:
+                                    # 1. Forcer le type en chaîne de caractères (String)
+                                    df_sheet1['photo'] = df_sheet1['photo'].astype(str)
+                                    df_sheet1.loc[idx_produit, 'photo'] = url_photo
+                                    
+                                    # 2. Exécuter la mise à jour cloud
+                                    conn.update(worksheet="Sheet1", data=df_sheet1)
+                                    
+                                    # 3. Mettre à jour l'historique pour archiver le traitement
+                                    df_historique.loc[idx, 'source'] = "APPROUVE_PHOTO"
+                                    conn.update(worksheet="Historique_Prix", data=df_historique)
+                                    
+                                    # Effacer les caches pour forcer la mise à jour immédiate à l'écran
+                                    st.cache_data.clear()
+                                    st.success(f"🎉 Image appliquée avec succès pour {cup_p} !")
+                                    
+                                    # Pause plus longue pour laisser le temps à l'interface d'afficher le succès
+                                    time.sleep(2)
+                                    st.rerun()
+                                    
+                                except Exception as error_sheets:
+                                    st.error(f"⚠️ Erreur lors de la synchronisation Google Sheets : {error_sheets}")
                             else:
                                 st.error(f"⚠️ Impossible de trouver '{cup_p}' dans le catalogue (ni dans code_upc, ni dans nom).")
+
 
                             
                             st.cache_data.clear()

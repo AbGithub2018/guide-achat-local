@@ -79,6 +79,7 @@ with onglet_nouveaux:
                     v_pays = infos_decoupees[3].replace("Pays:", "").strip() if len(infos_decoupees) > 3 else "Canada"
                 except Exception:
                     v_nom, v_marque, v_prov, v_pays = texte_source, "", "", "Canada"
+
                 
                 # Interface visuelle spacieuse sous forme de carte descriptive
                 with st.container(border=True):

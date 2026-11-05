@@ -172,7 +172,9 @@ with onglet_prix:
                     
                     if c_valider_prix.button("🟢 Approuver ce prix", key=f"btn_val_prix_{idx}", use_container_width=True):
                         if not produit_correspondant.empty:
+                            # Extraction de la position réelle (numéro de ligne entier)
                             idx_ligne_reelle = produit_correspondant.index[0]
+
                             
                             colonne_prix_cible = str(dist_h).strip().lower().replace(' ', '_')
                             if not colonne_prix_cible.startswith("prix_"):

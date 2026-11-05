@@ -155,7 +155,7 @@ with onglet_prix:
                 cup_h_clean = str(cup_h).strip().lstrip('0')
                 
                 produit_correspondant = df_sheet1[df_sheet1['code_upc_clean'] == cup_h_clean]
-                nom_catalogue = produit_correspondant.iloc.get('nom', 'Inconnu') if not produit_correspondant.empty else "⚠️ Code UPC inconnu dans le catalogue principal"
+                nom_catalogue = produit_correspondant.iloc[0]['nom'] if not produit_correspondant.empty else "⚠️ Code UPC inconnu dans le catalogue principal"
                 
                 with st.container(border=True):
                     st.markdown(f"### 💰 Suggestion de prix pour : **{nom_catalogue}**")

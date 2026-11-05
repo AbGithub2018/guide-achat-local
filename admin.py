@@ -57,8 +57,8 @@ with onglet_nouveaux:
         st.info("L'historique est complètement vide.")
     else:
         # On cherche les lignes contenant PROPOSITION_NOUVEAU dans la colonne source
-        df_nouveaux_attente = df_historique[df_historique['source'].str.contains("PROPOSITION_NOUVEAU:", na=False)]
-        
+        df_nouveaux_attente = df_historique[df_historique['source'].str.startswith("PROPOSITION_NOUVEAU:", na=False)]
+     
         if df_nouveaux_attente.empty:
             st.success("🎉 Aucun nouveau produit en attente de validation.")
         else:
@@ -137,7 +137,8 @@ with onglet_prix:
         st.info("L'historique est complètement vide.")
     else:
         # On cherche les lignes contenant PROPOSITION_PRIX dans la colonne source
-        df_prix_attente = df_historique[df_historique['source'].astype(str) == "PROPOSITION_PRIX"]
+        df_prix_attente = df_historique[df_historique['source'].astype(str).str.startswith("PROPOSITION_PRIX", na=False)]
+
         
         if df_prix_attente.empty:
             st.success("🎉 Aucun correctif de prix en attente de validation.")

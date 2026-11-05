@@ -540,7 +540,7 @@ if not df_affichage.empty:
     )
 
     if selection_tableau and "rows" in selection_tableau["selection"] and selection_tableau["selection"]["rows"] and 'code_upc' in df_affichage.columns:
-        index_ligne_cliquee = selection_tableau["selection"]["rows"]
+        index_ligne_cliquee = selection_tableau["selection"]["rows"][0]  # <-- Correction ici avec le [0]
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
@@ -548,13 +548,14 @@ if not df_affichage.empty:
 image_cam = None
 cup_actif = ""
 if resultats is not None and not resultats.empty:
-    cup_actif = str(resultats.iloc.get('code_upc', '')).strip()
+    cup_actif = str(resultats.iloc[0].get('code_upc', '')).strip() # <-- Ajout du .iloc[0] de sécurité
 elif saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_actif = saisie_net.strip()
 
 if cup_actif and cup_actif != "nan":
     st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
     image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
+
 if image_cam:
     try:
         with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
@@ -665,8 +666,8 @@ if resultats is None or resultats.empty:
                     except Exception as e: st.error(f"Erreur d'envoi : {e}")
             else: st.error("⚠️ Le Nom du produit est obligatoire.")
 if resultats is not None and not resultats.empty:
-    index_produit_reel = resultats.index
-    row = resultats.iloc
+    index_produit_reel = resultats.index[0]  # <-- Correction ici avec .index[0]
+    row = resultats.iloc[0]                  # <-- Correction ici avec .iloc[0]
 
     prov = str(row.get('entreprise_province_etat', '')).strip().replace('nan', '')
     pays = str(row.get('entreprise_pays', '')).strip().replace('nan', '')

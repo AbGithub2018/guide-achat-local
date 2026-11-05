@@ -668,7 +668,7 @@ if resultats is None or resultats.empty:
                         }])
                         
                         sauvegarder_historique(ligne_creation_h)
-                        st.success("🎉 Merci ! Votre proposition de produit a été ajoutée à la file de validation.")
+                        st.success("🎉 **Merci !** Votre proposition a été envoyée à notre file de modération bénévole. Elle sera ajoutée au catalogue après vérification par l'administrateur.")
                         st.balloons()
                         time.sleep(1.5)
                         st.rerun()
@@ -780,7 +780,7 @@ if resultats is not None and not resultats.empty:
                     sauvegarder_historique(df_nouvel_historique)
                     
                 st.session_state['dernier_horodatage'] = horodatage_actuel
-                st.success("👍 Vos suggestions de prix ont été placées en file de modération !")
+                st.success("👍 **Proposition enregistrée !** Les prix ont été envoyés pour vérification. Ils seront mis à jour publiquement dès que l'administrateur aura le temps de les valider.")
                 time.sleep(1.5)
                 st.rerun()
         except Exception as e: st.error(f"❌ Erreur lors de l'envoi : {e}")

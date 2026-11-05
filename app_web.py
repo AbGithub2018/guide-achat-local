@@ -342,7 +342,7 @@ if "cup" in st.query_params:
         if saisie_net and "cup" in st.query_params: 
             st.query_params.clear() 
             
-        elif choix_mode == "scan": 
+    elif choix_mode == "scan": 
         if "cup_scanne" not in st.session_state: 
             st.session_state["cup_scanne"] = "" 
         if "scan_termine" not in st.session_state:

@@ -168,7 +168,7 @@ with onglet_prix:
                     
                     if c_valider_prix.button("🟢 Approuver ce prix", key=f"btn_val_prix_{idx}", use_container_width=True):
                         if not produit_correspondant.empty:
-                            # --- CE QUE VOUS DEVEZ VÉRIFIER EN PRIORITÉ ---
+                            # --- CORRECTION CHIRURGICALE : Extraction de l'entier avec [0] ---
                             idx_ligne_reelle = produit_correspondant.index[0]
                             
                             colonne_prix_cible = str(dist_h).strip().lower().replace(' ', '_')
@@ -176,21 +176,20 @@ with onglet_prix:
                                 colonne_prix_cible = f"prix_{colonne_prix_cible}"
                             
                             if colonne_prix_cible in df_sheet1.columns:
-                                # L'utilisation de .at avec [0] est obligatoire ici :
+                                # Injection directe de la valeur propre
                                 df_sheet1.at[idx_ligne_reelle, colonne_prix_cible] = prix_h
                                 conn.update(worksheet="Sheet1", data=df_sheet1)
                             else:
                                 st.error(f"La colonne {colonne_prix_cible} n'existe pas dans Sheet1.")
-
-
                         
                         df_historique.loc[idx, 'source'] = f"APPROUVE_OK: PROPOSITION_PRIX"
                         conn.update(worksheet="Historique_Prix", data=df_historique)
                         
                         st.success("💰 Le prix a été mis à jour dans le catalogue public !")
                         st.cache_data.clear()
-                        time.sleep(1)
+                        time.sleep(1.5)
                         st.rerun()
+
                         
                     if c_rejeter_prix.button("❌ Rejeter ce prix", key=f"btn_rej_prix_{idx}", use_container_width=True):
                         df_historique.loc[idx, 'source'] = f"REFUSE_REJETE: PROPOSITION_PRIX"

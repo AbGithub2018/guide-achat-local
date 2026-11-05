@@ -663,6 +663,7 @@ if resultats is None or resultats.empty:
                         st.rerun()
                     except Exception as e: st.error(f"Erreur d'envoi : {e}")
             else: st.error("⚠️ Le Nom du produit est obligatoire.")
+)
 if resultats is not None and not resultats.empty:
     index_produit_reel = resultats.index
     row = resultats.iloc

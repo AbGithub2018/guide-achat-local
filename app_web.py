@@ -320,14 +320,32 @@ resultats, message_erreur_recherche = None, None
 if "saisie_manuelle" not in st.session_state:
     st.session_state["saisie_manuelle"] = ""
 
+# =====================================================================
+# GESTION DYNAMIQUE DU MODE DE RECHERCHE ET DU SCANNEUR
+# =====================================================================
+
+# 1. Initialisation du mode par défaut si non présent
+if "mode_recherche_actif" not in st.session_state:
+    st.session_state["mode_recherche_actif"] = "scan"
+
+# 2. SOLUTION COLLABORATIVE : Si l'utilisateur clique sur une ligne du tableau,
+# on force le mode manuel pour ÉTEINDRE le scanneur et libérer la caméra du cellulaire.
+if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
+    st.session_state["mode_recherche_actif"] = "manuel"
+
+# 3. Affichage du bouton radio synchronisé avec l'état de l'application
 choix_mode = st.radio(
     "👉 Mode de recherche :", 
     ["manuel", "scan"], 
+    index=0 if st.session_state["mode_recherche_actif"] == "manuel" else 1,
     horizontal=True, 
     label_visibility="collapsed",
-    format_func=lambda x: "⌨️ Recherche manuelle ou" if x == "manuel" else "📸 Scanner un code-barres"
+    format_func=lambda x: "⌨️ Recherche manuelle ou" if x == "manuel" else "📸 Scanner un code-barres",
+    key="bouton_choix_mode"
 )
+st.session_state["mode_recherche_actif"] = choix_mode
 
+# 4. Traitement selon le mode sélectionné
 saisie_net = "" 
 if "cup" in st.query_params: 
     saisie_net = str(st.query_params["cup"]).strip()
@@ -341,21 +359,31 @@ if choix_mode == "manuel":
     saisie_net = st.session_state["saisie_manuelle"]
     if saisie_net and "cup" in st.query_params: 
         st.query_params.clear() 
+
 elif choix_mode == "scan": 
     from streamlit_qrcode_scanner import qrcode_scanner 
     if "cup_scanne" not in st.session_state: 
         st.session_state["cup_scanne"] = "" 
+    
     code_detecte = qrcode_scanner(key="scanner_officiel_live") 
     if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
         st.session_state["cup_scanne"] = str(code_detecte).strip() 
         st.rerun() 
+        
     if st.session_state["cup_scanne"]: 
         saisie_net = st.session_state["cup_scanne"] 
         if st.button("🔄 Effacer le scan actuel"): 
             st.session_state["cup_scanne"] = "" 
+            st.session_state["mode_recherche_actif"] = "scan" # Force le retour au scanneur au prochain clic
+            # Nettoie la sélection du tableau pour pouvoir re-scanner proprement
+            if "tableau_consommateur" in st.session_state:
+                st.session_state["tableau_consommateur"]["selection"]["rows"] = []
             st.rerun()
+
+# Ligne d'origine où votre script reprend la suite de son exécution :
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()
+
     
     def enlever_accents(texte):
         t = str(texte).lower()

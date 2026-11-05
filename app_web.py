@@ -273,6 +273,13 @@ with open("logo_quebec.png", "rb") as image_file:
 
 logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: clamp(30px, 5vw, 46px); width: auto; flex-shrink: 0;" />'
 
+# --- AJOUTEZ LE BOUTON ICI (TOUT EN HAUT) ---
+st.link_button(
+    "⚙️ Administration", 
+    "https://streamlit.app"
+)
+
+# En dessous, votre bloc HTML actuel que vous venez de trouver :
 st.html(f"""
 <div style="display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 15px); margin-bottom: 20px; width: 100%; text-align: center;">
     {logo_html}
@@ -280,6 +287,7 @@ st.html(f"""
     <span style="font-size: clamp(1.3rem, 4.5vw, 2.5rem); flex-shrink: 0;">🍁</span>
 </div>
 """)
+
 
 st.html("""
     <a href="https://streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">

@@ -275,11 +275,12 @@ logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: c
 
 # --- AJOUTEZ LE BOUTON ICI (TOUT EN HAUT) ---
 st.link_button(
-    "⚙️ Administration", 
-    "https://streamlit.app"
+    "⚙️ Admin", 
+    "https://guide-achat-local-gerer.streamlit.app",
+    type="secondary"
 )
 
-# En dessous, votre bloc HTML actuel que vous venez de trouver :
+# En dessous, votre bloc HTML actuel :
 st.html(f"""
 <div style="display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 15px); margin-bottom: 20px; width: 100%; text-align: center;">
     {logo_html}

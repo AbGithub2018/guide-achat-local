@@ -341,19 +341,29 @@ if choix_mode == "manuel":
     saisie_net = st.session_state["saisie_manuelle"]
     if saisie_net and "cup" in st.query_params: 
         st.query_params.clear() 
-elif choix_mode == "scan": 
-    from streamlit_qrcode_scanner import qrcode_scanner 
-    if "cup_scanne" not in st.session_state: 
-        st.session_state["cup_scanne"] = "" 
-    code_detecte = qrcode_scanner(key="scanner_officiel_live") 
-    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
-        st.session_state["cup_scanne"] = str(code_detecte).strip() 
-        st.rerun() 
-    if st.session_state["cup_scanne"]: 
-        saisie_net = st.session_state["cup_scanne"] 
-        if st.button("🔄 Effacer le scan actuel"): 
-            st.session_state["cup_scanne"] = "" 
-            st.rerun()
+    elif choix_mode == "scan": 
+        # Si un produit a été sélectionné dans le tableau, on ferme le scanner
+        if resultats is not None and not resultats.empty:
+            st.success("✅ Produit sélectionné avec succès ! Le scanner est fermé.")
+            saisie_net = st.session_state["cup_scanne"]
+            if st.button("🔄 Scanner un autre produit"):
+                # Réinitialise la sélection pour pouvoir scanner à nouveau
+                if "tableau_consommateur" in st.session_state:
+                    st.session_state["tableau_consommateur"] = {"selection": {"rows": []}}
+                st.session_state["cup_scanne"] = ""
+                st.rerun()
+        else:
+            # Sinon, si aucun produit n'est sélectionné, le scanner s'affiche normalement
+            from streamlit_qrcode_scanner import qrcode_scanner 
+            if "cup_scanne" not in st.session_state: 
+                st.session_state["cup_scanne"] = "" 
+            code_detecte = qrcode_scanner(key="scanner_officiel_live") 
+            if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
+                st.session_state["cup_scanne"] = str(code_detecte).strip() 
+                st.rerun()
+            if st.session_state["cup_scanne"]: 
+                saisie_net = st.session_state["cup_scanne"]
+
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()
     

@@ -333,50 +333,27 @@ if "cup" in st.query_params:
     saisie_net = str(st.query_params["cup"]).strip()
     st.session_state["saisie_manuelle"] = saisie_net
 
-    if choix_mode == "manuel": 
-        if "cup_scanne" in st.session_state: 
-            st.session_state["cup_scanne"] = ""
-        saisie = st.text_input("👉 Saisissez un nom de produit ou un code UPC :", value=st.session_state["saisie_manuelle"], key="recherche_cup") 
-        st.session_state["saisie_manuelle"] = saisie.strip()
-        saisie_net = st.session_state["saisie_manuelle"]
-        if saisie_net and "cup" in st.query_params: 
-            st.query_params.clear() 
-            
-    elif choix_mode == "scan": 
-        if "cup_scanne" not in st.session_state: 
+if choix_mode == "manuel": 
+    if "cup_scanne" in st.session_state: 
+        st.session_state["cup_scanne"] = ""
+    saisie = st.text_input("👉 Saisissez un nom de produit ou un code UPC :", value=st.session_state["saisie_manuelle"], key="recherche_cup") 
+    st.session_state["saisie_manuelle"] = saisie.strip()
+    saisie_net = st.session_state["saisie_manuelle"]
+    if saisie_net and "cup" in st.query_params: 
+        st.query_params.clear() 
+elif choix_mode == "scan": 
+    from streamlit_qrcode_scanner import qrcode_scanner 
+    if "cup_scanne" not in st.session_state: 
+        st.session_state["cup_scanne"] = "" 
+    code_detecte = qrcode_scanner(key="scanner_officiel_live") 
+    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
+        st.session_state["cup_scanne"] = str(code_detecte).strip() 
+        st.rerun() 
+    if st.session_state["cup_scanne"]: 
+        saisie_net = st.session_state["cup_scanne"] 
+        if st.button("🔄 Effacer le scan actuel"): 
             st.session_state["cup_scanne"] = "" 
-        if "scan_termine" not in st.session_state:
-            st.session_state["scan_termine"] = False
-            
-        # ÉTAPE A : Si aucun code n'est scanné, on affiche le scanner
-        if st.session_state["cup_scanne"] == "":
-            from streamlit_qrcode_scanner import qrcode_scanner 
-            code_detecte = qrcode_scanner(key="scanner_officiel_live") 
-            if code_detecte and str(code_detecte).strip() != "": 
-                st.session_state["cup_scanne"] = str(code_detecte).strip() 
-                st.session_state["scan_termine"] = False
-                st.rerun() 
-        else:
-            saisie_net = st.session_state["cup_scanne"] 
-            
-            # ÉTAPE B : Le code est trouvé ! Compte à rebours de 5 secondes pour couper l'objectif
-            if not st.session_state["scan_termine"]:
-                barre_progression = st.progress(0, text="⏳ Code détecté ! Libération de la caméra (5s)...")
-                for i in range(100):
-                    time.sleep(0.05)
-                    barre_progression.progress(i + 1, text=f"⏳ Préparation de la zone photo... ({5 - int(i*0.05)}s)")
-                st.session_state["scan_termine"] = True
-                st.rerun()
-                
-            st.success(f"✅ Code-barres mémorisé : {saisie_net}")
-            if st.button("📸 Scanner un autre produit"): 
-                st.session_state["cup_scanne"] = "" 
-                st.session_state["scan_termine"] = False
-                st.rerun()
-
-
-
-
+            st.rerun()
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()
     
@@ -586,13 +563,7 @@ elif saisie_net and saisie_net.strip() not in ["", "****"]:
 
 if cup_actif and cup_actif != "nan":
     st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
-    
-    # On bloque l'apparition matérielle tant que le compte à rebours de 5 secondes n'est pas terminé
-    if choix_mode == "scan" and not st.session_state.get("scan_termine", False):
-        st.info("⏳ En attente de la détection du code-barres et de la libération de l'appareil photo...")
-    else:
-        image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_officielle_stable_{cup_actif}")
-
+    image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
 
 if image_cam:
     try:

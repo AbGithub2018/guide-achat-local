@@ -7,7 +7,7 @@ import re
 import os
 import base64
 import io
-from PIL import Image
+from PIL import Image, ImageOps
 from streamlit_gsheets import GSheetsConnection
 # Configuration unique de la page
 st.set_page_config(
@@ -602,6 +602,7 @@ if image_cam:
         with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
             nom_fichier_image = f"{cup_actif}.jpg"
             img = Image.open(image_cam)
+            img = ImageOps.exif_transpose(img)
             img.thumbnail((800, 800))
             tampon_memoire = io.BytesIO()
             img.save(tampon_memoire, format="JPEG", quality=70, optimize=True)

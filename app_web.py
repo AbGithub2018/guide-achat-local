@@ -333,15 +333,16 @@ if "cup" in st.query_params:
     saisie_net = str(st.query_params["cup"]).strip()
     st.session_state["saisie_manuelle"] = saisie_net
 
-if choix_mode == "manuel": 
-    if "cup_scanne" in st.session_state: 
-        st.session_state["cup_scanne"] = ""
-    saisie = st.text_input("👉 Saisissez un nom de produit ou un code UPC :", value=st.session_state["saisie_manuelle"], key="recherche_cup") 
-    st.session_state["saisie_manuelle"] = saisie.strip()
-    saisie_net = st.session_state["saisie_manuelle"]
-    if saisie_net and "cup" in st.query_params: 
-        st.query_params.clear() 
-        elif choix_mode == "scan": 
+    if choix_mode == "manuel": 
+        if "cup_scanne" in st.session_state: 
+            st.session_state["cup_scanne"] = ""
+        saisie = st.text_input("👉 Saisissez un nom de produit ou un code UPC :", value=st.session_state["saisie_manuelle"], key="recherche_cup") 
+        st.session_state["saisie_manuelle"] = saisie.strip()
+        saisie_net = st.session_state["saisie_manuelle"]
+        if saisie_net and "cup" in st.query_params: 
+            st.query_params.clear() 
+            
+    elif choix_mode == "scan": 
         from streamlit_qrcode_scanner import qrcode_scanner 
         
         if "cup_scanne" not in st.session_state: 
@@ -373,6 +374,7 @@ if choix_mode == "manuel":
                 st.session_state["cup_scanne"] = "" 
                 st.session_state["scan_termine"] = False
                 st.rerun()
+
 
 
 if saisie_net and saisie_net.strip() not in ["", "****"]:

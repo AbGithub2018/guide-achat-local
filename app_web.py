@@ -341,35 +341,19 @@ if choix_mode == "manuel":
     saisie_net = st.session_state["saisie_manuelle"]
     if saisie_net and "cup" in st.query_params: 
         st.query_params.clear() 
-    elif choix_mode == "scan": 
-        # On crée un interrupteur manuel dans la mémoire du téléphone
-        if "scanner_eteint" not in st.session_state:
-            st.session_state["scanner_eteint"] = False
-
-        # Si l'utilisateur clique sur le bouton pour éteindre, on cache le scanner
-        if st.session_state["scanner_eteint"]:
-            st.success("🔒 Scanner désactivé. L'appareil photo est libre pour la photo du produit ci-dessous.")
-            saisie_net = st.session_state["cup_scanne"]
-            if st.button("📸 Rallumer le scanner de code-barres"):
-                st.session_state["scanner_eteint"] = False
-                st.rerun()
-        else:
-            # Code d'origine exact qui ouvrait la caméra
-            from streamlit_qrcode_scanner import qrcode_scanner 
-            if "cup_scanne" not in st.session_state: 
-                st.session_state["cup_scanne"] = "" 
-            code_detecte = qrcode_scanner(key="scanner_officiel_live") 
-            if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
-                st.session_state["cup_scanne"] = str(code_detecte).strip() 
-                st.rerun() 
-            if st.session_state["cup_scanne"]: 
-                saisie_net = st.session_state["cup_scanne"] 
-                
-                # Le bouton d'extinction manuelle
-                if st.button("🛑 Éteindre le scanner (Étape suivante : Prendre la photo)"):
-                    st.session_state["scanner_eteint"] = True
-                    st.rerun()
-
+elif choix_mode == "scan": 
+    from streamlit_qrcode_scanner import qrcode_scanner 
+    if "cup_scanne" not in st.session_state: 
+        st.session_state["cup_scanne"] = "" 
+    code_detecte = qrcode_scanner(key="scanner_officiel_live") 
+    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
+        st.session_state["cup_scanne"] = str(code_detecte).strip() 
+        st.rerun() 
+    if st.session_state["cup_scanne"]: 
+        saisie_net = st.session_state["cup_scanne"] 
+        if st.button("🔄 Effacer le scan actuel"): 
+            st.session_state["cup_scanne"] = "" 
+            st.rerun()
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()
     
@@ -569,7 +553,6 @@ if not df_affichage.empty:
         if index_ligne_cliquee < len(df_affichage):
             cup_selectionne = str(df_affichage.iloc[index_ligne_cliquee]['code_upc']).strip()
             resultats = df[df['code_upc'] == cup_selectionne]
-            st.session_state["cup_scanne"] = ""
 
 image_cam = None
 cup_actif = ""

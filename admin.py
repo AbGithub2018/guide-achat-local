@@ -168,20 +168,20 @@ with onglet_prix:
                     
                     if c_valider_prix.button("🟢 Approuver ce prix", key=f"btn_val_prix_{idx}", use_container_width=True):
                         if not produit_correspondant.empty:
-                            # --- CORRECTION : Récupération propre de l'index de ligne de la feuille ---
+                            # --- CE QUE VOUS DEVEZ VÉRIFIER EN PRIORITÉ ---
                             idx_ligne_reelle = produit_correspondant.index[0]
                             
-                            # Nettoyage du nom de la colonne cible (tout en minuscules)
                             colonne_prix_cible = str(dist_h).strip().lower().replace(' ', '_')
                             if not colonne_prix_cible.startswith("prix_"):
                                 colonne_prix_cible = f"prix_{colonne_prix_cible}"
                             
-                            # Vérification et injection de la valeur dans la bonne cellule
                             if colonne_prix_cible in df_sheet1.columns:
+                                # L'utilisation de .at avec [0] est obligatoire ici :
                                 df_sheet1.at[idx_ligne_reelle, colonne_prix_cible] = prix_h
                                 conn.update(worksheet="Sheet1", data=df_sheet1)
                             else:
                                 st.error(f"La colonne {colonne_prix_cible} n'existe pas dans Sheet1.")
+
 
                         
                         df_historique.loc[idx, 'source'] = f"APPROUVE_OK: PROPOSITION_PRIX"

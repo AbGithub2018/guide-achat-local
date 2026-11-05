@@ -305,7 +305,7 @@ st.html(f"""
 
 
 st.html("""
-    <a href="https://achatquebec-streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
+    <a href="https://achatquebec-circulaires.streamlit.app/" target="_blank" style="text-decoration: none; width: 100%; display: block;">
         <div style="background-color: #FF3B30; color: white; text-align: center; padding: 18px 20px; border-radius: 12px; font-family: sans-serif; line-height: 1.6; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s ease;">
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 6px;">🛒 Votre panier au plus bas, en direct de vos commerces locaux</div>
             <div style="font-size: 15px; opacity: 0.90; font-weight: 500;">Ouvrir le Planificateur de Budget (circulaires & calcul du panier) ➔</div>

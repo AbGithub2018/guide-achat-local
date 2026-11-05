@@ -407,7 +407,12 @@ df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c
 
 for c in df_affichage.columns: df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
 df_affichage = df_affichage.reset_index(drop=True)
+df_affichage = df_affichage.reset_index(drop=True)
+# =====================================================================
+# APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (URL EXACTE INTEGRÉE)
+# =====================================================================
 st.sidebar.subheader("Aperçu du produit")
+
 cup_actuel = "nan"
 if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
     try:
@@ -429,6 +434,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         for ext in extensions_possibles:
             chemin_test_exact = os.path.join("images", f"{cup_actuel}{ext}")
             chemin_test_sans_zero = os.path.join("images", f"{cup_sans_zero}{ext}")
+
             if os.path.exists(chemin_test_exact):
                 chemin_image_locale = chemin_test_exact
                 break
@@ -440,7 +446,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             st.sidebar.image(chemin_image_locale, caption="Photo : Source Locale (Achat Québec)", use_container_width=True)
         else:
             with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
-                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
+                url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
                 reponse = requests.get(url_api, headers=headers, timeout=5)
                 if reponse.status_code == 200:
@@ -449,8 +455,11 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
                         st.sidebar.image(donnees["product"]["image_url"], caption="Photo officielle OpenFoodFacts", use_container_width=True)
                     else:
                         st.sidebar.warning("⚠️ Photo non disponible dans la base publique.")
-                else: st.sidebar.error("❌ Serveur d'images indisponible.")
-    except Exception as e: st.sidebar.error(f"Erreur Sidebar CUP : {e}")
+                else:
+                    st.sidebar.error("❌ Serveur d'images indisponible.")
+    except Exception as e:
+        st.sidebar.error(f"Erreur Sidebar CUP : {e}")
+
 with st.sidebar.expander("🔑 Administration"):
     if "admin_connecte" not in st.session_state: st.session_state["admin_connecte"] = False
     if not st.session_state["admin_connecte"]:

@@ -342,35 +342,33 @@ if choix_mode == "manuel":
     if saisie_net and "cup" in st.query_params: 
         st.query_params.clear() 
     elif choix_mode == "scan": 
-        # On s'assure d'avoir notre interrupteur pour savoir si le clic a eu lieu
-        if "clic_tableau_fait" not in st.session_state:
-            st.session_state["clic_tableau_fait"] = False
+        # On crée un interrupteur manuel dans la mémoire du téléphone
+        if "scanner_eteint" not in st.session_state:
+            st.session_state["scanner_eteint"] = False
 
-        # Si l'utilisateur a sélectionné un produit dans la liste, on FERME le scanner
-        if st.session_state["clic_tableau_fait"]:
-            st.success("✅ Produit sélectionné ! Le scanner est fermé pour libérer l'appareil photo.")
+        # Si l'utilisateur clique sur le bouton pour éteindre, on cache le scanner
+        if st.session_state["scanner_eteint"]:
+            st.success("🔒 Scanner désactivé. L'appareil photo est libre pour la photo du produit ci-dessous.")
             saisie_net = st.session_state["cup_scanne"]
-            if st.button("🔄 Scanner un autre produit"):
-                # Réinitialisation complète pour le prochain produit
-                st.session_state["clic_tableau_fait"] = False
-                st.session_state["cup_scanne"] = ""
-                if "tableau_consommateur" in st.session_state:
-                    st.session_state["tableau_consommateur"] = {"selection": {"rows":}}
+            if st.button("📸 Rallumer le scanner de code-barres"):
+                st.session_state["scanner_eteint"] = False
                 st.rerun()
         else:
-            # Sinon, on affiche le scanner normalement pour trouver le code-barres
+            # Code d'origine exact qui ouvrait la caméra
             from streamlit_qrcode_scanner import qrcode_scanner 
             if "cup_scanne" not in st.session_state: 
                 st.session_state["cup_scanne"] = "" 
+            code_detecte = qrcode_scanner(key="scanner_officiel_live") 
+            if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
+                st.session_state["cup_scanne"] = str(code_detecte).strip() 
+                st.rerun() 
+            if st.session_state["cup_scanne"]: 
+                saisie_net = st.session_state["cup_scanne"] 
                 
-            if st.session_state["cup_scanne"] == "":
-                code_detecte = qrcode_scanner(key="scanner_officiel_live") 
-                if code_detecte and str(code_detecte).strip() != "": 
-                    st.session_state["cup_scanne"] = str(code_detecte).strip() 
+                # Le bouton d'extinction manuelle
+                if st.button("🛑 Éteindre le scanner (Étape suivante : Prendre la photo)"):
+                    st.session_state["scanner_eteint"] = True
                     st.rerun()
-            
-            saisie_net = st.session_state["cup_scanne"]
-
 
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()

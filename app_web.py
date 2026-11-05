@@ -748,9 +748,10 @@ if resultats is not None and not resultats.empty:
                 nouvelles_lignes = []
                 upc_produit = str(row.get('code_upc', '')).strip()
                 champs_saisis = {
-                    'prix_iga': nouveau_iga, 'prix_maxi': nouveau_maxi, 'prix_metro': nouveau_metro, 'prix_super_c': nouveau_super_c,
+                    'prix_iga': nouveau_iga, 'prix_maxi': nouveau_maxi, 'prix_metro': nouveau_metro, 'prix_super_c': nouveau_superc,
                     'prix_walmart': nouveau_walmart, 'prix_tigre_geant': nouveau_tigre, 'prix_dollarama': nouveau_dollarama, 'prix_provigo': nouveau_provigo
                 }
+
 
                 for distribution_enseigne, valeur_prix in champs_saisis.items():
                     if valeur_prix and str(valeur_prix).strip() != "":

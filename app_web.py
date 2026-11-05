@@ -341,29 +341,29 @@ if choix_mode == "manuel":
     saisie_net = st.session_state["saisie_manuelle"]
     if saisie_net and "cup" in st.query_params: 
         st.query_params.clear() 
-    elif choix_mode == "scan": 
+        elif choix_mode == "scan": 
+        from streamlit_qrcode_scanner import qrcode_scanner 
+        
         if "cup_scanne" not in st.session_state: 
             st.session_state["cup_scanne"] = "" 
         if "scan_termine" not in st.session_state:
             st.session_state["scan_termine"] = False
             
-        # ÉTAPE A : Si aucun code n'est scanné, on affiche le scanner en continu
+        # ÉTAPE A : Si aucun code n'est scanné, on affiche le scanner
         if st.session_state["cup_scanne"] == "":
-            from streamlit_qrcode_scanner import qrcode_scanner 
             code_detecte = qrcode_scanner(key="scanner_officiel_live") 
-            if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
+            if code_detecte and str(code_detecte).strip() != "": 
                 st.session_state["cup_scanne"] = str(code_detecte).strip() 
-                st.session_state["scan_termine"] = False  # Prépare le chrono au prochain rafraîchissement
+                st.session_state["scan_termine"] = False
                 st.rerun() 
         else:
             saisie_net = st.session_state["cup_scanne"] 
             
-            # ÉTAPE B : Le code est trouvé ! On affiche un compte à rebours de 5 secondes 
-            # pendant que le scanner est masqué (ce qui éteint l'appareil photo pour Android)
+            # ÉTAPE B : Le code est trouvé ! Compte à rebours de 5 secondes pour couper l'objectif
             if not st.session_state["scan_termine"]:
                 barre_progression = st.progress(0, text="⏳ Code détecté ! Libération de la caméra (5s)...")
                 for i in range(100):
-                    time.sleep(0.05)  # 100 * 0.05 seconde = 5 secondes au total
+                    time.sleep(0.05)
                     barre_progression.progress(i + 1, text=f"⏳ Préparation de la zone photo... ({5 - int(i*0.05)}s)")
                 st.session_state["scan_termine"] = True
                 st.rerun()
@@ -373,6 +373,7 @@ if choix_mode == "manuel":
                 st.session_state["cup_scanne"] = "" 
                 st.session_state["scan_termine"] = False
                 st.rerun()
+
 
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()

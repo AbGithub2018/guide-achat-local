@@ -365,19 +365,18 @@ elif choix_mode == "scan":
     if "cup_scanne" not in st.session_state: 
         st.session_state["cup_scanne"] = "" 
     
-    code_detecte = qrcode_scanner(key="scanner_officiel_live") 
-    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
-        st.session_state["cup_scanne"] = str(code_detecte).strip() 
-        st.rerun() 
+    ligne_cochee = bool(st.session_state.get("tableau_consommateur", {}).get("selection", {}).get("rows"))
+
+    if not ligne_cochee:
+        code_detecte = qrcode_scanner(key="scanner_officiel_live") 
+        if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
+            st.session_state["cup_scanne"] = str(code_detecte).strip() 
+            st.rerun() 
         
     if st.session_state["cup_scanne"]: 
         saisie_net = st.session_state["cup_scanne"] 
         if st.button("🔄 Effacer le scan actuel"): 
             st.session_state["cup_scanne"] = "" 
-            st.session_state["mode_recherche_actif"] = "scan" # Force le retour au scanneur au prochain clic
-            # Nettoie la sélection du tableau pour pouvoir re-scanner proprement
-            if "tableau_consommateur" in st.session_state:
-                st.session_state["tableau_consommateur"]["selection"]["rows"] = []
             st.rerun()
 
 # Ligne d'origine où votre script reprend la suite de son exécution :

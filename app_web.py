@@ -1,44 +1,4 @@
-import streamlit as st
-import pandas as pd
-import urllib.parse
-import time
-import requests
-import re
-import os
-import base64
-import io
-from PIL import Image, ImageOps
-from streamlit_gsheets import GSheetsConnection
-# Configuration unique de la page
-st.set_page_config(
-    page_title="Acheter Québécois & Canadien",
-    page_icon="📦",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
-code_upc = "code_upc"
-st.html("""
-<style>
-    #MainMenu, footer { visibility: hidden !important; display: none !important; }
-    [data-testid="stStatusWidget"] { display: none !important; }
-    [data-testid="stHeaderActionElements"], .stAppDeployButton { 
-        display: none !important; 
-        visibility: hidden !important;
-        width: 0px !important;
-        height: 0px !important;
-    }
-    .stViewerBadge, .stGitHubIcon, a[href*="github.com"], button[title*="GitHub"] { 
-        display: none !important; 
-        visibility: hidden !important;
-        opacity: 0 !important;
-        width: 0px !important;
-    }
-    header div:nth-child(2) { display: none !important; }
-    header { background-color: transparent !important; }
-    [data-testid="stSidebarCollapseButton"], [data-testid="collapsedControl"] {
-        display: flex !important;
-        visibility: visible !important;
     }
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
@@ -743,17 +703,15 @@ if resultats is not None and not resultats.empty:
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
     # Détection parfaite du marqueur sans bug de formule Google Sheets
-    if "qc_logo" in prov.lower() or "québec" in prov.lower() or "qc" in prov.lower():
-        couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
-        badge_html = "images_stockees/fleur de lys.png"
+    if "québec" in prov.lower():
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⚜️ ACHAT QUÉBÉCOIS</span>'
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
-
-        
-        # 2. Utilisez le chemin local exact du dossier de votre application (sans "https" ou code HTML)
-        badge_html = "images_stockees/fleur de lys.png"
-        
-        # 3. Le texte de verdict
-        verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+    elif "canada" in pays.lower() or "canada" in prov.lower():
+        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
+        verdict = "Ce produit encourage l'économie canadienne."
+    else:
+        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
+        verdict = "Les profits de ce produit quittent le pays."
 
 
 

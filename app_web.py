@@ -684,7 +684,7 @@ if resultats is not None and not resultats.empty:
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
     if "québec" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = = (
+        couleur_boite, couleur_texte, badge_html = (
     '<span style="background-color: #0d47a1; color: white; padding: 8px 14px; '
     'border-radius: 20px; font-weight: bold; display: inline-inline-flex; align-items: center;">'
     '<span style="font-size: 20px; font-family: \'Segoe UI Symbol\', \'Arial Unicode MS\', sans-serif; margin-right: 8px; line-height: 1;">⚜</span>'

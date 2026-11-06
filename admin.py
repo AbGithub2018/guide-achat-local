@@ -287,7 +287,7 @@ with onglet_prix:
                     c_pr_valider, c_pr_rejeter = st.columns(2)
                     
                     # LOGIQUE DE VALIDATION DU PRIX (Double vérification UPC / Nom)
-                    if c_pr_valider.button("✅ Appliquer ce prix", key=f"btn_val_prix_{idx}", use_container_width=True):
+                    if c_pr_valider.button("✅ Appliquer ce prix", key=f"btn_val_prix_unique_{idx}", use_container_width=True):
                         idx_produit = None
                         methode_trouvee = ""
                         
@@ -336,11 +336,4 @@ with onglet_prix:
                         st.error("Proposition de prix rejetée.")
                         time.sleep(2)
                         st.rerun()
-
-                        
-                    if c_pr_rejeter.button("❌ Rejeter", key=f"btn_rej_prix_{idx}", use_container_width=True):
-                        df_historique.loc[idx, 'source'] = f"REFUSE_REJETE: PROPOSITION_PRIX"
-                        conn.update(worksheet="Historique_Prix", data=df_historique)
-                        st.error("Suggestion de prix rejetée.")
-                        time.sleep(1)
-                        st.rerun()
+                                         

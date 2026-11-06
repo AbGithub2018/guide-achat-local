@@ -683,11 +683,8 @@ if resultats is not None and not resultats.empty:
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
-    if "québec" in prov.lower():
-        couleur_boite = "#e1f5fe"
-couleur_texte = "#0d47a1"
-badge_html = '<span style="background-color: #0d47a1; color: white; padding: 8px 14px; border-radius: 20px; font-weight: bold; display: inline-flex; align-items: center;"><span style="font-size: 20px; font-family: \'Segoe UI Symbol\', \'Arial Unicode MS\', sans-serif; margin-right: 8px; line-height: 1;">⚜</span>ACHAT QUÉBÉCOIS</span>'
-
+if "québec" in prov.lower():
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⚜️ ACHAT QUÉBÉCOIS</span>'
          verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
     elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'

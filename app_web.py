@@ -690,32 +690,29 @@ import os
 prov = "Québec"  # Exemple de variable de province
 badge_html = ""
 
-if "québec" in prov.lower():
-    import base64
-    import os
-    
-    # Chemin vers votre fichier d'origine sur GitHub
-    chemin_image = os.path.join("images_stockees", "fleur de lys.png")
-    
-    # On lit le fichier et on le transforme en code texte sécurisé
-    try:
-        with open(chemin_image, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-            fleur_base64 = f"data:image/png;base64,{encoded_string}"
-    except FileNotFoundError:
-        # Sécurité au cas où le fichier n'est pas trouvé pendant un test
-        fleur_base64 = ""
+    if "québec" in prov.lower():
+        import base64
+        import os
         
-    badge_html = (
-        f'<span style="background-color: #0033A0; color: white; padding: 6px 14px; '
-        f'border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">'
-    )
-    if fleur_base64:
-        badge_html += f'<img src="{fleur_base64}" alt="⚜" style="height: 18px; width: auto; display: block;">'
+        chemin_image = os.path.join("images_stockees", "fleur de lys.png")
         
-    badge_html += f' Emploi Québec Confirmé</span>'
-    couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
-    verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+        try:
+            with open(chemin_image, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+                fleur_base64 = f"data:image/png;base64,{encoded_string}"
+        except FileNotFoundError:
+            fleur_base64 = ""
+            
+        badge_html = (
+            f'<span style="background-color: #0033A0; color: white; padding: 6px 14px; '
+            f'border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">'
+        )
+        if fleur_base64:
+            badge_html += f'<img src="{fleur_base64}" alt="⚜" style="height: 18px; width: auto; display: block;">'
+            
+        badge_html += f' Emploi Québec Confirmé</span>'
+        couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
+        verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
 
     elif "canada" in pays.lower() or "canada" in prov.lower():
     # Votre code existant pour le Canada se poursuit ici...

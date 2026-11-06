@@ -683,29 +683,42 @@ if resultats is not None and not resultats.empty:
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
-    if "québec" in prov.lower():
-        import base64
-        import os
+    import base64
+import os
 
-        # Chemin vers votre fichier d'origine sur GitHub
-        chemin_image = os.path.join("images_stockees", "fleur de lys.png")
+# Configuration des chemins et variables
+prov = "Québec"  # Exemple de variable de province
+badge_html = ""
+
+if "québec" in prov.lower():
+    # Chemin vers votre fichier d'origine
+    chemin_image = os.path.join("images_stockees", "fleur de lys.png")
+    
+    # Lecture et conversion de l'image en base64
+    try:
+        with open(chemin_image, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+            fleur_base64 = f"data:image/png;base64,{encoded_string}"
+    except FileNotFoundError:
+        # Sécurité si le fichier est manquant
+        fleur_base64 = ""
+
+    # Génération du badge HTML
+    badge_html = (
+        f'<span style="background-color: #0033A0; color: white; padding: 6px 14px; '
+        f'border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">'
+    )
+    if fleur_base64:
+        badge_html += f'<img src="{fleur_base64}" alt="⚜" style="height: 18px; width: auto; display: block;">'
+    else:
+        badge_html += '⚜'  # Caractère de secours si l'image est manquante
         
-        # On lit le fichier et on le transforme en code texte sécurisé
-        try:
-            with open(chemin_image, "rb") as image_file:
-                encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-                fleur_base64 = f"data:image/png;base64,{encoded_string}"
-        except FileNotFoundError:
-            # Sécurité au cas où le fichier n'est pas trouvé pendant un test
-            fleur_base64 = ""
+    badge_html += ' Emploi Québec Confirmé</span>'
 
-        badge_html = f'<span style="background-color: #0033A0; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">'
-        if fleur_base64:
-            badge_html += f'<img src="{fleur_base64}" alt="⚜" style="height: 18px; width: auto; display: block;">'
-        badge_html += f' Emploi Québec Confirmé</span>'
+    # Variables d'affichage complémentaires
+    couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
+    verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
 
-        couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
-        verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
 
 
 

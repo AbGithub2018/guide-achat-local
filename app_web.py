@@ -726,7 +726,7 @@ if "québec" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
 
-    bannières_config = {
+        bannières_config = {
         'prix_iga': ('🔴 IGA', '#d32f2f'), 'prix_maxi': ('🟡 MAXI', '#f9d71c'), 'prix_metro': ('🟢 METRO', '#28a745'), 'prix_super_c': ('🔵 SUPER C', '#0056b3'),
         'prix_walmart': ('🔵 WALMART', '#0071dc'), 'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#ffcc00'), 'prix_dollarama': ('💵 DOLLARAMA', '#00843d'), 'prix_provigo': ('🟢 PROVIGO', '#ff5a00')
     }

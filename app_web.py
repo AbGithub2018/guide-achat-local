@@ -683,7 +683,7 @@ if resultats is not None and not resultats.empty:
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
-    if "québec" in prov.lower():
+if "québec" in prov.lower():
     couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0033A0; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;"><img src="images_stockees/fleur de lys.png" alt="⚜" style="height: 16px; width: auto; vertical-align: middle;"> Emploi Québec Confirmé</span>'
     verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
 

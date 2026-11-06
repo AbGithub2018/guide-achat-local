@@ -684,8 +684,27 @@ if resultats is not None and not resultats.empty:
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
     if "québec" in prov.lower():
-        fleur_base64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAADG0lEQVRIx2NgGAWjYBSMAtwA7Pz8/P8ZGBj+g9jI8p9ArI9szI9E6wPxbyBWI9bCbyAWAWIuID7Agm7ALxArArETEAsg86H4D4jFgZgXahgDAwPDSyD+D8SvoZgZajgD6IBfQLwXis/CwMDwD4pZ0A3gB+JDUIwsh6vNCOQD+IHYGIhZofw/QLwTihkYGBgYvv758/8/A8P/f0DMBRUD+f8HiLWBmAnIDf8ZGBgYvvz+/f8/EF+G8g8wMDD8/fHz538Ghv9MDEDF99D0fWdgYGB4C8TfGf7/Z2D4D8YgO3//vMfZvYvqA0MQLf8Z/j3D6wB7P9XgXgD9Hegf/gYGBgY/vxm+P+fgeE/shw2N/ECzKjCWPgfiB8wMDD8BdoKshXkR5ArsLkC7HbGBgYGFgYGhgdAzA7E94B4EAsDAwPDX6DJn0HuwuYKFiCegBojLwMDw0cgXg/Ea6DuxmUPzI8gVwIDK9Ttf0C8EIhXAt35GegukBsYGBgYfEPMbYI7nB+I9QLwRiLcB8TcoZgRiHiD+A6VxALF+IDuFmYGBgRGo0AqoW0Hu/wbE7AwMDN8g7v8BxawMDAz/gGbiwMwwgE0+E9CcD1BMbyO4AYqR3YCsfAsM3EDMDsRsSDoYGBgeA/EDBoZ/v8EMZgYGBl6onX+AYRDoEAnGzAxA8yD0PxSzoNvwF2onAxQzgvIDzBCQHVD3MzAwsDIwMDADNf8DGvAbasMHiDsZgNqOgeF7IOZgYGBg+Pn9x///DAz/mRmQDf727ed/BoYnzAygU79+//WfgYGBmYEB2fDvv//8Z2BgYGFgYGD49fvvfwiGAbDdDAwMP7///wexP0DxZ6DdrEALIDZ9/w0y/yNUDwPD/99//wPZH5B0Mv7//fefgYFhCzMDssGvP37/B2p+BsQsUPwbiFmwiDGDDAAr/gPEzFDEwMDw9ffv///+gTVEZgbUAFf//gHzO7AboAnb9f3X//9gA3T/MjMwMDD8+P77/38g/g3FrP+ZGBgYfn3//+8/E9S9WDAAnv4Axf+R5YCcxIgs/gW1A9nF39DEnEwMDEDMDsTsyG4gFAYAfBfD5wMcoIsAAAAASUVORK5CYII="
-        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", f'<span style="background-color: #0033A0; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;"><img src="{fleur_base64}" alt="⚜" style="height: 18px; width: auto; display: block;"> Emploi Québec Confirmé</span>'
+        import base64
+        import os
+
+        # Chemin vers votre fichier d'origine sur GitHub
+        chemin_image = os.path.join("images_stockees", "fleur de lys.png")
+        
+        # On lit le fichier et on le transforme en code texte sécurisé
+        try:
+            with open(chemin_image, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+                fleur_base64 = f"data:image/png;base64,{encoded_string}"
+        except FileNotFoundError:
+            # Sécurité au cas où le fichier n'est pas trouvé pendant un test
+            fleur_base64 = ""
+
+        badge_html = f'<span style="background-color: #0033A0; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">'
+        if fleur_base64:
+            badge_html += f'<img src="{fleur_base64}" alt="⚜" style="height: 18px; width: auto; display: block;">'
+        badge_html += f' Emploi Québec Confirmé</span>'
+
+        couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
 
 

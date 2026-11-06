@@ -709,10 +709,10 @@ if "québec" in prov.lower():
     badge_html += f' Emploi Québec Confirmé</span>'
     couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
     verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
-  elif "canada" in pays.lower() or "canada" in prov.lower():
+elif "canada" in pays.lower() or "canada" in prov.lower():
     couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
     verdict = "Ce produit encourage l'économie canadienne."
-  else:
+else:
     couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
     verdict = "Les profits de ce produit quittent le pays."
 

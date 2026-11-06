@@ -742,9 +742,11 @@ if resultats is not None and not resultats.empty:
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
-    if "québec" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⚜️ ACHAT QUÉBÉCOIS</span>'
+    if "québec" in prov.lower() or "qc" in prov.lower() or "cellimage" in prov.lower():
+        couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
+        badge_html = '<img src="https://githubusercontent.com" style="height: 32px; vertical-align: middle; border-radius: 4px;" alt="Emploi Québec Confirmé">'
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+
     elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
         verdict = "Ce produit encourage l'économie canadienne."

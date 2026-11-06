@@ -685,7 +685,7 @@ if resultats is not None and not resultats.empty:
 
 if "québec" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⚜️ ACHAT QUÉBÉCOIS</span>'
-         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+    verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
     elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
         verdict = "Ce produit encourage l'économie canadienne."

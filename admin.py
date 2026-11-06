@@ -249,63 +249,94 @@ with onglet_photos:
 
 
 # =====================================================================
-# GESTION DES MODIFICATIONS DE PRIX
+# =====================================================================
+# GESTION DES PRIX SUGGÉRÉS (Onglet 2)
 # =====================================================================
 with onglet_prix:
     if df_historique.empty:
         st.info("L'historique est complètement vide.")
     else:
-        df_prix_attente = df_historique[df_historique['source'].str.startswith("PROPOSITION_PRIX", na=False)]
+        # Sécurisation de la colonne source (colonne E) pour le filtrage
+        source_securisee = df_historique['source'].fillna("").astype(str)
+        
+        # Filtre : On récupère les lignes 'PROPOSITION_PRIX' non encore validées ou refusées
+        df_prix_attente = df_historique[
+            (source_securisee == 'PROPOSITION_PRIX') & 
+            (~source_securisee.str.startswith("APPROUVE_")) & 
+            (~source_securisee.str.startswith("REFUSE_"))
+        ]
         
         if df_prix_attente.empty:
             st.success("🎉 Aucun correctif de prix en attente de validation.")
         else:
-            st.warning(f"Il y a {len(df_prix_attente)} proposition(s) de modification de prix à réviser.")
+            st.warning(f"Il y a {len(df_prix_attente)} proposition(s) de prix à réviser.")
             
-            # Création sécurisée de la colonne temporaire de recherche
-            df_sheet1['code_upc_clean'] = df_sheet1['code_upc'].astype(str).str.strip().replace(r'\.0$', '', regex=True).str.lstrip('0')
-            
-            for idx, ligne_h in df_prix_attente.iterrows():
-                cup_h = str(ligne_h['code_upc']).strip()
-                dist_h = str(ligne_h['distribution']).strip()
-                prix_h = str(ligne_h['prix']).strip()
-                
-                cup_h_clean = str(cup_h).strip().lstrip('0')
-                produit_correspondant = df_sheet1[df_sheet1['code_upc_clean'] == cup_h_clean]
-                nom_catalogue = produit_correspondant.iloc[0]['nom'] if not produit_correspondant.empty else "⚠️ Code UPC inconnu"
+            for idx, ligne_pr in df_prix_attente.iterrows():
+                cup_pr = str(ligne_pr['code_upc']).strip()
+                nouveau_prix = str(ligne_pr['prix']).strip()
+                colonne_cible = str(ligne_pr['distribution']).strip() # contient par ex: 'prix_super_c'
+                horodatage_pr = str(ligne_pr['horodatage'])
                 
                 with st.container(border=True):
-                    st.markdown(f"### 💰 Suggestion de prix pour : **{nom_catalogue}**")
-                    col_p1, col_p2 = st.columns(2)
-                    with col_p1:
-                        st.markdown(f"**Code-barres (UPC) :** `{cup_h}`")
-                        st.markdown(f"**Enseigne / Supermarché :** {dist_h.upper().replace('_', ' ')}")
-                    with col_p2:
-                        st.markdown(f"**Nouveau prix proposé :** :green[{prix_h} $]")
+                    st.markdown(f"### 💰 Proposition de nouveau prix")
+                    st.markdown(f"**Produit / Clé Source (UPC ou Nom) :** `{cup_pr}`")
+                    st.markdown(f"**Enseigne concernée (colonne) :** `{colonne_cible}`")
+                    st.markdown(f"**Prix suggéré par l'utilisateur :** {nouveau_prix} $")
+                    st.markdown(f"**Soumis le :** {horodatage_pr}")
                     
-                    c_valider_prix, c_rejeter_prix = st.columns(2)
+                    c_pr_valider, c_pr_rejeter = st.columns(2)
                     
-                    if c_valider_prix.button("🟢 Approuver ce prix", key=f"btn_val_prix_{idx}", use_container_width=True):
-                        if not produit_correspondant.empty:
-                            idx_ligne_reelle = produit_correspondant.index[0]
-                            colonne_prix_cible = str(dist_h).strip().lower().replace(' ', '_')
-                            if not colonne_prix_cible.startswith("prix_"):
-                                colonne_prix_cible = f"prix_{colonne_prix_cible}"
-                            
-                            if colonne_prix_cible in df_sheet1.columns:
-                                df_sheet1.at[idx_ligne_reelle, colonne_prix_cible] = str(prix_h).replace(',', '.').strip()
-                                # On nettoie la colonne temporaire avant l'envoi cloud
-                                df_sheet1_clean = df_sheet1.drop(columns=['code_upc_clean'], errors='ignore')
-                                conn.update(worksheet="Sheet1", data=df_sheet1_clean)
-                            else:
-                                st.error(f"La colonne {colonne_prix_cible} n'existe pas dans Sheet1.")
+                    # LOGIQUE DE VALIDATION DU PRIX (Double vérification UPC / Nom)
+                    if c_pr_valider.button("✅ Appliquer ce prix", key=f"btn_val_prix_{idx}", use_container_width=True):
+                        idx_produit = None
+                        methode_trouvee = ""
                         
-                        df_historique.loc[idx, 'source'] = f"APPROUVE_OK: PROPOSITION_PRIX"
+                        df_sheet1_prive = df_sheet1.copy()
+                        df_sheet1_prive['code_upc_clean'] = df_sheet1_prive['code_upc'].fillna("").astype(str).str.strip()
+                        df_sheet1_prive['nom_clean'] = df_sheet1_prive['nom'].fillna("").astype(str).str.strip().str.lower()
+                        
+                        # 1. Recherche par Code UPC
+                        match_upc = df_sheet1_prive[df_sheet1_prive['code_upc_clean'] == cup_pr].index
+                        if not match_upc.empty:
+                            idx_produit = match_upc
+                            methode_trouvee = "le code UPC"
+                        else:
+                            # 2. Recherche par Nom si l'UPC n'a rien donné
+                            match_nom = df_sheet1_prive[df_sheet1_prive['nom_clean'] == cup_pr.lower()].index
+                            if not match_nom.empty:
+                                idx_produit = match_nom
+                                methode_trouvee = "le nom du produit"
+                                
+                        if idx_produit is not None:
+                            try:
+                                # Validation de la présence de la colonne de prix dans Sheet1
+                                if colonne_cible in df_sheet1.columns:
+                                    df_sheet1.loc[idx_produit, colonne_cible] = nouveau_prix
+                                    
+                                    # Envois successifs au cloud pour éviter la désynchronisation
+                                    conn.update(worksheet="Sheet1", data=df_sheet1)
+                                    df_historique.loc[idx, 'source'] = "APPROUVE_PRIX"
+                                    conn.update(worksheet="Historique_Prix", data=df_historique)
+                                    
+                                    st.cache_data.clear()
+                                    st.success(f"🎉 Prix mis à jour avec succès via {methode_trouvee} !")
+                                    time.sleep(2)
+                                    st.rerun()
+                                else:
+                                    st.error(f"La colonne '{colonne_cible}' n'existe pas dans l'onglet Sheet1.")
+                            except Exception as e:
+                                st.error(f"⚠️ Erreur lors de la synchronisation Cloud : {e}")
+                        else:
+                            st.error("⚠️ Impossible de lier ce prix à un produit existant (Vérifiez l'UPC ou le Nom).")
+                            
+                    # LOGIQUE DE REJET
+                    if c_pr_rejeter.button("❌ Rejeter", key=f"btn_rej_prix_{idx}", use_container_width=True):
+                        df_historique.loc[idx, 'source'] = "REFUSE_PRIX"
                         conn.update(worksheet="Historique_Prix", data=df_historique)
-                        st.success("💰 Le prix a été mis à jour dans le catalogue public !")
-                        st.cache_data.clear()
-                        time.sleep(1.5)
+                        st.error("Proposition de prix rejetée.")
+                        time.sleep(2)
                         st.rerun()
+
                         
                     if c_rejeter_prix.button("❌ Rejeter ce prix", key=f"btn_rej_prix_{idx}", use_container_width=True):
                         df_historique.loc[idx, 'source'] = f"REFUSE_REJETE: PROPOSITION_PRIX"

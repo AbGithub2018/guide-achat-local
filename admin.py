@@ -330,7 +330,7 @@ with onglet_prix:
                             st.error("⚠️ Impossible de lier ce prix à un produit existant (Vérifiez l'UPC ou le Nom).")
                             
                     # LOGIQUE DE REJET
-                    if c_pr_rejeter.button("❌ Rejeter", key=f"btn_rej_prix_{idx}", use_container_width=True):
+                    if c_pr_rejeter.button("❌ Rejeter", key=f"btn_rej_prix_unique_{idx}", use_container_width=True):
                         df_historique.loc[idx, 'source'] = "REFUSE_PRIX"
                         conn.update(worksheet="Historique_Prix", data=df_historique)
                         st.error("Proposition de prix rejetée.")

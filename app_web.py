@@ -1,4 +1,44 @@
+import streamlit as st
+import pandas as pd
+import urllib.parse
+import time
+import requests
+import re
+import os
+import base64
+import io
+from PIL import Image
+from streamlit_gsheets import GSheetsConnection
+# Configuration unique de la page
+st.set_page_config(
+    page_title="Acheter Québécois & Canadien",
+    page_icon="📦",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
+code_upc = "code_upc"
+st.html("""
+<style>
+    #MainMenu, footer { visibility: hidden !important; display: none !important; }
+    [data-testid="stStatusWidget"] { display: none !important; }
+    [data-testid="stHeaderActionElements"], .stAppDeployButton { 
+        display: none !important; 
+        visibility: hidden !important;
+        width: 0px !important;
+        height: 0px !important;
+    }
+    .stViewerBadge, .stGitHubIcon, a[href*="github.com"], button[title*="GitHub"] { 
+        display: none !important; 
+        visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0px !important;
+    }
+    header div:nth-child(2) { display: none !important; }
+    header { background-color: transparent !important; }
+    [data-testid="stSidebarCollapseButton"], [data-testid="collapsedControl"] {
+        display: flex !important;
+        visibility: visible !important;
     }
     .stTextInput label p { font-size: 24px !important; font-weight: bold !important; color: #003366 !important; }
     .stTextInput input { font-size: 26px !important; padding: 15px !important; height: 65px !important; font-weight: bold !important; letter-spacing: 2px !important; }
@@ -233,27 +273,6 @@ with open("logo_quebec.png", "rb") as image_file:
 
 logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: clamp(30px, 5vw, 46px); width: auto; flex-shrink: 0;" />'
 
-# --- UN BOUTON PETIT ET DISCRET TOUT EN HAUT ---
-st.html("""
-<div style="text-align: left; margin-bottom: 5px;">
-    <a href="https://guide-achat-local-gerer.streamlit.app" target="_blank" style="
-        display: inline-block;
-        padding: 4px 10px;
-        font-size: 12px;
-        font-family: sans-serif;
-        color: #333333;
-        background-color: #f0f2f6;
-        border: 1px solid #d3d3d3;
-        border-radius: 4px;
-        text-decoration: none;
-        transition: background-color 0.2s;
-    " onmouseover="this.style.backgroundColor='#e0e2e6'" onmouseout="this.style.backgroundColor='#f0f2f6'">
-        ⚙️ Admin
-    </a>
-</div>
-""")
-
-# En dessous, votre bloc HTML actuel qui reste identique :
 st.html(f"""
 <div style="display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 15px); margin-bottom: 20px; width: 100%; text-align: center;">
     {logo_html}
@@ -262,10 +281,8 @@ st.html(f"""
 </div>
 """)
 
-
-
 st.html("""
-    <a href="https://achatquebec-circulaires.streamlit.app/" target="_blank" style="text-decoration: none; width: 100%; display: block;">
+    <a href="https://streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
         <div style="background-color: #FF3B30; color: white; text-align: center; padding: 18px 20px; border-radius: 12px; font-family: sans-serif; line-height: 1.6; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s ease;">
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 6px;">🛒 Votre panier au plus bas, en direct de vos commerces locaux</div>
             <div style="font-size: 15px; opacity: 0.90; font-weight: 500;">Ouvrir le Planificateur de Budget (circulaires & calcul du panier) ➔</div>
@@ -303,32 +320,14 @@ resultats, message_erreur_recherche = None, None
 if "saisie_manuelle" not in st.session_state:
     st.session_state["saisie_manuelle"] = ""
 
-# =====================================================================
-# GESTION DYNAMIQUE DU MODE DE RECHERCHE ET DU SCANNEUR
-# =====================================================================
-
-# 1. Initialisation du mode par défaut si non présent
-if "mode_recherche_actif" not in st.session_state:
-    st.session_state["mode_recherche_actif"] = "scan"
-
-# 2. SOLUTION COLLABORATIVE : Si l'utilisateur clique sur une ligne du tableau,
-# on force le mode manuel pour ÉTEINDRE le scanneur et libérer la caméra du cellulaire.
-if "tableau_consommateur" in st.session_state and st.session_state["tableau_consommateur"]["selection"]["rows"]:
-    st.session_state["mode_recherche_actif"] = "manuel"
-
-# 3. Affichage du bouton radio synchronisé avec l'état de l'application
 choix_mode = st.radio(
     "👉 Mode de recherche :", 
     ["manuel", "scan"], 
-    index=0 if st.session_state["mode_recherche_actif"] == "manuel" else 1,
     horizontal=True, 
     label_visibility="collapsed",
-    format_func=lambda x: "⌨️ Recherche manuelle ou" if x == "manuel" else "📸 Scanner un code-barres",
-    key="bouton_choix_mode"
+    format_func=lambda x: "⌨️ Recherche manuelle ou" if x == "manuel" else "📸 Scanner un code-barres"
 )
-st.session_state["mode_recherche_actif"] = choix_mode
 
-# 4. Traitement selon le mode sélectionné
 saisie_net = "" 
 if "cup" in st.query_params: 
     saisie_net = str(st.query_params["cup"]).strip()
@@ -342,30 +341,21 @@ if choix_mode == "manuel":
     saisie_net = st.session_state["saisie_manuelle"]
     if saisie_net and "cup" in st.query_params: 
         st.query_params.clear() 
-
 elif choix_mode == "scan": 
     from streamlit_qrcode_scanner import qrcode_scanner 
     if "cup_scanne" not in st.session_state: 
         st.session_state["cup_scanne"] = "" 
-    
-    ligne_cochee = bool(st.session_state.get("tableau_consommateur", {}).get("selection", {}).get("rows"))
-
-    if not ligne_cochee:
-        code_detecte = qrcode_scanner(key="scanner_officiel_live") 
-        if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
-            st.session_state["cup_scanne"] = str(code_detecte).strip() 
-            st.rerun() 
-        
+    code_detecte = qrcode_scanner(key="scanner_officiel_live") 
+    if code_detecte and str(code_detecte).strip() != st.session_state["cup_scanne"]: 
+        st.session_state["cup_scanne"] = str(code_detecte).strip() 
+        st.rerun() 
     if st.session_state["cup_scanne"]: 
         saisie_net = st.session_state["cup_scanne"] 
         if st.button("🔄 Effacer le scan actuel"): 
             st.session_state["cup_scanne"] = "" 
             st.rerun()
-
-# Ligne d'origine où votre script reprend la suite de son exécution :
 if saisie_net and saisie_net.strip() not in ["", "****"]:
     cup_saisi = str(saisie_net).strip()
-
     
     def enlever_accents(texte):
         t = str(texte).lower()
@@ -442,8 +432,8 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         cup_sans_zero = cup_actuel.lstrip('0')
 
         for ext in extensions_possibles:
-            chemin_test_exact = os.path.join("images_stockees", f"{cup_actuel}{ext}")
-            chemin_test_sans_zero = os.path.join("images_stockees", f"{cup_sans_zero}{ext}")
+            chemin_test_exact = os.path.join("images", f"{cup_actuel}{ext}")
+            chemin_test_sans_zero = os.path.join("images", f"{cup_sans_zero}{ext}")
 
             if os.path.exists(chemin_test_exact):
                 chemin_image_locale = chemin_test_exact
@@ -573,32 +563,23 @@ elif saisie_net and saisie_net.strip() not in ["", "****"]:
 
 if cup_actif and cup_actif != "nan":
     st.markdown(f"#### 📸 Ajouter ou remplacer la photo de ce produit (UPC: {cup_actif})")
-    image_cam = st.file_uploader(
-        "Appuyez ici pour prendre le produit en photo", 
-        type=["jpg", "jpeg", "png"], 
-        key=f"cam_globale_{cup_actif}"
-    )
-
+    image_cam = st.camera_input("Prenez le produit en photo (Face avant bien visible)", key=f"cam_globale_{cup_actif}")
 
 if image_cam:
     try:
         with st.spinner("Envoi et sauvegarde définitive de la photo sur GitHub..."):
             nom_fichier_image = f"{cup_actif}.jpg"
             img = Image.open(image_cam)
-            img = ImageOps.exif_transpose(img)
-            if img.width > img.height:
-                img = img.rotate(-90, expand=True)
             img.thumbnail((800, 800))
             tampon_memoire = io.BytesIO()
             img.save(tampon_memoire, format="JPEG", quality=70, optimize=True)
             contenu_image = tampon_memoire.getvalue()
-
             
             UTILISATEUR_GH = "abgithub2018"
             DEPOT_GH = "guide-achat-local"
             TOKEN_GH = st.secrets["GITHUB_TOKEN"]
             
-            url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
+            url_api_github = f"https://github.com{UTILISATEUR_GH}/{DEPOT_GH}/contents/images_stockees/{nom_fichier_image}"
             headers_gh = {"Authorization": f"token {TOKEN_GH}", "Accept": "application/vnd.github.v3+json"}
             
             reponse_get = requests.get(url_api_github, headers=headers_gh)
@@ -613,7 +594,7 @@ if image_cam:
             if envoi_gh.status_code != 200 and envoi_gh.status_code != 201: raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
 
             horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
-            lien_public_github = f"https://raw.githubusercontent.com/{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"
+            lien_public_github = f"https://githubusercontent.com{UTILISATEUR_GH}/{DEPOT_GH}/main/images_stockees/{nom_fichier_image}"
             
             ligne_photo_h = pd.DataFrame([{
                 'horodatage': horodatage_actuel,
@@ -702,20 +683,9 @@ if resultats is not None and not resultats.empty:
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
-    # Détection parfaite du marqueur sans bug de formule Google Sheets
     if "québec" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⚜️ ACHAT QUÉBÉCOIS</span>'
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
-    elif "canada" in pays.lower() or "canada" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
-        verdict = "Ce produit encourage l'économie canadienne."
-    else:
-        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
-        verdict = "Les profits de ce produit quittent le pays."
-
-
-
-
     elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
         verdict = "Ce produit encourage l'économie canadienne."

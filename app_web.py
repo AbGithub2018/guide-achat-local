@@ -744,8 +744,10 @@ if resultats is not None and not resultats.empty:
 
     # Détection parfaite du marqueur sans bug de formule Google Sheets
     if "qc_logo" in prov.lower() or "québec" in prov.lower() or "qc" in prov.lower():
-        # 1. Vos couleurs d'origine restent inchangées
         couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
+        badge_html = "images_stockees/fleur de lys.png"
+        verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+
         
         # 2. Utilisez le chemin local exact du dossier de votre application (sans "https" ou code HTML)
         badge_html = "images_stockees/fleur de lys.png"

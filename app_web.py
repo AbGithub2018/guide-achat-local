@@ -684,7 +684,7 @@ if resultats is not None and not resultats.empty:
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
     if "québec" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", """<img src="https://raw.githubusercontent.com/AbGithub2018/guide-achat-local/main/images_stockees/fleur%20de%20lys.png" style="height: 42px; width: 42px; object-fit: cover; object-position: left; mix-blend-mode: screen; vertical-align: middle; margin-right: 8px; display: inline-block;" alt="⚜">"""
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", """<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 32px; height: 32px; overflow: hidden; display: inline-flex; align-items: center; margin-right: 14px;"><img src="https://raw.githubusercontent.com/AbGithub2018/guide-achat-local/main/images_stockees/fleur%20de%20lys.png" style="height: 32px; width: auto; max-width: none; display: block;" alt="⚜"></div>Emploi Québec Confirmé</span>"""
         verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
     elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'

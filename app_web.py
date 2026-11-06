@@ -683,14 +683,13 @@ if resultats is not None and not resultats.empty:
     compagnie = str(row.get('entreprise_proprietaire', '')).strip().replace('nan', '')
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
-if "québec" in prov.lower():
-    couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0033A0; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;"><img src="images_stockees/fleur de lys.png" alt="⚜" style="height: 16px; width: auto; vertical-align: middle;"> Emploi Québec Confirmé</span>'
-    verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
-
-elif "canada" in pays.lower() or "canada" in prov.lower():
+    if "québec" in prov.lower():
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⚜️ ACHAT QUÉBÉCOIS</span>'
+        verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+    elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
         verdict = "Ce produit encourage l'économie canadienne."
-else:
+    else:
         couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
 

@@ -690,11 +690,11 @@ import os
 prov = "Québec"  # Exemple de variable de province
 badge_html = ""
 
-    if "québec" in prov.lower():
-        import base64
-        import os
+        if "québec" in prov.lower():
+            import base64
+            import os
         
-        chemin_image = os.path.join("images_stockees", "fleur de lys.png")
+            chemin_image = os.path.join("images_stockees", "fleur de lys.png")
         
         try:
             with open(chemin_image, "rb") as image_file:

@@ -338,7 +338,7 @@ with onglet_prix:
                         st.rerun()
 
                         
-                    if c_rejeter_prix.button("❌ Rejeter ce prix", key=f"btn_rej_prix_{idx}", use_container_width=True):
+                    if c_pr_rejeter.button("❌ Rejeter", key=f"btn_rej_prix_{idx}", use_container_width=True):
                         df_historique.loc[idx, 'source'] = f"REFUSE_REJETE: PROPOSITION_PRIX"
                         conn.update(worksheet="Historique_Prix", data=df_historique)
                         st.error("Suggestion de prix rejetée.")

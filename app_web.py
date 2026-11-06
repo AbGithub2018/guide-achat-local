@@ -691,30 +691,30 @@ prov = "Québec"  # Exemple de variable de province
 badge_html = ""
 
 if "québec" in prov.lower():
-import base64
-import os
-chemin_image = os.path.join("images_stockees", "fleur de lys.png")
-try:
-with open(chemin_image, "rb") as image_file:
-encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-fleur_base64 = f"data:image/png;base64,{encoded_string}"
-except FileNotFoundError:
-fleur_base64 = ""
-badge_html = (
-f'<span style="background-color: #0033A0; color: white; padding: 6px 14px; '
-f'border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">'
-)
-if fleur_base64:
-badge_html += f'<img src="{fleur_base64}" alt="⚜" style="height: 18px; width: auto; display: block;">'
-badge_html += f' Emploi Québec Confirmé</span>'
-couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
-verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
-elif "canada" in pays.lower() or "canada" in prov.lower():
-couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
-verdict = "Ce produit encourage l'économie canadienne."
-else:
-couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
-verdict = "Les profits de ce produit quittent le pays."
+    import base64
+    import os
+    chemin_image = os.path.join("images_stockees", "fleur de lys.png")
+    try:
+    with open(chemin_image, "rb") as image_file:
+    encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+    fleur_base64 = f"data:image/png;base64,{encoded_string}"
+    except FileNotFoundError:
+    fleur_base64 = ""
+    badge_html = (
+    f'<span style="background-color: #0033A0; color: white; padding: 6px 14px; '
+    f'border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">'
+    )
+    if fleur_base64:
+    badge_html += f'<img src="{fleur_base64}" alt="⚜" style="height: 18px; width: auto; display: block;">'
+    badge_html += f' Emploi Québec Confirmé</span>'
+    couleur_boite, couleur_texte = "#e1f5fe", "#0d47a1"
+    verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
+    elif "canada" in pays.lower() or "canada" in prov.lower():
+    couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
+    verdict = "Ce produit encourage l'économie canadienne."
+    else:
+    couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
+    verdict = "Les profits de ce produit quittent le pays."
 
 
 

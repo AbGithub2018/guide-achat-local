@@ -717,16 +717,28 @@ if resultats is not None and not resultats.empty:
         import base64
         import os
 
-        # 1. Vérification sécurisée de la cellule de la colonne Z (emplois_quebec)
-        valeur_emplois = 0
-        if 'emplois_quebec' in locals() or 'emplois_quebec' in globals():
-            if emplois_quebec and str(emplois_quebec).strip() != "" and str(emplois_quebec).lower() != "nan":
-                try:
-                    valeur_emplois = int(float(emplois_quebec))
-                except ValueError:
-                    valeur_emplois = 0
+        # 1. Extraction et nettoyage automatique du chiffre depuis votre ligne active
+        chiffre_nettoye = 0
+        try:
+            valeur_brute = None
+            # Détecteurs intelligents pour trouver votre ligne Google Sheets grâce au code UPC
+            if 'df' in locals() and 'code_upc' in df.columns and 'emplois_quebec' in df.columns:
+                ligne_produit = df[df['code_upc'].astype(str) == str(code_upc)]
+                if not ligne_produit.empty:
+                    valeur_brute = ligne_produit['emplois_quebec'].values[0]
+            elif 'row' in locals() and 'emplois_quebec' in row:
+                valeur_brute = row['emplois_quebec']
+            elif 'produit' in locals() and 'emplois_quebec' in produit:
+                valeur_brute = produit['emplois_quebec']
 
-        # 2. Encodage de la fleur de lys en texte Base64 (affichage garanti à 100%)
+            # Nettoyage de la valeur (gestion des espaces de Google Sheets et des NaN)
+            if valeur_brute and str(valeur_brute).strip() != "" and str(valeur_brute).lower() != "nan":
+                texte_brut = str(valeur_brute).replace(" ", "").replace("\xa0", "").replace("\u202f", "")
+                chiffre_nettoye = int(float(texte_brut))
+        except Exception:
+            chiffre_nettoye = 0
+
+        # 2. Encodage de votre fleur de lys transparente (Base64)
         chemin_img = "images_stockees/logo_quebec.png"
         src_image = ""
         if os.path.exists(chemin_img):
@@ -736,21 +748,24 @@ if resultats is not None and not resultats.empty:
         else:
             src_image = "https://githubusercontent.com"
 
-        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", f"""<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 32px; height: 32px; display: inline-flex; align-items: center; margin-right: 14px;"><img src="{src_image}" style="height: 100%; width: auto; display: block;" alt="⚜"></div>Emploi au Québec Confirmé</span>"""
+        # Badge HTML bleu royal avec fleur de lys blanche intégrée à gauche
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", f"""<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 54px; height: 32px; display: inline-flex; align-items: center; margin-right: 14px;"><img src="{src_image}" style="height: 100%; width: auto; display: block;" alt="⚜"></div>Emploi au Québec Confirmé</span>"""
         
-        # 3. Verdict adapté : Précise qu'il s'agit de l'usine, avec ou sans chiffre
-        if valeur_emplois > 0:
-            verdict = f"Ce produit est fabriqué dans une usine locale générant environ {valeur_emplois} emplois directs au Québec."
+        # 3. Verdict : Si la colonne Z contient un chiffre, on l'affiche. Sinon, phrase de secours.
+        if chiffre_nettoye > 0:
+            format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
+            verdict = f"Ce produit est fabriqué dans une usine locale générant environ {format_emplois} emplois directs au Québec."
         else:
-            verdict = "Ce produit est fabriqué dans une usine locale générant des emplois directs au Québec."
-
+            verdict = "Ce produit est fabriqué dans une usine locale au Québec."
 
     elif "canada" in pays.lower() or "canada" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
+        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 4px;">Canada</span>'
         verdict = "Ce produit encourage l'économie canadienne."
+        
     else:
-        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
+        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 4px;">Autre</span>'
         verdict = "Les profits de ce produit quittent le pays."
+
 
 
     bannières_config = {

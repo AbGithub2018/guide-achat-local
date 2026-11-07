@@ -727,7 +727,7 @@ if resultats is not None and not resultats.empty:
                     valeur_emplois = 0
 
         # 2. Encodage de la fleur de lys en texte Base64 (affichage garanti à 100%)
-        chemin_img = "images_stockees/logo_quebec.png"
+        chemin_img = "images_stockees/logo_quebec.jpg"
         src_image = ""
         if os.path.exists(chemin_img):
             with open(chemin_img, "rb") as f:

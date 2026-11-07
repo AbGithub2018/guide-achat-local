@@ -717,22 +717,31 @@ if resultats is not None and not resultats.empty:
         import base64
         import os
 
-        # 1. Extraction et nettoyage automatique du chiffre depuis votre ligne active
+        # 1. Extraction robuste par code UPC (Gestion du format texte brut et numérique)
         chiffre_nettoye = 0
         try:
             valeur_brute = None
-            # Détecteurs intelligents pour trouver votre ligne Google Sheets grâce au code UPC
-            if 'df' in locals() and 'code_upc' in df.columns and 'emplois_quebec' in df.columns:
-                ligne_produit = df[df['code_upc'].astype(str) == str(code_upc)]
+            
+            # Recherche dans le tableau principal 'df'
+            if 'df' in locals() and 'code_upc' in df.columns and 'emplois_quebec' in df.columns and 'code_upc' in locals():
+                # On nettoie le code_upc recherché pour enlever les décimales s'il a été lu comme un nombre (ex: 59749979573.0 -> 59749979573)
+                upc_recherche = str(code_upc).split('.')[0].strip()
+                
+                # On compare les deux colonnes converties textuellement et nettoyées
+                ligne_produit = df[df['code_upc'].astype(str).str.split('.').str[0].str.strip() == upc_recherche]
+                
                 if not ligne_produit.empty:
                     valeur_brute = ligne_produit['emplois_quebec'].values[0]
-            elif 'row' in locals() and 'emplois_quebec' in row:
-                valeur_brute = row['emplois_quebec']
-            elif 'produit' in locals() and 'emplois_quebec' in produit:
-                valeur_brute = produit['emplois_quebec']
 
-            # Nettoyage de la valeur (gestion des espaces de Google Sheets et des NaN)
-            if valeur_brute and str(valeur_brute).strip() != "" and str(valeur_brute).lower() != "nan":
+            # Sécurités de secours si la variable est déjà présente dans la mémoire de la ligne
+            if valeur_brute is None:
+                if 'row' in locals() and 'emplois_quebec' in row:
+                    valeur_brute = row['emplois_quebec']
+                elif 'produit' in locals() and 'emplois_quebec' in produit:
+                    valeur_brute = produit['emplois_quebec']
+
+            # Extraction et nettoyage final du nombre d'emplois (colonne Z)
+            if valeur_brute is not None and str(valeur_brute).strip() != "" and str(valeur_brute).lower() != "nan":
                 texte_brut = str(valeur_brute).replace(" ", "").replace("\xa0", "").replace("\u202f", "")
                 chiffre_nettoye = int(float(texte_brut))
         except Exception:
@@ -748,15 +757,15 @@ if resultats is not None and not resultats.empty:
         else:
             src_image = "https://githubusercontent.com"
 
-        # Badge HTML bleu royal avec fleur de lys blanche intégrée à gauche
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", f"""<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 54px; height: 32px; display: inline-flex; align-items: center; margin-right: 14px;"><img src="{src_image}" style="height: 100%; width: auto; display: block;" alt="⚜"></div>Emploi au Québec Confirmé</span>"""
         
-        # 3. Verdict : Si la colonne Z contient un chiffre, on l'affiche. Sinon, phrase de secours.
+        # 3. Verdict
         if chiffre_nettoye > 0:
             format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
             verdict = f"Ce produit est fabriqué dans une usine locale générant environ {format_emplois} emplois directs au Québec."
         else:
             verdict = "Ce produit est fabriqué dans une usine locale au Québec."
+
 
     elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 4px;">Canada</span>'

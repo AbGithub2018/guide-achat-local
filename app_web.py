@@ -719,7 +719,6 @@ if resultats is not None and not resultats.empty:
             verdict = f"Ce produit génère environ {emplois_quebec} emplois directs au Québec (Usine locale)."
         else:
             verdict = "Ce produit génère des emplois directs au Québec (Usine locale)."
-"
         
     elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'

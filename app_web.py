@@ -717,17 +717,28 @@ if resultats is not None and not resultats.empty:
         import base64
         import os
 
-        # 1. Extraction et nettoyage de la valeur de la colonne Z (emplois_quebec)
+        # 1. On va chercher la ligne du produit dans votre tableau Google Sheet (df) grâce au code UPC
         chiffre_nettoye = 0
-        if 'emplois_quebec' in locals() or 'emplois_quebec' in globals():
-            if emplois_quebec and str(emplois_quebec).strip() != "" and str(emplois_quebec).lower() != "nan":
-                try:
-                    # Enlève tous les types d'espaces (standards et insécables de Google Sheets)
-                    texte_brut = str(emplois_quebec).replace(" ", "").replace("\xa0", "").replace("\u202f", "")
-                    # Convertit d'abord en float pour gérer les "1000.0" puis en int propre
-                    chiffre_nettoye = int(float(texte_brut))
-                except (ValueError, TypeError):
-                    chiffre_nettoye = 0
+        try:
+            # On cherche dans votre tableau 'df' la ligne où la colonne 'code_upc' correspond au produit affiché
+            # (Si vos variables s'appellent un peu différemment, le script a des sécurités automatiques ci-dessous)
+            if 'df' in locals() and 'code_upc' in df.columns and 'emplois_quebec' in df.columns:
+                ligne_produit = df[df['code_upc'].astype(str) == str(code_upc)]
+                if not ligne_produit.empty:
+                    valeur_brute = ligne_produit['emplois_quebec'].values[0]
+            elif 'row' in locals() and 'emplois_quebec' in row:
+                valeur_brute = row['emplois_quebec']
+            elif 'produit' in locals() and 'emplois_quebec' in produit:
+                valeur_brute = produit['emplois_quebec']
+            else:
+                valeur_brute = locals().get('emplois_quebec', globals().get('emplois_quebec', None))
+
+            # Nettoyage automatique du chiffre (enlève les espaces et les virgules de Google Sheets)
+            if valeur_brute and str(valeur_brute).strip() != "" and str(valeur_brute).lower() != "nan":
+                texte_brut = str(valeur_brute).replace(" ", "").replace("\xa0", "").replace("\u202f", "")
+                chiffre_nettoye = int(float(texte_brut))
+        except Exception:
+            chiffre_nettoye = 0
 
         # 2. Encodage de la fleur de lys en texte Base64 (PNG transparent)
         chemin_img = "images_stockees/logo_quebec.png"
@@ -741,10 +752,13 @@ if resultats is not None and not resultats.empty:
 
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", f"""<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 54px; height: 32px; display: inline-flex; align-items: center; margin-right: 14px;"><img src="{src_image}" style="height: 100%; width: auto; display: block;" alt="⚜"></div>Emploi au Québec Confirmé</span>"""
         
-        # 3. Verdict : Affichage avec séparateur de milliers canadien (ex: 1 000)
+        # 3. Verdict : Affichage automatique du bon nombre (ex: 3 000) s'il existe
         if chiffre_nettoye > 0:
             format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
             verdict = f"Ce produit est fabriqué dans une usine locale générant environ {format_emplois} emplois directs au Québec."
+        else:
+            verdict = "Ce produit est fabriqué dans une usine locale générant des emplois directs au Québec."
+
         else:
             verdict = "Ce produit est fabriqué dans une usine locale générant des emplois directs au Québec."
 

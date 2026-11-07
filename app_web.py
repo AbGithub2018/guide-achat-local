@@ -762,7 +762,7 @@ if resultats is not None and not resultats.empty:
         # 3. Verdict
         if chiffre_nettoye > 0:
             format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
-            verdict = f"Ce produit est fabriqué dans une usine locale générant environ <b>{format_emplois}</b> emplois directs au Québec."
+            verdict = f"Ce produit est fabriqué dans une usine locale générant aussi environ <b>{format_emplois}</b> emplois directs au Québec."
         else:
             verdict = "Ce produit est fabriqué dans une usine locale au Québec."
 

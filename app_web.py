@@ -17,6 +17,36 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# INTERRUPTEUR DE MAINTENANCE (Mettre à True pour bloquer l'accès)
+# =========================================================
+EN_CONSTRUCTION = True 
+
+if EN_CONSTRUCTION:
+    # 1. Configuration esthétique de la page temporaire
+    st.set_page_config(page_title="Maintenance - Épicerie QC", page_icon="🍏", layout="centered")
+    
+    # 2. Affichage visuel épuré pour vos utilisateurs
+    st.title("🇨🇦 Base de Données de l'Épicerie Citoyenne")
+    st.markdown("### 🛠️ Mise à jour majeure en cours...")
+    
+    st.warning("⚠️ **L'application est temporairement suspendue pour maintenance.**")
+    
+    st.info(
+        f"💡 Nous retravaillons actuellement notre algorithme et mettons à jour nos fiches "
+        f"pour optimiser la recherche parmi nos **10 500 produits référencés**. "
+        "Le service sera de retour très bientôt !"
+    )
+    
+    # Petit indicateur visuel de chargement
+    st.spinner("Indexation de la base de données québécoise en cours...")
+    
+    st.divider()
+    st.caption("Merci de votre patience et de votre soutien envers ce projet bénévole québécois. ❤️")
+    
+    # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
+    st.stop()
+
+
 code_upc = "code_upc"
 st.html("""
 <style>

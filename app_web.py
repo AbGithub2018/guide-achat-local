@@ -714,17 +714,13 @@ if resultats is not None and not resultats.empty:
     localisation_siege = f"{prov}" + (f" ({pays})" if pays else "") if prov else pays or "Non spécifié"
 
     if "québec" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", """<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 28px; height: 32px; overflow: hidden; display: inline-flex; align-items: center; margin-right: 14px;"><img src="https://githubusercontent.com" style="height: 32px; width: auto; max-width: none; display: block;" alt="⚜"></div>Emploi au Québec Confirmé</span>"""
-        verdict = f"Ce produit génère environ {emplois_quebec} emplois directs au Québec (Usine locale)."
-    else:
-        # Vous pouvez laisser cette section vide ou y mettre des valeurs par défaut si nécessaire
-        pass
-
+        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", '<span style="background-color: #0d47a1; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⚜️ ACHAT QUÉBÉCOIS</span>'
+        verdict = "Ce produit est fièrement ancré au Québec (Décisions et Siège social)."
     elif "canada" in pays.lower() or "canada" in prov.lower():
-        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 4px;">Canada</span>'
+        couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'
         verdict = "Ce produit encourage l'économie canadienne."
     else:
-        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 4px;">Autre</span>'
+        couleur_boite, couleur_texte, badge_html = "#f5f5f5", "#424242", '<span style="background-color: #757575; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🌍 PROPRIÉTÉ ÉTRANGÈRE</span>'
         verdict = "Les profits de ce produit quittent le pays."
 
 

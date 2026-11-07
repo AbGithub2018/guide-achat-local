@@ -717,7 +717,16 @@ if resultats is not None and not resultats.empty:
         import base64
         import os
 
-        # Encodage de l'image locale en texte Base64 (Solution Miracle)
+        # 1. Vérification sécurisée de la cellule de la colonne Z (emplois_quebec)
+        valeur_emplois = 0
+        if 'emplois_quebec' in locals() or 'emplois_quebec' in globals():
+            if emplois_quebec and str(emplois_quebec).strip() != "" and str(emplois_quebec).lower() != "nan":
+                try:
+                    valeur_emplois = int(float(emplois_quebec))
+                except ValueError:
+                    valeur_emplois = 0
+
+        # 2. Encodage de la fleur de lys en texte Base64 (affichage garanti à 100%)
         chemin_img = "images_stockees/logo_quebec.png"
         src_image = ""
         if os.path.exists(chemin_img):
@@ -725,11 +734,16 @@ if resultats is not None and not resultats.empty:
                 data_base64 = base64.b64encode(f.read()).decode("utf-8")
                 src_image = f"data:image/png;base64,{data_base64}"
         else:
-            # Sécurité au cas où le fichier n'est pas trouvé
             src_image = "https://githubusercontent.com"
 
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", f"""<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 32px; height: 32px; display: inline-flex; align-items: center; margin-right: 14px;"><img src="{src_image}" style="height: 100%; width: auto; display: block;" alt="⚜"></div>Emploi au Québec Confirmé</span>"""
-        verdict = f"Ce produit génère environ {emplois_quebec} emplois directs au Québec (Usine locale)."
+        
+        # 3. Verdict adapté : Précise qu'il s'agit de l'usine, avec ou sans chiffre
+        if valeur_emplois > 0:
+            verdict = f"Ce produit est fabriqué dans une usine locale générant environ {valeur_emplois} emplois directs au Québec."
+        else:
+            verdict = "Ce produit est fabriqué dans une usine locale générant des emplois directs au Québec."
+
 
     elif "canada" in pays.lower() or "canada" in prov.lower():
         couleur_boite, couleur_texte, badge_html = "#e8f5e9", "#1b5e20", '<span style="background-color: #1b5e20; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🍁 ACHAT CANADIEN</span>'

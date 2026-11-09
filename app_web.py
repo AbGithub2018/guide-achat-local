@@ -9,6 +9,7 @@ import base64
 import io
 from PIL import Image
 from streamlit_gsheets import GSheetsConnection
+
 # Configuration unique de la page
 st.set_page_config(
     page_title="Acheter Québécois & Canadien",
@@ -45,6 +46,29 @@ if EN_CONSTRUCTION:
     
     # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
     st.stop()
+
+
+# =====================================================================
+# BLOC AJOUTÉ : BOUTON DE GESTION (S'affiche uniquement si EN_CONSTRUCTION = False)
+# =====================================================================
+col_bouton, col_vide = st.columns([1, 4])
+
+with col_bouton:
+    st.link_button(
+        label="⚙️ Gérer l'application", 
+        url="https://streamlit.app",
+        use_container_width=True
+    )
+
+st.markdown("##") 
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# REPRISE DE VOTRE CODE INITIAL
+# (Collez la suite de votre code d'origine juste en dessous : Titre, bannières, etc.)
+# ---------------------------------------------------------------------
+
 
     
 code_upc = "code_upc"

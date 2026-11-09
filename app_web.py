@@ -48,35 +48,44 @@ if EN_CONSTRUCTION:
     st.stop()
 
 # =====================================================================
-# BOUTON GRIS, PETIT ET DISCRET (CODE CORRIGÉ)
+# BOUTON GRIS, PETIT ET DISCRET (VERSION COMPLÈTE FORCE)
 # =====================================================================
 
-# 1. On injecte le style CSS pour forcer le bouton à devenir gris et petit
+# 1. Injection du CSS ultra-ciblé pour forcer la couleur grise
 st.markdown(
     """
     <style>
-    div[data-testid="stLinkButton"] > a {
-        background-color: #f0f2f6 !important; /* Fond gris clair */
-        color: #31333F !important;            /* Texte/icône en foncé */
-        border: 1px solid #d0d4dc !important; /* Bordure fine grise */
-        padding: 4px 12px !important;         /* Moins haut et moins large */
-        font-size: 14px !important;           /* Écrit plus petit */
-        width: auto !important;               /* Empêche le bouton de prendre toute la largeur */
-        display: inline-flex !important;
-    }
-    div[data-testid="stLinkButton"] > a:hover {
-        background-color: #e4e6ea !important; /* Gris un peu plus foncé au survol */
+    /* Ciblage agressif de l'élément pour écraser le thème rouge */
+    div[data-testid="stLinkButton"] a[kind="secondary"] {
+        background-color: #f0f2f6 !important;
         color: #31333F !important;
+        border: 1px solid #d3d3d3 !important;
+        padding: 4px 12px !important;
+        font-size: 14px !important;
+        border-radius: 4px !important;
+        text-decoration: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Forcer aussi la couleur de l'icône et du texte à l'intérieur */
+    div[data-testid="stLinkButton"] a[kind="secondary"] * {
+        color: #31333F !important;
+    }
+
+    /* Effet de survol (devient un poil plus foncé) */
+    div[data-testid="stLinkButton"] a[kind="secondary"]:hover {
+        background-color: #e4e6ea !important;
+        border-color: #b0b0b0 !important;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# 2. On affiche le bouton qui va automatiquement adopter ce style discret
+# 2. Votre bouton avec l'URL originale
 st.link_button(
     label="Gestion", 
-    url="https://guide-achat-local-gerer.streamlit.app/", 
+    url="https://streamlit.app", 
     icon="⚙️", 
     type="secondary" 
 )

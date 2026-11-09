@@ -47,24 +47,22 @@ if EN_CONSTRUCTION:
     # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
     st.stop()
 
-
-# =====================================================================
 # =====================================================================
 # BLOC AJOUTÉ : BOUTON DE GESTION DISCRET
 # =====================================================================
-col_bouton, col_vide = st.columns([1, 10])
+col_bouton, col_vide = st.columns([1, 6])
 
 with col_bouton:
     st.link_button(
         label="⚙️ Gestion", 
         url="https://streamlit.app",
-        type="secondary"  # Force la couleur grise/neutre de Streamlit
+        type="secondary"
     )
 
-# Un tout petit espace sous le bouton
-st.markdown("<div style='margin-bottom: -10px;'></div>", unsafe_html=True)
+# Un simple séparateur natif Streamlit à la place du HTML
+st.write("") 
 # =====================================================================
-   
+  
 code_upc = "code_upc"
 st.html("""
 <style>

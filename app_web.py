@@ -48,27 +48,10 @@ if EN_CONSTRUCTION:
     st.stop()
 
 # =====================================================================
-# BLOC AJOUTÉ : LIEN DISCRET EN HAUT À GAUCHE
+# BOUTON DE GESTION SIMPLE
 # =====================================================================
-# Un lien HTML stylisé en petit bouton gris, aligné à gauche
-st.markdown(
-    """
-    <div style='text-align: left;'>
-        <a href='https://streamlit.app' target='_blank' 
-           style='display: inline-block; padding: 6px 12px; background-color: #f0f2f6; 
-                  color: #31333F; text-decoration: none; border-radius: 4px; 
-                  font-size: 14px; border: 1px solid #d3d3d3; font-family: sans-serif;'>
-            ⚙️ Gestion
-        </a>
-    </div>
-    """,
-    unsafe_html=True
-)
-
-# Un espace propre sous le bouton
-st.write("")
+st.link_button("⚙️ Gestion", "https://guide-achat-local-gerer.streamlit.app/")
 # =====================================================================
-
   
 code_upc = "code_upc"
 st.html("""

@@ -46,6 +46,32 @@ if EN_CONSTRUCTION:
     # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
     st.stop()
 
+    # AJOUT DU BOUTON DE GESTION (Tout en haut à gauche de la page principale)
+# =====================================================================
+# On crée deux colonnes : une petite pour le bouton, une grande vide à droite
+col_bouton, col_vide = st.columns([1, 4])
+
+with col_bouton:
+    st.link_button(
+        label="⚙️ Gérer l'application", 
+        url="https://streamlit.app",
+        use_container_width=True
+    )
+
+# Petit espace visuel optionnel avant votre titre principal
+st.markdown("##") 
+
+# ---------------------------------------------------------------------
+# LE RESTE DE VOTRE CODE CONTINU ICI (Votre titre "MON GUIDE D'ACHAT LOCAL", etc.)
+# ---------------------------------------------------------------------
+Utilisez le code avec précaution.
+
+Ce qui a changé :
+
+1. Positionnement stratégique : Le bloc a été inséré sous le st.stop() de la maintenance. Si le mode maintenance est activé, le script s'arrête et le bouton n'est pas visible. Si la maintenance est désactivée (False), le bouton apparaît instantanément en haut à gauche.
+2. Proportions ajustées [1, 4] : J'ai forcé la première colonne à ne prendre qu'un cinquième (1) de la largeur disponible et laissé les quatre cinquièmes restants vides (4). Cela garantit que votre bouton reste bien compact à gauche et ne s'étire pas de façon inesthétique.
+Si vous le souhaitez, je peux également vous montrer comment masquer ce bouton derrière un petit mot de passe (dans la barre latérale par exemple) pour éviter que n'importe quel utilisateur de votre guide ne clique dessus. Est-ce que cela serait utile pour votre projet ?
+
 
 code_upc = "code_upc"
 st.html("""

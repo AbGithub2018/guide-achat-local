@@ -19,7 +19,7 @@ st.set_page_config(
 
 # INTERRUPTEUR DE MAINTENANCE (Mettre à True pour bloquer et false pour débloquer l'accès)
 # =========================================================
-EN_CONSTRUCTION = True 
+EN_CONSTRUCTION = False
 
 if EN_CONSTRUCTION:
     # 1. Configuration esthétique de la page temporaire

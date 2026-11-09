@@ -47,22 +47,54 @@ if EN_CONSTRUCTION:
     # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
     st.stop()
 
-# Création directe d'un lien stylisé en petit bouton gris discret
+# REMPLACEZ VOTRE ANCIEN BOUTON PAR CE BLOC UNIQUE :
 st.markdown(
     """
-    <a href="https://guide-achat-local-gerer.streamlit.app/" target="_blank" style="
-        display: inline-flex;
-        align-items: center;
-        background-color: #f0f2f6;
-        color: #31333F;
-        border: 1px solid #d3d3d3;
-        padding: 4px 10px;
-        font-size: 14px;
-        border-radius: 4px;
-        text-decoration: none;
-        font-family: sans-serif;
-        gap: 6px;
-    ">⚙️ Gestion</a>
+    <div style="display: flex; align-items: center; gap: 10px; font-family: sans-serif; margin-bottom: 20px;">
+        
+        <!-- 1. Le bouton Gestion discret -->
+        <a href="https://guide-achat-local-gerer.streamlit.app/" target="_blank" style="
+            display: inline-flex;
+            align-items: center;
+            background-color: #f0f2f6;
+            color: #31333F;
+            border: 1px solid #d3d3d3;
+            padding: 4px 10px;
+            font-size: 14px;
+            border-radius: 4px;
+            text-decoration: none;
+            gap: 6px;
+            white-space: nowrap;
+        ">⚙️ Gestion</a>
+        
+        <!-- 2. La flèche déroulante compacte -->
+        <details style="cursor: pointer; position: relative;">
+            <summary style="list-style: none; display: flex; align-items: center; font-size: 14px; color: #555;">
+                ℹ️ <span style="text-decoration: underline; margin-left: 4px;">Explications</span>
+            </summary>
+            
+            <!-- La bulle explicative flottante -->
+            <div style="
+                position: absolute;
+                left: 0;
+                top: 25px;
+                background-color: white;
+                border: 1px solid #d3d3d3;
+                padding: 12px;
+                border-radius: 6px;
+                width: 260px;
+                box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+                z-index: 999;
+                font-size: 13px;
+                line-height: 1.4;
+                color: #31333F;
+            ">
+                Pour protéger la base principale (<strong>10 500 lignes</strong>), les modifications (prix, images, produits) 
+                sont envoyées dans un onglet secondaire. Le bouton permet de les valider.
+            </div>
+        </details>
+        
+    </div>
     """,
     unsafe_allow_html=True
 )

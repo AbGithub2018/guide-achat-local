@@ -48,20 +48,27 @@ if EN_CONSTRUCTION:
     st.stop()
 
 # =====================================================================
-# BLOC AJOUTÉ : BOUTON DE GESTION DISCRET
+# BLOC AJOUTÉ : LIEN DISCRET EN HAUT À GAUCHE
 # =====================================================================
-col_bouton, col_vide = st.columns([1, 6])
+# Un lien HTML stylisé en petit bouton gris, aligné à gauche
+st.markdown(
+    """
+    <div style='text-align: left;'>
+        <a href='https://streamlit.app' target='_blank' 
+           style='display: inline-block; padding: 6px 12px; background-color: #f0f2f6; 
+                  color: #31333F; text-decoration: none; border-radius: 4px; 
+                  font-size: 14px; border: 1px solid #d3d3d3; font-family: sans-serif;'>
+            ⚙️ Gestion
+        </a>
+    </div>
+    """,
+    unsafe_html=True
+)
 
-with col_bouton:
-    st.link_button(
-        label="⚙️ Gestion", 
-        url="https://streamlit.app",
-        type="secondary"
-    )
-
-# Un simple séparateur natif Streamlit à la place du HTML
-st.write("") 
+# Un espace propre sous le bouton
+st.write("")
 # =====================================================================
+
   
 code_upc = "code_upc"
 st.html("""

@@ -47,50 +47,25 @@ if EN_CONSTRUCTION:
     # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
     st.stop()
 
-# 1. Injection du CSS ciblé sur notre conteneur personnalisé
+# Création directe d'un lien stylisé en petit bouton gris discret
 st.markdown(
     """
-    <style>
-    /* Ciblage strict de n'importe quel lien/bouton à l'intérieur de notre zone personnalisée */
-    div.zone-bouton-discret a {
-        background-color: #f0f2f6 !important;
-        border: 1px solid #d3d3d3 !important;
-        padding: 4px 12px !important;
-        font-size: 14px !important;
-        border-radius: 4px !important;
-        text-decoration: none !important;
-        box-shadow: none !important;
-        height: auto !important;
-        min-height: unset !important;
-    }
-
-    /* Forcer la couleur grise/noire du texte et de l'icône à l'intérieur */
-    div.zone-bouton-discret a, 
-    div.zone-bouton-discret a * {
-        color: #31333F !important;
-    }
-
-    /* Effet de survol discret */
-    div.zone-bouton-discret a:hover {
-        background-color: #e4e6ea !important;
-        border-color: #b0b0b0 !important;
-    }
-    </style>
+    <a href="https://guide-achat-local-gerer.streamlit.app/" target="_blank" style="
+        display: inline-flex;
+        align-items: center;
+        background-color: #f0f2f6;
+        color: #31333F;
+        border: 1px solid #d3d3d3;
+        padding: 4px 10px;
+        font-size: 14px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-family: sans-serif;
+        gap: 6px;
+    ">⚙️ Gestion</a>
     """,
     unsafe_allow_html=True
 )
-
-# 2. Création du conteneur HTML et du bouton à l'intérieur
-st.markdown('<div class="zone-bouton-discret">', unsafe_allow_html=True)
-
-st.link_button(
-    label="Gestion",
-    url="https://guide-achat-local-gerer.streamlit.app/",
-    icon="⚙️",
-    type="secondary"
-)
-
-st.markdown('</div>', unsafe_allow_html=True)
 
 code_upc = "code_upc"
 st.html("""

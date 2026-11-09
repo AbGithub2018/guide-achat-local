@@ -50,7 +50,7 @@ if EN_CONSTRUCTION:
 st.markdown(
     """
     <div style="display: inline-flex; align-items: center; gap: 10px; font-family: sans-serif; margin-bottom: 20px; vertical-align: middle;">
-        <a href="https://streamlit.app" target="_blank" style="display: inline-flex; align-items: center; background-color: #f0f2f6; color: #31333F; border: 1px solid #d3d3d3; padding: 5px 12px; font-size: 14px; border-radius: 4px; text-decoration: none; gap: 6px; white-space: nowrap; font-weight: 500; height: 32px; box-sizing: border-box;">⚙️ Gestion</a>
+        <a href="https://guide-achat-local-gerer.streamlit.app/" target="_blank" style="display: inline-flex; align-items: center; background-color: #f0f2f6; color: #31333F; border: 1px solid #d3d3d3; padding: 5px 12px; font-size: 14px; border-radius: 4px; text-decoration: none; gap: 6px; white-space: nowrap; font-weight: 500; height: 32px; box-sizing: border-box;">⚙️ Gestion</a>
         <details style="cursor: pointer; position: relative; display: inline-flex; align-items: center; height: 32px;">
             <summary style="list-style: none; display: inline-flex; align-items: center; font-size: 14px; color: #555; outline: none;">
                 <span style="font-size: 16px; margin-right: 4px;">ℹ️</span>

@@ -58,7 +58,7 @@ st.markdown(
                 <span style="font-size: 10px; margin-left: 4px;">▼</span>
             </summary>
             <div style="position: absolute; left: 0; top: 35px; background-color: white; border: 1px solid #d3d3d3; padding: 14px; border-radius: 6px; width: 280px; box-shadow: 0px 4px 12px rgba(0,0,0,0.15); z-index: 99999; font-size: 13px; line-height: 1.5; color: #31333F; cursor: default;">
-                Pour protéger la base principale (<strong>10 500 lignes</strong>), les modifications (prix, images, produits) sont envoyées dans un onglet secondaire. Le bouton permet de les valider.
+                Pour protéger la base principale (<strong>10 500 lignes</strong>), les modifications (prix, images, produits) sont envoyées dans un onglet secondaire. Le bouton permet à l'administrateur, de les valider.
             </div>
         </details>
     </div>

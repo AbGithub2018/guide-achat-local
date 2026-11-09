@@ -17,9 +17,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# INTERRUPTEUR DE MAINTENANCE (Mettre à True pour bloquer l'accès)
+# INTERRUPTEUR DE MAINTENANCE (Mettre à True pour bloquer et false pour débloquer l'accès)
 # =========================================================
-EN_CONSTRUCTION = False 
+EN_CONSTRUCTION = True 
 
 if EN_CONSTRUCTION:
     # 1. Configuration esthétique de la page temporaire

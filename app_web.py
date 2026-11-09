@@ -47,6 +47,7 @@ if EN_CONSTRUCTION:
     # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
     st.stop()
 
+# Assurez-vous qu'il n'y a PAS de guillemets triples ``` autour de ce bloc dans votre code
 st.markdown(
     """
     <div style="display: flex; align-items: center; gap: 10px; font-family: sans-serif; margin-bottom: 20px;">

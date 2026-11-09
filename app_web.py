@@ -70,7 +70,7 @@ st.markdown(
     }
     </style>
     """,
-    unsafe_allow_code_html=True
+    unsafe_allow_html=True
 )
 
 # 2. On affiche le bouton qui va automatiquement adopter ce style discret

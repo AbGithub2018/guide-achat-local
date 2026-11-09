@@ -47,13 +47,12 @@ if EN_CONSTRUCTION:
     # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
     st.stop()
 
-# REMPLACEZ VOTRE ANCIEN BOUTON PAR CE BLOC UNIQUE :
 st.markdown(
     """
     <div style="display: flex; align-items: center; gap: 10px; font-family: sans-serif; margin-bottom: 20px;">
         
         <!-- 1. Le bouton Gestion discret -->
-        <a href="https://guide-achat-local-gerer.streamlit.app/" target="_blank" style="
+        <a href="https://streamlit.app" target="_blank" style="
             display: inline-flex;
             align-items: center;
             background-color: #f0f2f6;

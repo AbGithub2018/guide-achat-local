@@ -49,28 +49,22 @@ if EN_CONSTRUCTION:
 
 
 # =====================================================================
-# BLOC AJOUTÉ : BOUTON DE GESTION (S'affiche uniquement si EN_CONSTRUCTION = False)
 # =====================================================================
-col_bouton, col_vide = st.columns([1, 4])
+# BLOC AJOUTÉ : BOUTON DE GESTION DISCRET
+# =====================================================================
+col_bouton, col_vide = st.columns([1, 10])
 
 with col_bouton:
     st.link_button(
-        label="⚙️ Gérer l'application", 
+        label="⚙️ Gestion", 
         url="https://streamlit.app",
-        use_container_width=True
+        type="secondary"  # Force la couleur grise/neutre de Streamlit
     )
 
-st.markdown("##") 
+# Un tout petit espace sous le bouton
+st.markdown("<div style='margin-bottom: -10px;'></div>", unsafe_html=True)
 # =====================================================================
-
-
-# ---------------------------------------------------------------------
-# REPRISE DE VOTRE CODE INITIAL
-# (Collez la suite de votre code d'origine juste en dessous : Titre, bannières, etc.)
-# ---------------------------------------------------------------------
-
-
-    
+   
 code_upc = "code_upc"
 st.html("""
 <style>

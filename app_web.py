@@ -48,16 +48,40 @@ if EN_CONSTRUCTION:
     st.stop()
 
 # =====================================================================
-# BOUTON GRIS, PETIT ET DISCRET
+# BOUTON GRIS, PETIT ET DISCRET (CODE CORRIGÉ)
 # =====================================================================
+
+# 1. On injecte le style CSS pour forcer le bouton à devenir gris et petit
+st.markdown(
+    """
+    <style>
+    div[data-testid="stLinkButton"] > a {
+        background-color: #f0f2f6 !important; /* Fond gris clair */
+        color: #31333F !important;            /* Texte/icône en foncé */
+        border: 1px solid #d0d4dc !important; /* Bordure fine grise */
+        padding: 4px 12px !important;         /* Moins haut et moins large */
+        font-size: 14px !important;           /* Écrit plus petit */
+        width: auto !important;               /* Empêche le bouton de prendre toute la largeur */
+        display: inline-flex !important;
+    }
+    div[data-testid="stLinkButton"] > a:hover {
+        background-color: #e4e6ea !important; /* Gris un peu plus foncé au survol */
+        color: #31333F !important;
+    }
+    </style>
+    """,
+    unsafe_allow_code_html=True
+)
+
+# 2. On affiche le bouton qui va automatiquement adopter ce style discret
 st.link_button(
-    label="Gestion",
-    url="https://guide-achat-local-gerer.streamlit.app/",
-    icon="⚙️",
-    type="secondary"
+    label="Gestion", 
+    url="https://guide-achat-local-gerer.streamlit.app/", 
+    icon="⚙️", 
+    type="secondary" 
 )
 # =====================================================================
-  
+
 code_upc = "code_upc"
 st.html("""
 <style>

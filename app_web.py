@@ -48,9 +48,14 @@ if EN_CONSTRUCTION:
     st.stop()
 
 # =====================================================================
-# BOUTON DE GESTION SIMPLE
+# BOUTON GRIS, PETIT ET DISCRET
 # =====================================================================
-st.link_button("⚙️ Gestion", "https://guide-achat-local-gerer.streamlit.app/")
+st.link_button(
+    label="Gestion",
+    url="https://guide-achat-local-gerer.streamlit.app/",
+    icon="⚙️",
+    type="secondary"
+)
 # =====================================================================
   
 code_upc = "code_upc"

@@ -13,10 +13,12 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
     
     with st.spinner("Connexion à votre Google Sheet et traitement des images en cours..."):
         
-        # Utilisation de votre dossier d'images GitHub
-        dossier_images = "images_stockees"
-        if not os.path.exists(dossier_images):
-            os.makedirs(dossier_images)
+        # CORRECTION : Cibler le bon dossier visible sur votre GitHub
+        dossier_photos = "images_stockees"
+        
+        # Créer le dossier s'il n'existe pas encore
+        if not os.path.exists(dossier_photos):
+            os.makedirs(dossier_photos)
             
         # 1. Connexion à votre Google Sheet (onglet 'Sheets')
         from streamlit_gsheets import GSheetsConnection
@@ -31,7 +33,7 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
             produits_corriges_ou_presents = []
             produits_en_erreur = []
             
-            # Analyse de la plage 800 à 1000
+            # Correction de la syntaxe .iloc[800:1000] pour analyser 200 produits
             for index, row in df_produits.iloc[800:1000].iterrows():
                 valeur_cellule = row[colonne_code]
                 if pd.isna(valeur_cellule):
@@ -44,20 +46,29 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                 if not cup_actuel or cup_actuel == "nan" or cup_actuel == "":
                     continue
 
-                # Détecter si une image existe déjà dans 'images_stockees'
+                # Détecter si une image locale existe déjà et trouver son extension
                 image_locale_existe = False
                 extension_locale = ".jpg"
                 for ext in [".jpg", ".jpeg", ".png", ".webp"]:
-                    if os.path.exists(os.path.join(dossier_images, f"{cup_actuel}{ext}")):
+                    if os.path.exists(os.path.join(dossier_photos, f"{cup_actuel}{ext}")):
                         image_locale_existe = True
                         extension_locale = ext
                         break
 
-                url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
+                # URL de l'API v0
+                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecMaintenance - robert.st.jules@gmail.com"}
                 
                 try:
-                    res = requests.get(url_api, headers=headers, timeout=2).json()
+                    reponse_api = requests.get(url_api, headers=headers, timeout=2)
+                    
+                    # CORRECTIF : On s'assure de recevoir du JSON valide pour éviter le crash 'Expecting value'
+                    if reponse_api.status_code == 200 and "application/json" in reponse_api.headers.get("Content-Type", ""):
+                        res = reponse_api.json()
+                    else:
+                        produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": "Produit introuvable ou erreur de format sur OFF"})
+                        continue
+                    
                     if res.get("status") == 1 and "product" in res:
                         img_url = res["product"].get("image_url")
                         
@@ -65,37 +76,38 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                             produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": "Aucune image disponible sur Open Food Facts"})
                             continue
                         
+                        # Vérifier les métadonnées de l'image distante (poids)
                         meta = requests.head(img_url, timeout=2)
                         poids_distant = int(meta.headers.get("Content-Length", 0))
                         
+                        # Déterminer si le téléchargement est nécessaire
                         a_telecharger = False
                         raison = ""
                         
                         if not image_locale_existe:
                             a_telecharger = True
-                            raison = "Image manquante (Téléchargée)"
+                            raison = "Image manquante localement (Téléchargée)"
                         elif poids_distant >= 15000:
                             a_telecharger = True
-                            raison = "Image de basse qualité remplacée par version HD"
+                            raison = "Image locale existante remplacée par version HD"
                         else:
                             produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": "Image OFF également de mauvaise qualité (< 15 Ko)"})
                             continue
 
                         if a_telecharger:
-                            url_sans_parametres = img_url.split('?')[0]
-                            ext_distante = os.path.splitext(url_sans_parametres)[1].lower()
-                            
+                            ext_distante = os.path.splitext(img_url)[1].split('?')[0].lower()
                             if ext_distante not in [".jpg", ".jpeg", ".png", ".webp"]:
                                 ext_distante = ".jpg"
                             
                             if image_locale_existe and extension_locale != ext_distante:
                                 try:
-                                    os.remove(os.path.join(dossier_images, f"{cup_actuel}{extension_locale}"))
+                                    os.remove(os.path.join(dossier_photos, f"{cup_actuel}{extension_locale}"))
                                 except Exception:
                                     pass
                             
+                            # Téléchargement et enregistrement dans le bon dossier
                             img_data = requests.get(img_url, timeout=5).content
-                            chemin_sauvegarde = os.path.join(dossier_images, f"{cup_actuel}{ext_distante}")
+                            chemin_sauvegarde = os.path.join(dossier_photos, f"{cup_actuel}{ext_distante}")
                             with open(chemin_sauvegarde, "wb") as handler:
                                 handler.write(img_data)
                                 

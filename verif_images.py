@@ -25,7 +25,7 @@ if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary
         else:
             produits_a_corriger = []
             
-            # Définition automatique de l'emplacement du dossier "images" à côté du script
+            # Définition automatique de l'emplacement du dossier "images" juste à côté du script
             dossier_actuel = os.path.dirname(os.path.abspath(__file__))
             dossier_photos = os.path.join(dossier_actuel, "images")
             if not os.path.exists(dossier_photos):
@@ -44,7 +44,7 @@ if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary
                 if not cup_actuel or cup_actuel in ["nan", ""]:
                     continue
 
-                # Étape 1 : On vérifie si l'image existe déjà sur le PC
+                # Étape 1 : On vérifie si l'image existe déjà localement sur le PC
                 image_locale_existe = False
                 for ext in [".jpg", ".jpeg", ".png", ".webp"]:
                     if os.path.exists(os.path.join(dossier_photos, f"{cup_actuel}{ext}")):
@@ -66,38 +66,41 @@ if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary
                         if not img_url:
                             produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Image manquante sur Open Food Facts"})
                         else:
-                            # Vérification du poids de la photo sur l'API
-                            meta = requests.head(img_url, timeout=3)
-                            poids_distant = int(meta.headers.get("Content-Length", 0))
+                            # SOLUTION DU BUG : On télécharge d'abord l'image pour connaître son vrai poids
+                            reponse_image = requests.get(img_url, timeout=5)
+                            img_data = reponse_image.content
+                            vrai_poids = len(img_data) # Donne la taille réelle exacte en octets
                             
-                            if poids_distant < 15000:
+                            if vrai_poids < 15000:
                                 produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Qualité médiocre en ligne (< 15 Ko)"})
                             else:
-                                # L'IMAGE EN LIGNE EST BONNE (>= 15 Ko) : ON LA TÉLÉCHARGE DANS LE DOSSIER DU PC
-                                img_data = requests.get(img_url, timeout=5).content
-                                
-                                # Extraction propre de l'extension de l'URL (.jpg, .png, etc.)
-                                url_sans_param = str(img_url).split('?')[0]
-                                ext_distante = os.path.splitext(url_sans_param)[1].lower()
-                                if ext_distante not in [".jpg", ".jpeg", ".png", ".webp"]:
-                                    ext_distante = ".jpg"
+                                # L'IMAGE EST DE BONNE QUALITÉ : ON L'ENREGISTRE SANS FAILLE
+                                # Détermination simple et sécurisée de l'extension
+                                extension = ".jpg"
+                                img_url_basse = str(img_url).lower()
+                                if ".png" in img_url_basse:
+                                    extension = ".png"
+                                elif ".webp" in img_url_basse:
+                                    extension = ".webp"
+                                elif ".jpeg" in img_url_basse:
+                                    extension = ".jpeg"
                                     
-                                chemin_sauvegarde = os.path.join(dossier_photos, f"{cup_actuel}{ext_distante}")
+                                chemin_sauvegarde = os.path.join(dossier_photos, f"{cup_actuel}{extension}")
                                 with open(chemin_sauvegarde, "wb") as handler:
                                     handler.write(img_data)
                     else:
                         produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Produit inconnu sur Open Food Facts"})
-                except Exception:
-                    pass
+                except Exception as e:
+                    produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": f"Erreur technique : {str(e)}"})
 
-            # 2. Affichage des anomalies à l'écran (celles qui n'ont pas pu être téléchargées)
+            # 3. Affichage des anomalies à l'écran (uniquement ce qui n'a pas pu être téléchargé)
             if produits_a_corriger:
                 df_erreurs = pd.DataFrame(produits_a_corriger)
-                st.success(f"🎯 Analyse terminée ! Voici les anomalies qui nécessitent une action manuelle :")
+                st.success(f"🎯 Analyse terminée ! Voici les anomalies restantes :")
                 st.dataframe(df_erreurs) 
                 
                 csv = df_erreurs.to_csv(index=False).encode('utf-8')
                 st.download_button("📥 Télécharger la liste de travail (CSV)", data=csv, file_name="produits_a_remplacer.csv", mime="text/csv")
             else:
                 st.balloons()
-                st.success("🎉 Félicitations ! Toutes les images manquantes ont été téléchargées ou vos fichiers locaux sont déjà parfaits.")
+                st.success("🎉 Félicitations ! Toutes les images manquantes de bonne qualité ont été téléchargées.")

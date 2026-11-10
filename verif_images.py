@@ -5,14 +5,18 @@ import streamlit as st
 
 # Configuration de la page du site de maintenance
 st.set_page_config(page_title="Maintenance - Achat Québec", page_icon="🛠️")
-st.title("🛠️ Outil de Contrôle de Qualité des Images")
-st.write("Ce site analyse vos produits pour trouver les photos manquantes ou floues.")
+st.title("🛠️ Outil de Contrôle et Correction des Images")
+st.write("Ce site analyse vos produits, télécharge les photos manquantes et remplace celles de mauvaise qualité.")
 
 # Bouton pour lancer l'action
-if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary"):
+if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suivants", type="primary"):
     
-    with st.spinner("Connexion à votre Google Sheet et analyse des images en cours..."):
+    with st.spinner("Connexion à votre Google Sheet et traitement des images en cours..."):
         
+        # Créer le dossier 'images' s'il n'existe pas encore
+        if not os.path.exists("images"):
+            os.makedirs("images")
+            
         # 1. Connexion à votre Google Sheet (onglet 'Sheets')
         from streamlit_gsheets import GSheetsConnection
         conn = st.connection("gsheets", type=GSheetsConnection)
@@ -23,9 +27,10 @@ if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary
         if colonne_code not in df_produits.columns:
             st.error(f"❌ La colonne '{colonne_code}' n'existe pas dans votre onglet Sheets.")
         else:
-            produits_a_corriger = []
+            produits_corriges_ou_presents = []
+            produits_en_erreur = []
             
-            # Mode TEST : limité de 600:800  lignes
+            # Correction de la syntaxe .iloc[800:1000] pour analyser 200 produits
             for index, row in df_produits.iloc[800:1000].iterrows():
                 valeur_cellule = row[colonne_code]
                 if pd.isna(valeur_cellule):
@@ -38,45 +43,89 @@ if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary
                 if not cup_actuel or cup_actuel == "nan" or cup_actuel == "":
                     continue
 
-                # Vérification 1 : Dossier local sur GitHub
+                # Détecter si une image locale existe déjà et trouver son extension
                 image_locale_existe = False
+                extension_locale = ".jpg"
                 for ext in [".jpg", ".jpeg", ".png", ".webp"]:
                     if os.path.exists(os.path.join("images", f"{cup_actuel}{ext}")):
                         image_locale_existe = True
+                        extension_locale = ext
                         break
-                        
-                if image_locale_existe:
-                    continue # Déjà corrigé !
 
-                # Vérification 2 : API Open Food Facts
-                url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
+                # Interroger l'API Open Food Facts
+                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecMaintenance - robert.st.jules@gmail.com"}
                 
                 try:
                     res = requests.get(url_api, headers=headers, timeout=2).json()
                     if res.get("status") == 1 and "product" in res:
                         img_url = res["product"].get("image_url")
+                        
                         if not img_url:
-                            produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Image manquante sur OFF"})
+                            produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": "Aucune image disponible sur Open Food Facts"})
+                            continue
+                        
+                        # Vérifier les métadonnées de l'image distante (poids)
+                        meta = requests.head(img_url, timeout=2)
+                        poids_distant = int(meta.headers.get("Content-Length", 0))
+                        
+                        # Déterminer si le téléchargement est nécessaire
+                        a_telecharger = False
+                        raison = ""
+                        
+                        if not image_locale_existe:
+                            a_telecharger = True
+                            raison = "Image manquante localement (Téléchargée)"
+                        elif poids_distant >= 15000:
+                            # Si l'image locale existe mais qu'on veut s'assurer d'avoir la version HD d'OFF
+                            a_telecharger = True
+                            raison = "Image locale existante remplacée par version HD"
                         else:
-                            meta = requests.head(img_url, timeout=2)
-                            poids = int(meta.headers.get("Content-Length", 0))
-                            if poids < 15000:
-                                produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Qualité médiocre (< 15 Ko)"})
-                    else:
-                        produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Produit inconnu sur OFF"})
-                except Exception:
-                    pass
+                            produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": "Image OFF également de mauvaise qualité (< 15 Ko)"})
+                            continue
 
-            # 2. Affichage des résultats sur votre écran web
-            if produits_a_corriger:
-                df_erreurs = pd.DataFrame(produits_a_corriger)
-                st.success(f"🎯 Analyse terminée ! Voici les anomalies détectées :")
-                st.dataframe(df_erreurs) # Génère le tableau interactif à l'écran
+                        if a_telecharger:
+                            # Déduire l'extension depuis l'URL d'OFF (par défaut .jpg)
+                            ext_distante = os.path.splitext(img_url)[1].split('?')[0].lower()
+                            if ext_distante not in [".jpg", ".jpeg", ".png", ".webp"]:
+                                ext_distante = ".jpg"
+                            
+                            # Si l'ancienne image avait une extension différente, on la supprime pour éviter les doublons
+                            if image_locale_existe and extension_locale != ext_distante:
+                                try:
+                                    os.remove(os.path.join("images", f"{cup_actuel}{extension_locale}"))
+                                except Exception:
+                                    pass
+                            
+                            # Téléchargement et enregistrement de la nouvelle image
+                            img_data = requests.get(img_url, timeout=5).content
+                            chemin_sauvegarde = os.path.join("images", f"{cup_actuel}{ext_distante}")
+                            with open(chemin_sauvegarde, "wb") as handler:
+                                handler.write(img_data)
+                                
+                            produits_corriges_ou_presents.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Action": raison, "Poids (octets)": poids_distant})
+                    else:
+                        produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": "Produit inconnu sur Open Food Facts"})
+                except Exception as e:
+                    produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": f"Erreur lors du traitement : {str(e)}"})
+
+            # 2. Affichage des résultats à l'écran
+            st.success("🎯 Analyse et mise à jour terminées !")
+            
+            if produits_corriges_ou_presents:
+                st.subheader("✅ Images téléchargées ou mises à jour")
+                df_succes = pd.DataFrame(produits_corriges_ou_presents)
+                st.dataframe(df_succes)
+            
+            if produits_en_erreur:
+                st.subheader("⚠️ Attention : Produits nécessitant une action manuelle")
+                df_erreurs = pd.DataFrame(produits_en_erreur)
+                st.dataframe(df_erreurs)
                 
-                # Crée le bouton de téléchargement pour votre ordinateur
+                # Permet de télécharger le rapport des anomalies insolubles
                 csv = df_erreurs.to_csv(index=False).encode('utf-8')
-                st.download_button("📥 Télécharger la liste de travail (CSV)", data=csv, file_name="produits_a_remplacer.csv", mime="text/csv")
-            else:
+                st.download_button("📥 Télécharger la liste des anomalies restantes (CSV)", data=csv, file_name="anomalies_images_restantes.csv", mime="text/csv")
+                
+            if not produits_corriges_ou_presents and not produits_en_erreur:
                 st.balloons()
-                st.success("🎉 Félicitations ! Toutes les images analysées sont parfaites.")
+                st.success("🎉 Félicitations ! Aucun produit n'a nécessité de modification dans cette plage.")

@@ -13,8 +13,9 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
     
     with st.spinner("Connexion à votre Google Sheet et traitement des images en cours..."):
         
-        # CORRECTION : Cibler le bon dossier visible sur votre GitHub
-        dossier_photos = "images"
+       # FORCE le téléchargement exact dans votre dossier physique sur le bureau
+        dossier_photos = "C:\\Users\\Robert\\Desktop\\TRUMP\\acheter canadien ou québécois\\application à créer\\DESCRIPTION DES PRODUITS\\PROJET_UPC\\images"
+
         
         # Créer le dossier s'il n'existe pas encore
         if not os.path.exists(dossier_photos):

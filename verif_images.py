@@ -2,7 +2,6 @@ import os
 import requests
 import pandas as pd
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 
 # Configuration de la page du site de maintenance
 st.set_page_config(page_title="Maintenance - Achat Québec", page_icon="🛠️")
@@ -15,6 +14,7 @@ if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary
     with st.spinner("Connexion à votre Google Sheet et analyse des images en cours..."):
         
         # 1. Connexion à votre Google Sheet (onglet 'Sheets')
+        from streamlit_gsheets import GSheetsConnection
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_produits = conn.read(worksheet="Sheet1") 
         
@@ -54,49 +54,39 @@ if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary
                 if image_locale_existe:
                     continue # L'image est déjà sur le PC, on passe au produit suivant !
 
-                # Étape 2 : L'image n'est pas sur le PC, on interroge l'API Canada v3
-                url_api = f"https://ca.openfoodfacts.org/api/v3/product/{cup_actuel}.json"
+                # Étape 2 : L'image n'est pas sur le PC, on interroge l'API v0 originale
+                url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecMaintenance - robert.st.jules@gmail.com"}
                 
                 try:
                     res = requests.get(url_api, headers=headers, timeout=3).json()
-                    if res.get("status") != "failure" and "product" in res:
+                    if res.get("status") == 1 and "product" in res:
                         img_url = res["product"].get("image_url")
                         
                         if not img_url:
-                            produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Image manquante sur Open Food Facts"})
+                            produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Image manquante sur OFF"})
                         else:
-                            # SOLUTION DU BUG : On télécharge d'abord l'image pour connaître son vrai poids
+                            # TÉLÉCHARGEMENT DIRECT SANS REQUÊTE HEAD
                             reponse_image = requests.get(img_url, timeout=5)
                             img_data = reponse_image.content
-                            vrai_poids = len(img_data) # Donne la taille réelle exacte en octets
+                            vrai_poids = len(img_data)
                             
                             if vrai_poids < 15000:
-                                produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Qualité médiocre en ligne (< 15 Ko)"})
+                                produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Qualité médiocre sur OFF (< 15 Ko)"})
                             else:
-                                # L'IMAGE EST DE BONNE QUALITÉ : ON L'ENREGISTRE SANS FAILLE
-                                # Détermination simple et sécurisée de l'extension
-                                extension = ".jpg"
-                                img_url_basse = str(img_url).lower()
-                                if ".png" in img_url_basse:
-                                    extension = ".png"
-                                elif ".webp" in img_url_basse:
-                                    extension = ".webp"
-                                elif ".jpeg" in img_url_basse:
-                                    extension = ".jpeg"
-                                    
-                                chemin_sauvegarde = os.path.join(dossier_photos, f"{cup_actuel}{extension}")
+                                # L'IMAGE EST BONNE : ENREGISTREMENT EN SÉCURITÉ EN .JPG
+                                chemin_sauvegarde = os.path.join(dossier_photos, f"{cup_actuel}.jpg")
                                 with open(chemin_sauvegarde, "wb") as handler:
                                     handler.write(img_data)
                     else:
-                        produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Produit inconnu sur Open Food Facts"})
+                        produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": "Produit inconnu sur OFF"})
                 except Exception as e:
                     produits_a_corriger.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Raison": f"Erreur technique : {str(e)}"})
 
-            # 3. Affichage des anomalies à l'écran (uniquement ce qui n'a pas pu être téléchargé)
+            # 3. Affichage des anomalies à l'écran
             if produits_a_corriger:
                 df_erreurs = pd.DataFrame(produits_a_corriger)
-                st.success(f"🎯 Analyse terminée ! Voici les anomalies restantes :")
+                st.success(f"🎯 Analyse terminée ! Voici les anomalies détectées :")
                 st.dataframe(df_erreurs) 
                 
                 csv = df_erreurs.to_csv(index=False).encode('utf-8')

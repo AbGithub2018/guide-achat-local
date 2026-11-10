@@ -25,8 +25,8 @@ if st.button("🚀 Démarrer l'analyse des 200 produits suivants", type="primary
         else:
             produits_a_corriger = []
             
-            # Mode TEST : limité de 600-800  lignes
-            for index, row in df_produits.iloc[800-1000].iterrows():
+            # Mode TEST : limité de 600:800  lignes
+            for index, row in df_produits.iloc[800:1000].iterrows():
                 valeur_cellule = row[colonne_code]
                 if pd.isna(valeur_cellule):
                     continue

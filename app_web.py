@@ -592,7 +592,7 @@ try:
         lon = dms_a_decimal_sidebar(infos_commune["Longitude"], est_longitude=True)
         if lat and lon:
             terme_recherche = urllib.parse.quote("épiceries")
-            lien_maps = f"https://google.com{terme_recherche}/@{lat},{lon},13z"
+            lien_maps = f"https://www.google.com/maps/search/{terme_recherche}/@{lat},{lon},13z"
             st.sidebar.link_button(f"🚀 Ouvrir Google Maps", lien_maps, use_container_width=True)
         else: st.sidebar.error("Impossible de charger les coordonnées de cette ville.")
 except Exception as erreur_carte:

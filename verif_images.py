@@ -13,9 +13,10 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
     
     with st.spinner("Connexion à votre Google Sheet et traitement des images en cours..."):
         
-        # Créer le dossier 'images' s'il n'existe pas encore
-        if not os.path.exists("images"):
-            os.makedirs("images")
+        # Utilisation de votre dossier d'images GitHub
+        dossier_images = "images_stockees"
+        if not os.path.exists(dossier_images):
+            os.makedirs(dossier_images)
             
         # 1. Connexion à votre Google Sheet (onglet 'Sheets')
         from streamlit_gsheets import GSheetsConnection
@@ -30,7 +31,7 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
             produits_corriges_ou_presents = []
             produits_en_erreur = []
             
-            # Correction de la syntaxe .iloc[800:1000] pour analyser 200 produits
+            # Analyse de la plage 800 à 1000
             for index, row in df_produits.iloc[800:1000].iterrows():
                 valeur_cellule = row[colonne_code]
                 if pd.isna(valeur_cellule):
@@ -43,16 +44,15 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                 if not cup_actuel or cup_actuel == "nan" or cup_actuel == "":
                     continue
 
-                # Détecter si une image locale existe déjà et trouver son extension
+                # Détecter si une image existe déjà dans 'images_stockees'
                 image_locale_existe = False
                 extension_locale = ".jpg"
                 for ext in [".jpg", ".jpeg", ".png", ".webp"]:
-                    if os.path.exists(os.path.join("images", f"{cup_actuel}{ext}")):
+                    if os.path.exists(os.path.join(dossier_images, f"{cup_actuel}{ext}")):
                         image_locale_existe = True
                         extension_locale = ext
                         break
 
-                # Interroger l'API Open Food Facts
                 url_api = f"https://openfoodfacts.org{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecMaintenance - robert.st.jules@gmail.com"}
                 
@@ -65,41 +65,37 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                             produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": "Aucune image disponible sur Open Food Facts"})
                             continue
                         
-                        # Vérifier les métadonnées de l'image distante (poids)
                         meta = requests.head(img_url, timeout=2)
                         poids_distant = int(meta.headers.get("Content-Length", 0))
                         
-                        # Déterminer si le téléchargement est nécessaire
                         a_telecharger = False
                         raison = ""
                         
                         if not image_locale_existe:
                             a_telecharger = True
-                            raison = "Image manquante localement (Téléchargée)"
+                            raison = "Image manquante (Téléchargée)"
                         elif poids_distant >= 15000:
-                            # Si l'image locale existe mais qu'on veut s'assurer d'avoir la version HD d'OFF
                             a_telecharger = True
-                            raison = "Image locale existante remplacée par version HD"
+                            raison = "Image de basse qualité remplacée par version HD"
                         else:
                             produits_en_erreur.append({"code_upc": cup_actuel, "Nom": row.get("Nom_Produit", ""), "Statut": "Image OFF également de mauvaise qualité (< 15 Ko)"})
                             continue
 
                         if a_telecharger:
-                            # Déduire l'extension depuis l'URL d'OFF (par défaut .jpg)
-                            ext_distante = os.path.splitext(img_url)[1].split('?')[0].lower()
+                            url_sans_parametres = img_url.split('?')[0]
+                            ext_distante = os.path.splitext(url_sans_parametres)[1].lower()
+                            
                             if ext_distante not in [".jpg", ".jpeg", ".png", ".webp"]:
                                 ext_distante = ".jpg"
                             
-                            # Si l'ancienne image avait une extension différente, on la supprime pour éviter les doublons
                             if image_locale_existe and extension_locale != ext_distante:
                                 try:
-                                    os.remove(os.path.join("images", f"{cup_actuel}{extension_locale}"))
+                                    os.remove(os.path.join(dossier_images, f"{cup_actuel}{extension_locale}"))
                                 except Exception:
                                     pass
                             
-                            # Téléchargement et enregistrement de la nouvelle image
                             img_data = requests.get(img_url, timeout=5).content
-                            chemin_sauvegarde = os.path.join("images", f"{cup_actuel}{ext_distante}")
+                            chemin_sauvegarde = os.path.join(dossier_images, f"{cup_actuel}{ext_distante}")
                             with open(chemin_sauvegarde, "wb") as handler:
                                 handler.write(img_data)
                                 
@@ -122,7 +118,6 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                 df_erreurs = pd.DataFrame(produits_en_erreur)
                 st.dataframe(df_erreurs)
                 
-                # Permet de télécharger le rapport des anomalies insolubles
                 csv = df_erreurs.to_csv(index=False).encode('utf-8')
                 st.download_button("📥 Télécharger la liste des anomalies restantes (CSV)", data=csv, file_name="anomalies_images_restantes.csv", mime="text/csv")
                 

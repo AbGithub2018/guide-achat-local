@@ -506,8 +506,8 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
         cup_sans_zero = cup_actuel.lstrip('0')
 
         for ext in extensions_possibles:
-            chemin_test_exact = os.path.join("images", f"{cup_actuel}{ext}")
-            chemin_test_sans_zero = os.path.join("images", f"{cup_sans_zero}{ext}")
+            chemin_test_exact = os.path.join("images_stockees", f"{cup_actuel}{ext}")
+            chemin_test_sans_zero = os.path.join("images_stockees", f"{cup_sans_zero}{ext}")
 
             if os.path.exists(chemin_test_exact):
                 chemin_image_locale = chemin_test_exact

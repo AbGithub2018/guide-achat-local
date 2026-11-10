@@ -55,7 +55,7 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                         extension_locale = ext
                         break
 
-                # URL de l'API v3 ciblée spécifiquement sur le Canada
+                # URL de l'API v3 Canada (Exacte et corrigée)
                 url_api = f"https://ca.openfoodfacts.org/api/v3/product/{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecMaintenance - robert.st.jules@gmail.com"}
                 
@@ -113,11 +113,11 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                         })
                         continue
 
-                    # Processus de téléchargement
+                    # Processus de téléchargement sécurisé
                     if a_telecharger:
-                        # Extraction propre et sécurisée de l'extension
-                        nom_fich, ext_brute = os.path.splitext(img_url)
-                        ext_distante = ext_brute.split('?')[0].lower()
+                        # CORRECTION DE L'EXTRACTION DE L'EXTENSION
+                        base_url = img_url.split('?')[0]
+                        ext_distante = os.path.splitext(base_url)[1].lower()
                         
                         if ext_distante not in [".jpg", ".jpeg", ".png", ".webp"]:
                             ext_distante = ".jpg"
@@ -135,7 +135,7 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                         with open(chemin_sauvegarde, "wb") as handler:
                             handler.write(img_data)
 
-                        # Succès : Le produit est classé dans la bonne liste
+                        # Succès : Le produit est correctement enregistré
                         produits_corriges_ou_presents.append({
                             "code_upc": cup_actuel, 
                             "Nom": row.get("Nom_Produit", ""), 

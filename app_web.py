@@ -157,16 +157,32 @@ def charger_donnees():
         df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip() 
 
         if 'entreprise_province_etat' in df_initial.columns and 'entreprise_pays' in df_initial.columns:
-            # 1. Nettoyage de la casse pour enlever les doublons (ex: "ontario" -> "Ontario")
-            df_initial['entreprise_province_etat'] = df_initial['entreprise_province_etat'].astype(str).str.strip().str.title()
+            # 1. On convertit d'abord en texte brut propre pour l'analyse
+            df_initial['entreprise_province_etat'] = df_initial['entreprise_province_etat'].astype(str).str.strip()
+
+            # 2. Détection élargie : cherche "quebec", "qc", "Qc", ou n'importe quel texte contenant ",QC" ou ",Qc"
+            mask_quebec = (
+                df_initial['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False) |
+                df_initial['entreprise_province_etat'].str.lower().str.contains(r'\bqc\b', na=False) |
+                df_initial['entreprise_province_etat'].str.lower().str.contains(r',\s*qc', na=False)
+            )
+            
+            # On force l'harmonisation pour toutes les lignes détectées comme étant au Québec
+            df_initial.loc[mask_quebec, 'entreprise_province_etat'] = 'Québec'
+            df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Canada'
+
+            # 3. Nettoyage final pour TOUTES les autres provinces (fusionne "ontario" -> "Ontario")
+            df_initial['entreprise_province_etat'] = df_initial['entreprise_province_etat'].str.title()
             df_initial['entreprise_pays'] = df_initial['entreprise_pays'].astype(str).str.strip().str.title()
 
-            # 2. Détection et correction pour le Québec
-            mask_quebec = df_initial['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False)
-            df_initial.loc[mask_quebec, 'entreprise_province_etat'] = 'Québec'
-            
-            # CORRECTION ICI : On rattache le Québec au Canada pour qu'il apparaisse sous le bon pays
-            df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Canada'
+            # 4. Correction rapide des fautes de frappes et formats restants
+            df_initial['entreprise_province_etat'] = df_initial['entreprise_province_etat'].replace({
+                'Ontatio': 'Ontario',
+                'Etobicoke, Ontario': 'Ontario',
+                'Nouveau-Brunswick': 'Nouveau Brunswick',
+                'Colombie Britanique': 'Colombie-Britannique'
+            })
+
 
 
         if 'entreprise_proprietaire' in df_initial.columns:

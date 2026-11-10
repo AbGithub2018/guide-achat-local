@@ -155,10 +155,19 @@ def charger_donnees():
         elif 'distribution' not in df_initial.columns:
             df_initial['distribution'] = ""
         df_initial['distribution'] = df_initial['distribution'].replace('nan', '').str.strip() 
+
         if 'entreprise_province_etat' in df_initial.columns and 'entreprise_pays' in df_initial.columns:
+            # 1. Nettoyage de la casse pour enlever les doublons (ex: "ontario" -> "Ontario")
+            df_initial['entreprise_province_etat'] = df_initial['entreprise_province_etat'].astype(str).str.strip().str.title()
+            df_initial['entreprise_pays'] = df_initial['entreprise_pays'].astype(str).str.strip().str.title()
+
+            # 2. Détection et correction pour le Québec
             mask_quebec = df_initial['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False)
             df_initial.loc[mask_quebec, 'entreprise_province_etat'] = 'Québec'
+            
+            # CORRECTION ICI : On rattache le Québec au Canada pour qu'il apparaisse sous le bon pays
             df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Canada'
+
 
         if 'entreprise_proprietaire' in df_initial.columns:
             def epurer_nom_entreprise(nom):

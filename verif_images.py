@@ -14,7 +14,7 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
     with st.spinner("Connexion à votre Google Sheet et traitement des images en cours..."):
         
         # CORRECTION : Cibler le bon dossier visible sur votre GitHub
-        dossier_photos = "images_stockees"
+        dossier_photos = "images"
         
         # Créer le dossier s'il n'existe pas encore
         if not os.path.exists(dossier_photos):

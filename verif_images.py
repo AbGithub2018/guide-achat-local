@@ -34,8 +34,8 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
             produits_corriges_ou_presents = []
             produits_en_erreur = []
             
-            # Correction de la syntaxe .iloc[800:1000] pour analyser 200 produits
-            for index, row in df_produits.iloc[800:1000].iterrows():
+            # Correction de la syntaxe .iloc[1000:1200] pour analyser 200 produits
+            for index, row in df_produits.iloc[1000:1200].iterrows():
                 valeur_cellule = row[colonne_code]
                 if pd.isna(valeur_cellule):
                     continue

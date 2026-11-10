@@ -53,7 +53,7 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                         extension_locale = ext
                         break
 
-                url_api = f"https://openfoodfacts.org{cup_actuel}.json"
+                url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecMaintenance - robert.st.jules@gmail.com"}
                 
                 try:

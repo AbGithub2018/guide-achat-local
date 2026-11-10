@@ -13,8 +13,12 @@ st.write("Ce site analyse vos produits, télécharge les photos manquantes et re
 if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suivants", type="primary"):
     with st.spinner("Connexion à votre Google Sheet et traitement des images en cours..."):
         
-        # Répertoire local de stockage (Chaîne brute 'r' sécurisée pour Windows)
-        dossier_photos = r"C:\Users\Robert\Desktop\TRUMP\acheter canadien ou québécois\application à créer\DESCRIPTION DES PRODUITS\PROJET_UPC\images"
+        # CHEMIN RELATIF AUTOMATIQUE : 
+        # dossier_actuel cible dynamiquement le dossier "PROJET_UPC" où se trouve ce script
+        dossier_actuel = os.path.dirname(os.path.abspath(__file__))
+        # dossier_photos cible le dossier "images" situé juste à côté du script
+        dossier_photos = os.path.join(dossier_actuel, "images")
+        
         if not os.path.exists(dossier_photos):
             os.makedirs(dossier_photos)
 
@@ -111,7 +115,10 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
 
                     # Processus de téléchargement
                     if a_telecharger:
-                        ext_distante = os.path.splitext(img_url)[1].split('?')[0].lower()
+                        # Extraction propre et sécurisée de l'extension
+                        nom_fich, ext_brute = os.path.splitext(img_url)
+                        ext_distante = ext_brute.split('?')[0].lower()
+                        
                         if ext_distante not in [".jpg", ".jpeg", ".png", ".webp"]:
                             ext_distante = ".jpg"
 
@@ -128,7 +135,7 @@ if st.button("🚀 Démarrer l'analyse et la mise à jour des 200 produits suiva
                         with open(chemin_sauvegarde, "wb") as handler:
                             handler.write(img_data)
 
-                        # AJOUT CRUCIAL : Le produit est classé dans les succès
+                        # Succès : Le produit est classé dans la bonne liste
                         produits_corriges_ou_presents.append({
                             "code_upc": cup_actuel, 
                             "Nom": row.get("Nom_Produit", ""), 

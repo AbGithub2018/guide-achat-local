@@ -158,7 +158,7 @@ def charger_donnees():
         if 'entreprise_province_etat' in df_initial.columns and 'entreprise_pays' in df_initial.columns:
             mask_quebec = df_initial['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False)
             df_initial.loc[mask_quebec, 'entreprise_province_etat'] = 'Québec'
-            df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Québec'
+            df_initial.loc[mask_quebec, 'entreprise_pays'] = 'Canada'
 
         if 'entreprise_proprietaire' in df_initial.columns:
             def epurer_nom_entreprise(nom):

@@ -602,9 +602,9 @@ st.sidebar.markdown("---")
 with st.sidebar.expander("⚖️ Mentions légales & Transparence"):
     st.markdown("""
     **Avis de non-responsabilité**
-    Cette application est une initiative citoyenne bénévole, indépendante et sans but lucratif destinée à soutenir les consommateurs québécois.
-• Propriété des marques et des images : Les marques de commerce, logos, noms de produits et images présentés dans cette application sont la propriété exclusive de leurs détenteurs respectifs. Leur affichage est fait à des fins purement descriptives, informatives et d'évaluation, sans aucune intention de contrefaçon ni d'association commerciale avec les marques citées.
-• Exactitude des informations : Les données sur les produits (ingrédients, valeurs nutritionnelles, visuels) proviennent de contributions citoyennes ou de bases de données ouvertes. Bien que nous fermions des efforts pour assurer leur exactitude, nous ne pouvons en garantir l'actualisation en temps réel. Les consommateurs sont invités à toujours vérifier l'emballage réel du produit en magasin..
+    **Cette application** est une initiative citoyenne bénévole, indépendante et sans but lucratif destinée à soutenir les consommateurs québécois.
+• **Propriété des marques et des images** : Les marques de commerce, logos, noms de produits et images présentés dans cette application sont la propriété exclusive de leurs détenteurs respectifs. Leur affichage est fait à des fins purement descriptives, informatives et d'évaluation, sans aucune intention de contrefaçon ni d'association commerciale avec les marques citées.
+• **Exactitude des informations** : Les données sur les produits (ingrédients, valeurs nutritionnelles, visuels) proviennent de contributions citoyennes ou de bases de données ouvertes. Bien que nous fermions des efforts pour assurer leur exactitude, nous ne pouvons en garantir l'actualisation en temps réel. Les consommateurs sont invités à toujours vérifier l'emballage réel du produit en magasin..
     """)
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),

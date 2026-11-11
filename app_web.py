@@ -614,12 +614,20 @@ with st.sidebar.expander("📖 À propos du projet & Guide"):
     except FileNotFoundError:
         st.info("La présentation du projet sera bientôt disponible.")
 
+with st.sidebar.expander("🛡️ Politique de sécurité"):
+    try:
+        with open("SECURITY.md", "r", encoding="utf-8") as f:
+            st.markdown(f.read())
+    except FileNotFoundError:
+        st.info("La politique de sécurité sera bientôt disponible.")
+
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large")
 }
 
 selection_tableau = None
+
  
 if not df_affichage.empty:
     selection_tableau = st.dataframe(

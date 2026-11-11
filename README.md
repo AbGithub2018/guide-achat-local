@@ -33,7 +33,7 @@ Un outil d'optimisation de budget d'épicerie basé sur la localisation de l'uti
 ## 🚀 Utilisation en ligne
 
 *(Optionnel : Ajoutez ici le lien vers votre application hébergée sur Streamlit Community Cloud)*
-👉 **Accéder à l'application :** [Lien vers votre application]
+👉 **Accéder à l'application :** [achatquebec.streamlit.app]
 
 ---
 
@@ -41,7 +41,7 @@ Un outil d'optimisation de budget d'épicerie basé sur la localisation de l'uti
 
 Ce projet repose sur l'entraide citoyenne. Vos suggestions, retours d'expérience ou signalements de bugs sont les bienvenus !
 
-* **📧 Contact général & Suggestions :** `[votre-email-projet@gmail.com]`
+* **📧 Contact général & Suggestions :** `[monguide.d.achatlocal@gmail.com]`
 * **🛡️ Sécurité :** Si vous découvrez une faille de sécurité ou un problème technique critique, merci de consulter notre [Politique de sécurité](SECURITY.md) avant toute divulgation publique.
 
 ---

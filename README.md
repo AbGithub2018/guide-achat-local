@@ -32,7 +32,7 @@ Un outil d'optimisation de budget d'épicerie basé sur la localisation de l'uti
 
 ## 🚀 Utilisation en ligne
 
-*(Optionnel : Ajoutez ici le lien vers votre application hébergée sur Streamlit Community Cloud)*
+(Ici se trouve le lien vers votre application hébergée sur Streamlit Community Cloud)*
 👉 **Accéder à l'application :** https://www.achatquebec.streamlit.app
 ---
 

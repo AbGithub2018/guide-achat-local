@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://sitemaps.org">
-  <url>
-    <loc>https://abgithub2018.github.io/guide-achat-local/</loc>
-  </url>
-  <!-- Si vos deux outils ont leur propre adresse web, ajoutez-les ici comme ci-dessous (sinon supprimez ces lignes) : -->
-  <url>
-    <loc>https://github.io</loc>
-  </url>
-  <url>
-    <loc>https://github.io</loc>
-  </url>
+   <url>
+      <loc>https://abgithub2018.github.io/guide-achat-local/</loc>
+      <lastmod>2026-11-11</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>1.0</priority>
+   </url>
 </urlset>

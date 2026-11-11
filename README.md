@@ -1,4 +1,5 @@
 # ⚜️ Mon Guide d'Achat Local & Planificateur Anti-Inflation 🍁
+👉 Lancer l'application en ligne : achatquebec.streamlit.app
 
 Une **initiative citoyenne bénévole, indépendante et sans but lucratif** destinée à aider les consommateurs québécois à identifier l'origine des produits de consommation, à soutenir l'économie locale et à réduire le coût de leur panier d'épicerie.
 
@@ -33,7 +34,7 @@ Un outil d'optimisation de budget d'épicerie basé sur la localisation de l'uti
 ## 🚀 Utilisation en ligne
 
 (Ici se trouve le lien vers votre application hébergée sur Streamlit Community Cloud)*
-👉 **Accéder à l'application :** https://www.achatquebec.streamlit.app
+👉 **Accéder à l'application :** https://achatquebec.streamlit.app
 ---
 
 ## 🤝 Contribuer et Signaler un problème

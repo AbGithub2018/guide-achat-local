@@ -606,12 +606,21 @@ with st.sidebar.expander("⚖️ Mentions légales & Transparence"):
 • **Propriété des marques et des images** : Les marques de commerce, logos, noms de produits et images présentés dans cette application sont la propriété exclusive de leurs détenteurs respectifs. Leur affichage est fait à des fins purement descriptives, informatives et d'évaluation, sans aucune intention de contrefaçon ni d'association commerciale avec les marques citées.
 • **Exactitude des informations** : Les données sur les produits (ingrédients, valeurs nutritionnelles, visuels) proviennent de contributions citoyennes ou de bases de données ouvertes. Bien que nous déployions tous les efforts nécessaires pour assurer leur exactitude, nous ne pouvons en garantir l'actualisation en temps réel. . Les consommateurs sont invités à toujours vérifier l'emballage réel du produit en magasin..
     """)
+
+with st.sidebar.expander("📖 À propos du projet & Guide"):
+    try:
+        with open("README.md", "r", encoding="utf-8") as f:
+            st.markdown(f.read())
+    except FileNotFoundError:
+        st.info("La présentation du projet sera bientôt disponible.")
+
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
     "nom": st.column_config.TextColumn("Nom du produit", width="large")
 }
 
-selection_tableau = None 
+selection_tableau = None
+ 
 if not df_affichage.empty:
     selection_tableau = st.dataframe(
         df_affichage, 

@@ -63,7 +63,7 @@ st.markdown(
         </details>
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=False
 )
 
 code_upc = "code_upc"

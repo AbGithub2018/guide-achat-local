@@ -20,7 +20,7 @@ st.set_page_config(
 
 # INTERRUPTEUR DE MAINTENANCE (Mettre à True pour bloquer et false pour débloquer l'accès)
 # =========================================================
-EN_CONSTRUCTION = False
+EN_CONSTRUCTION = True
 
 if EN_CONSTRUCTION:
     # 1. Configuration esthétique de la page temporaire
@@ -63,7 +63,7 @@ st.markdown(
         </details>
     </div>
     """,
-    unsafe_allow_html=False
+    unsafe_allow_html=True
 )
 
 code_upc = "code_upc"

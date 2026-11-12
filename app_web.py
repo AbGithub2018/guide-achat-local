@@ -840,6 +840,57 @@ if resultats is not None and not resultats.empty:
 
 
 
+        # 1. Extraction de l'entreprise et de la région depuis la colonne J (usine_principale)
+    usine_brute = str(row.get('usine_principale', '')).strip().replace('nan', '')
+    
+    # Solution de repli sur lieu_usine (colonne D) si usine_principale est vide
+    if not usine_brute:
+        usine_brute = str(row.get('lieu_usine', '')).strip().replace('nan', '')
+
+    if usine_brute:
+        # On découpe le texte à la première virgule pour séparer l'entreprise du lieu
+        parties = [p.strip() for p in usine_brute.split(',', 1)]
+        if len(parties) == 2:
+            nom_entreprise_locale = parties[0]
+            region_fabrication = parties[1]
+        else:
+            # S'il n'y a pas de virgule (ex: "Multiples usines sous contrat (Canada)")
+            nom_entreprise_locale = usine_brute
+            region_fabrication = prov if prov else "Non spécifiée"
+    else:
+        nom_entreprise_locale = "Usine non spécifiée"
+        region_fabrication = prov if prov else "Non spécifiée"
+
+    # 2. Formatage du texte des emplois (colonne Z)
+    if chiffre_nettoye > 0:
+        format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
+        texte_emplois = f"Environ <b>{format_emplois}</b> emplois directs au Québec"
+    else:
+        texte_emplois = "Nombre d'emplois non répertorié"
+
+    # 3. Création de la boîte dédiée "Entreprise"
+    boite_entreprise_html = f"""
+    <div style="background-color: #ffffff; border-left: 5px solid {couleur_texte}; border-radius: 8px; padding: 15px 20px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.06);">
+        <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: {couleur_texte}; letter-spacing: 0.5px; margin-bottom: 8px;">
+            🏭 Entreprise & Usine de fabrication
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 15px; color: #333333;">
+            <div style="flex: 1; min-width: 200px;">
+                <span style="color: #666666; font-size: 13px;">Entreprise / Usine :</span><br>
+                <strong style="font-size: 16px;">{nom_entreprise_locale}</strong>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <span style="color: #666666; font-size: 13px;">Ville et Région :</span><br>
+                <strong style="font-size: 16px;">📍 {region_fabrication}</strong>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <span style="color: #666666; font-size: 13px;">Emplois approximatifs :</span><br>
+                <span style="font-size: 16px; color: #0d47a1;">👥 {texte_emplois}</span>
+            </div>
+        </div>
+    </div>
+    """
+
     bannières_config = {
         'prix_iga': ('🔴 IGA', '#d32f2f'), 'prix_maxi': ('🟡 MAXI', '#f9d71c'), 'prix_metro': ('🟢 METRO', '#28a745'), 'prix_super_c': ('🔵 SUPER C', '#0056b3'),
         'prix_walmart': ('🔵 WALMART', '#0071dc'), 'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#ffcc00'), 'prix_dollarama': ('💵 DOLLARAMA', '#00843d'), 'prix_provigo': ('🟢 PROVIGO', '#ff5a00')
@@ -862,8 +913,19 @@ if resultats is not None and not resultats.empty:
         bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 135px; text-align: center; {style_card}"><div style="font-size: 11px; color: #666;">{label}</div><div style="font-size: 17px;">{affichage}</div></div>'
     bloc_prix_html += '</div>'
 
-    st.html(f'<div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;"><div style="display: flex; justify-content: space-between;"><span>UPC : {row.get("code_upc", "")}</span>{badge_html}</div><h2>📦 {row.get("nom", "Produit sans nom")}</h2><p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>{bloc_prix_html}</div>')
-    
+    st.html(f'''
+    <div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>UPC : {row.get("code_upc", "")}</span>
+            {badge_html}
+        </div>
+        <h2>📦 {row.get("nom", "Produit sans nom")}</h2>
+        <p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>
+        {boite_entreprise_html}
+        {bloc_prix_html}
+    </div>
+    ''')
+
     st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
     with st.form("formulaire_prix_epicerie"):
         upc_dynamique = str(row.get('code_upc', 'sans_upc'))

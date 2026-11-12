@@ -840,56 +840,85 @@ if resultats is not None and not resultats.empty:
 
 
 
-        # 1. Extraction de l'entreprise et de la région depuis la colonne J (usine_principale)
-    usine_brute = str(row.get('usine_principale', '')).strip().replace('nan', '')
-    
-    # Solution de repli sur lieu_usine (colonne D) si usine_principale est vide
-    if not usine_brute:
+       # Par défaut, la boîte reste vide si la colonne G n'indique pas "Québec"
+    boite_entreprise_html = ""
+
+    # Déclencheur : la colonne G (entreprise_province_etat, stockée dans 'prov') contient "québec"
+    if "québec" in prov.lower() or "quebec" in prov.lower():
+        
+        # 1. Récupération de l'usine et de la ville dans la colonne D (lieu_usine)
         usine_brute = str(row.get('lieu_usine', '')).strip().replace('nan', '')
+        if not usine_brute:
+            usine_brute = str(row.get('usine_principale', '')).strip().replace('nan', '')
 
-    if usine_brute:
-        # On découpe le texte à la première virgule pour séparer l'entreprise du lieu
-        parties = [p.strip() for p in usine_brute.split(',', 1)]
-        if len(parties) == 2:
-            nom_entreprise_locale = parties[0]
-            region_fabrication = parties[1]
+        nom_entreprise_locale = "Usine au Québec"
+        region_fabrication = "Québec"
+
+        if usine_brute:
+            usine_min = usine_brute.lower()
+            
+            # Cas A : Phrase avec "situé à" (ex: "Aliments Clic Inc. est situé à Laval (Québec")
+            if "situé à" in usine_min or "situe a" in usine_min:
+                morceaux = re.split(r',?\s*(?:est\s+)?situ[ée]\s+[àa]\s+', usine_brute, maxsplit=1, flags=re.IGNORECASE)
+                if len(morceaux) == 2:
+                    nom_entreprise_locale = morceaux[0].strip(' ,.')
+                    region_fabrication = morceaux[1].strip(' ,.()')
+                else:
+                    nom_entreprise_locale = usine_brute
+
+            # Cas B : Séparation standard par virgule (ex: "Biscuits Leclerc Ltée, Saint-Augustin-de-Desmaures, QC")
+            elif ',' in usine_brute:
+                parties = [p.strip() for p in usine_brute.split(',', 1)]
+                if parties[0].lower() in ['québec', 'quebec', 'qc']:
+                    nom_entreprise_locale = "Usine au Québec"
+                    region_fabrication = usine_brute
+                else:
+                    nom_entreprise_locale = parties[0].strip(' .')
+                    region_fabrication = parties[1].strip(' .')
+
+            # Cas C : Autre format sans virgule (ex: "Multiples usines sous contrat (Canada)")
+            else:
+                nom_entreprise_locale = usine_brute
+                region_fabrication = "Québec"
+
+        # 2. Extraction du nombre d'emplois approximatifs au Québec (colonne Z)
+        chiffre_nettoye = 0
+        val_emplois = str(row.get('emplois_quebec', '')).strip()
+        if val_emplois and val_emplois.lower() != 'nan':
+            try:
+                chiffre_nettoye = int(float(val_emplois.replace(" ", "").replace("\xa0", "").replace("\u202f", "")))
+            except ValueError:
+                chiffre_nettoye = 0
+
+        if chiffre_nettoye > 0:
+            format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
+            texte_emplois = f"Environ <b>{format_emplois}</b> emplois directs au Québec"
         else:
-            # S'il n'y a pas de virgule (ex: "Multiples usines sous contrat (Canada)")
-            nom_entreprise_locale = usine_brute
-            region_fabrication = prov if prov else "Non spécifiée"
-    else:
-        nom_entreprise_locale = "Usine non spécifiée"
-        region_fabrication = prov if prov else "Non spécifiée"
+            texte_emplois = "Nombre d'emplois non répertorié"
 
-    # 2. Formatage du texte des emplois (colonne Z)
-    if chiffre_nettoye > 0:
-        format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
-        texte_emplois = f"Environ <b>{format_emplois}</b> emplois directs au Québec"
-    else:
-        texte_emplois = "Nombre d'emplois non répertorié"
-
-    # 3. Création de la boîte dédiée "Entreprise"
-    boite_entreprise_html = f"""
-    <div style="background-color: #ffffff; border-left: 5px solid {couleur_texte}; border-radius: 8px; padding: 15px 20px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.06);">
-        <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: {couleur_texte}; letter-spacing: 0.5px; margin-bottom: 8px;">
-            🏭 Entreprise & Usine de fabrication
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 15px; color: #333333;">
-            <div style="flex: 1; min-width: 200px;">
-                <span style="color: #666666; font-size: 13px;">Entreprise / Usine :</span><br>
-                <strong style="font-size: 16px;">{nom_entreprise_locale}</strong>
+        # 3. Construction de la boîte dédiée (uniquement quand la colonne G = Québec)
+        boite_entreprise_html = f"""
+        <div style="background-color: #ffffff; border-left: 5px solid {couleur_texte}; border-radius: 8px; padding: 15px 20px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.06);">
+            <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: {couleur_texte}; letter-spacing: 0.5px; margin-bottom: 8px;">
+                🏭 Entreprise & Usine de fabrication au Québec
             </div>
-            <div style="flex: 1; min-width: 200px;">
-                <span style="color: #666666; font-size: 13px;">Ville et Région :</span><br>
-                <strong style="font-size: 16px;">📍 {region_fabrication}</strong>
-            </div>
-            <div style="flex: 1; min-width: 200px;">
-                <span style="color: #666666; font-size: 13px;">Emplois approximatifs :</span><br>
-                <span style="font-size: 16px; color: #0d47a1;">👥 {texte_emplois}</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 15px; color: #333333;">
+                <div style="flex: 1; min-width: 200px;">
+                    <span style="color: #666666; font-size: 13px;">Entreprise / Usine :</span><br>
+                    <strong style="font-size: 16px;">{nom_entreprise_locale}</strong>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <span style="color: #666666; font-size: 13px;">Lieu de fabrication :</span><br>
+                    <strong style="font-size: 16px;">📍 {region_fabrication}</strong>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <span style="color: #666666; font-size: 13px;">Emplois approximatifs :</span><br>
+                    <span style="font-size: 16px; color: #0d47a1;">👥 {texte_emplois}</span>
+                </div>
             </div>
         </div>
-    </div>
-    """
+        """
+
 
     bannières_config = {
         'prix_iga': ('🔴 IGA', '#d32f2f'), 'prix_maxi': ('🟡 MAXI', '#f9d71c'), 'prix_metro': ('🟢 METRO', '#28a745'), 'prix_super_c': ('🔵 SUPER C', '#0056b3'),

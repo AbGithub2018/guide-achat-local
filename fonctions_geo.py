@@ -26,15 +26,36 @@ def calculer_distance(lat1, lon1, lat2, lon2):
 def charger_donnees():
     """Charge et nettoie les fichiers de codes postaux et de magasins."""
     try:
-        df_coords = pd.read_csv("codes_qc.csv", sep=";")
-        df_magasins = pd.read_csv("disponibilite_magasins.csv")
+        df_coords = pd.read_csv(
+            "codes_qc.csv", sep=";", encoding="utf-8-sig", low_memory=False
+        )
+        df_magasins = pd.read_csv(
+            "disponibilite_magasins.csv",
+            sep=",",
+            encoding="utf-8-sig",
+            low_memory=False,
+        )
+
+        df_coords.columns = df_coords.columns.str.strip()
+        df_magasins.columns = df_magasins.columns.str.strip()
 
         df_coords["Code postal"] = (
             df_coords["Code postal"].astype(str).str.replace(" ", "").str.upper()
         )
         df_magasins["Code postal"] = (
-            df_magasins["Code postal"].astype(str).str.replace(" ", "").str.upper()
+            df_magasins["Code_Postal"]
+            .astype(str)
+            .str.replace(" ", "")
+            .str.upper()
         )
+
+        df_coords["Latitude"] = pd.to_numeric(
+            df_coords["Latitude"], errors="coerce"
+        )
+        df_coords["Longitude"] = pd.to_numeric(
+            df_coords["Longitude"], errors="coerce"
+        )
+
         return df_coords, df_magasins
     except Exception as e:
         st.error(f"Erreur lors de la lecture des fichiers CSV : {e}")

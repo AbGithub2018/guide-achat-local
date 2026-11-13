@@ -1,0 +1,38 @@
+name: Extraction Circulaires QC (Jeudi 3h00)
+
+on:
+  schedule:
+    # 08h00 UTC = 03h00 EST (heure de Montréal) dans la nuit du mercredi au jeudi
+    - cron: '0 8 * * 4'
+  workflow_dispatch: # Permet de lancer la mise à jour manuellement en 1 clic sur GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  extraction-circulaires:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer les fichiers du dépôt
+        uses: actions/checkout@v4
+
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pillow numpy pandas rapidocr_onnxruntime
+
+      - name: Exécuter l'extraction automatique des circulaires
+        run: python update_circulaires.py
+
+      - name: Mettre à jour circulaires_qc.csv sur GitHub
+        run: |
+          git config --local user.email "github-actions[bot]@://github.com"
+          git config --local user.name "github-actions[bot]"
+          git add circulaires_qc.csv
+          git diff --quiet && git diff --staged --quiet || (git commit -m "MAJ automatique circulaires semaine" && git push)

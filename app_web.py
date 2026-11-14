@@ -23,11 +23,16 @@ st.set_page_config(
 EN_CONSTRUCTION = True
 
 if EN_CONSTRUCTION:
-    # 1. Configuration esthétique de la page temporaire
-    st.set_page_config(page_title="Maintenance - Épicerie QC", page_icon="🍏", layout="centered")
+    # 1. Configuration esthétique de la page temporaire (icône dans l'onglet du navigateur)
+    st.set_page_config(page_title="Maintenance - Épicerie QC", page_icon="drapeau_qc.png", layout="centered")
     
-    # 2. Affichage visuel épuré pour vos utilisateurs
-    st.title("🇨🇦 Base de Données de l'Épicerie Citoyenne")
+    # 2. Affichage visuel avec votre drapeau du Québec à côté du titre
+    col1, col2 = st.columns([1, 6], vertical_alignment="center")
+    with col1:
+        st.image("drapeau_qc.png", width=70)
+    with col2:
+        st.title("Base de Données de l'Épicerie Citoyenne")
+        
     st.markdown("### 🛠️ Mise à jour majeure en cours...")
     
     st.warning("⚠️ **L'application est temporairement suspendue pour maintenance.**")
@@ -46,6 +51,7 @@ if EN_CONSTRUCTION:
     
     # 3. LE PLUS IMPORTANT : On arrête l'exécution du script ici pour bloquer le reste de l'app
     st.stop()
+
 
 st.markdown(
     """

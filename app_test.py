@@ -386,9 +386,11 @@ with col_droite:
             "MARCHÉ TRADITION",
             "COSTCO",
         ]:
-            url_final_site = f"https://google.com{urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
-        elif "superc" in url_base_site or "metro" in url_base_site:
-            url_final_site = f"{url_base_site}?search={code_postal_url}"
+            url_final_site = f"https://google.com/search?q={urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
+       elif "superc" in url_base_site:
+            url_final_site = f"https://superc.ca/trouver-un-magasin?search={code_postal_url}"
+        elif "metro" in url_base_site:
+            url_final_site = f"https://metro.ca/trouver-un-magasin?search={code_postal_url}"
         elif "maxi" in url_base_site or "provigo" in url_base_site:
             url_final_site = f"{url_base_site}?searchQuery={code_postal_url}"
         elif "walmart" in url_base_site or "gianttiger" in url_base_site:

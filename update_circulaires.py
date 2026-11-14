@@ -140,6 +140,19 @@ def extraire_prix_regulier_numerique(val: str) -> float:
     return float(m.group(1)) if m else 0.0
 
 
+def valider_prix_regulier(
+    prix_special: float, prix_regulier_str: str
+) -> str:
+    """Élimine les faux prix réguliers OCR (ex: prix équivalent au kg/lb donnant >70% de rabais)."""
+    if not prix_regulier_str or prix_special <= 0:
+        return ""
+    val_reg = extraire_prix_regulier_numerique(prix_regulier_str)
+    # Un rabais réel en épicerie se situe entre 3 % et 70 % maximum
+    if val_reg <= prix_special * 1.03 or val_reg > prix_special * 3.33:
+        return ""
+    return prix_regulier_str
+
+
 def traiter_article_ameliore(item, merchant, flyer_id):
     nom_brut = str(item.get("name", "")).strip()
     nom_fr, _, _ = nom_brut.partition("|")
@@ -186,6 +199,8 @@ def traiter_article_ameliore(item, merchant, flyer_id):
     prix_regulier = extraire_texte_regulier(champs_texte, prix_unitaire)
     if not prix_regulier and texte_ocr:
         prix_regulier = extraire_texte_regulier(texte_ocr, prix_unitaire)
+
+    prix_regulier = valider_prix_regulier(prix_unitaire, prix_regulier)
 
     format_prod = extraire_format(texte_global)
     unite_prix = extraire_unite_prix(item, texte_global)

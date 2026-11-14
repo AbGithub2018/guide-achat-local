@@ -1,17 +1,10 @@
-import json
 import os
 import re
-import time
 import unicodedata
 from difflib import SequenceMatcher
 import pandas as pd
-import requests
 
 FICHIER_BASE_QC = "base_upc_qc.csv"
-FICHIER_CACHE_UPC = "cache_upc.json"
-
-SESSION_API = requests.Session()
-SESSION_API.headers.update({"Accept": "application/json"})
 
 MOTS_FAIBLES = {
     "rouge", "vert", "jaune", "blanc", "noir", "rose", "orange", "bleu", "dore",
@@ -64,24 +57,8 @@ def _extraire_upc_url(url: str) -> str:
     if len(code) == 13 and code.startswith("0"):
         return code[1:]
     return code.zfill(12)
-
-def _charger_cache() -> dict:
-    if os.path.exists(FICHIER_CACHE_UPC):
-        try:
-            with open(FICHIER_CACHE_UPC, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
-
-def _sauvegarder_cache(cache: dict):
-    try:
-        with open(FICHIER_CACHE_UPC, "w", encoding="utf-8") as f:
-            json.dump(cache, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
 def _charger_base_permanente_qc() -> list:
-    """Charge le dictionnaire permanent des produits québécois (sans dépendre des prix)."""
+    """Charge instantanément le dictionnaire permanent des produits québécois."""
     if not os.path.exists(FICHIER_BASE_QC):
         return []
     df = pd.read_csv(FICHIER_BASE_QC, dtype=str).fillna("")
@@ -110,7 +87,7 @@ def _charger_base_permanente_qc() -> list:
 
 
 def _chercher_dans_base_qc(marque: str, produit: str, catalogue: list) -> str:
-    premier_produit = produit.split(",").strip()
+    premier_produit = produit.split(",")[0].strip()
     texte_f = f"{marque} {premier_produit}".strip()
     mots_f = _mots_significatifs(texte_f)
     forts_f = mots_f - MOTS_FAIBLES
@@ -149,68 +126,30 @@ def _chercher_dans_base_qc(marque: str, produit: str, catalogue: list) -> str:
     return meilleur_upc
 
 
-def _chercher_via_api_upcitemdb(marque: str, produit: str) -> str:
-    """Secours via l'API officielle UPCitemdb (ne bloque pas GitHub Actions)."""
-    premier_produit = produit.split(",").strip()
-    requete = f"{marque} {premier_produit}".strip()
-    if len(requete) < 4:
-        return ""
-    try:
-        url = "https://upcitemdb.com"
-        resp = SESSION_API.get(url, params={"s": requete, "match_mode": 1, "type": "product"}, timeout=6)
-        if resp.status_code != 200:
-            return ""
-        items = resp.json().get("items", [])
-        for it in items[:3]:
-            upc = str(it.get("upc") or it.get("ean") or "").strip()
-            if len(upc) == 13 and upc.startswith("0"):
-                upc = upc[1:]
-            if len(upc) == 12 and upc.isdigit():
-                return upc
-    except Exception:
-        return ""
-    return ""
-
-
 def enrichir_avec_codes_upc(df_global: pd.DataFrame, inclure_variantes_superc: bool = True) -> pd.DataFrame:
-    """Enrichit toutes les bannières sans aucun scraping web (zéro blocage)."""
+    """Enrichit toutes les bannières en moins d'une seconde sans appel réseau externe."""
     df_global = df_global.copy()
     if "code_upc" not in df_global.columns:
         df_global["code_upc"] = ""
 
     catalogue_qc = _charger_base_permanente_qc()
-    cache = _charger_cache()
-    appels_api = 0
+    memoire_locale = {}
 
     for idx, row in df_global.iterrows():
-        if str(row.get("code_upc") or "").strip():
-            continue
-
         marque = str(row.get("marque") or "").strip()
         produit = str(row.get("produit") or "").strip()
-        cle_cache = _normaliser(f"{marque} {produit}")
-        if not cle_cache:
+        cle = _normaliser(f"{marque} {produit}")
+        if not cle:
             continue
 
-        # 1. Recherche dans la mémoire cumulée
-        if cle_cache in cache:
-            df_global.at[idx, "code_upc"] = cache[cle_cache]
+        if cle in memoire_locale:
+            df_global.at[idx, "code_upc"] = memoire_locale[cle]
             continue
 
-        # 2. Recherche dans le dictionnaire permanent québécois (base_upc_qc.csv)
         code = _chercher_dans_base_qc(marque, produit, catalogue_qc)
+        memoire_locale[cle] = code
+        df_global.at[idx, "code_upc"] = code
 
-        # 3. Secours via API officielle UPCitemdb (max 40 appels/semaine)
-        if not code and appels_api < 40:
-            code = _chercher_via_api_upcitemdb(marque, produit)
-            appels_api += 1
-            time.sleep(0.5)
-
-        if code:
-            cache[cle_cache] = code
-            df_global.at[idx, "code_upc"] = code
-
-    _sauvegarder_cache(cache)
     nb_upc = df_global["code_upc"].astype(bool).sum()
-    print(f"Codes UPC associés (sans scraping) : {nb_upc} / {len(df_global)} produits.")
+    print(f"Codes UPC associés instantanément : {nb_upc} / {len(df_global)} produits.")
     return df_global

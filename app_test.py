@@ -35,18 +35,125 @@ LIENS_OFFICIELS = {
 }
 
 
+def classer_rayon(nom_produit: str) -> str:
+    """Attribue automatiquement un rayon et une icône visuelle sans image protégée."""
+    txt = str(nom_produit).lower()
+    if any(
+        m in txt
+        for m in [
+            "porc",
+            "boeuf",
+            "bœuf",
+            "poulet",
+            "dinde",
+            "veau",
+            "saumon",
+            "crevette",
+            "poisson",
+            "jambon",
+            "bacon",
+            "saucisse",
+            "steak",
+            "rôti",
+            "filet",
+            "bifteck",
+            "côtelette",
+            "viande",
+        ]
+    ):
+        return "🥩 Viandes et Poissons"
+    if any(
+        m in txt
+        for m in [
+            "pomme",
+            "banane",
+            "fraise",
+            "framboise",
+            "bleuet",
+            "orange",
+            "raisin",
+            "melon",
+            "tomate",
+            "laitue",
+            "carotte",
+            "oignon",
+            "poivron",
+            "brocoli",
+            "concombre",
+            "patate",
+            "pomme de terre",
+            "salade",
+            "avocat",
+            "champignon",
+            "céleri",
+            "citron",
+        ]
+    ):
+        return "🍎 Fruits et Légumes"
+    if any(
+        m in txt
+        for m in [
+            "lait",
+            "fromage",
+            "beurre",
+            "yogourt",
+            "crème",
+            "oeuf",
+            "œuf",
+            "margarine",
+            "cheddar",
+            "mozzarella",
+        ]
+    ):
+        return "🧀 Produits laitiers"
+    if any(
+        m in txt
+        for m in [
+            "pain",
+            "bagel",
+            "muffin",
+            "croissant",
+            "tortilla",
+            "brioche",
+            "gâteau",
+            "tarte",
+            "biscuit",
+        ]
+    ):
+        return "🍞 Boulangerie"
+    if any(
+        m in txt
+        for m in [
+            "papier",
+            "savon",
+            "détergent",
+            "essuie-tout",
+            "mouchoir",
+            "sac",
+            "nettoyant",
+            "shampooing",
+            "dentifrice",
+        ]
+    ):
+        return "🧼 Entretien / Autre"
+    return "📦 Épicerie / Boîtes"
+
+
 @st.cache_data(ttl=3600)
 def charger_circulaires_qc():
     fichier = "circulaires_qc.csv"
     if not os.path.exists(fichier):
         return None
     df = pd.read_csv(fichier).fillna("")
+    if "unite_prix" not in df.columns:
+        df["unite_prix"] = ""
     df["marchand_norm"] = df["marchand"].astype(str).str.strip().str.upper()
     df["marchand_norm"] = df["marchand_norm"].replace({
         "TIGRE GEANT": "TIGRE GÉANT",
         "MARCHE TRADITION": "MARCHÉ TRADITION",
         "MARCHE AMI": "MARCHÉ AMI",
     })
+    df["rayon_auto"] = df["produit"].apply(classer_rayon)
     return df
 
 
@@ -159,7 +266,7 @@ col_gauche, col_droite = st.columns([1.0, 1.0])
 with col_gauche:
     with st.container(border=True):
         st.markdown(
-            "<h2 style='font-size: 24px; color: #1E3A8A; font-weight: 600; margin-top: 0px;'>🔍 Étape 1 : Saisie de ma liste</h2>",
+            "<h2 style='font-size: 24px; color: #1E3A8A; font-weight: 600; margin-top: 0px;'>🔍 Étape 1 : Saisie manuelle</h2>",
             unsafe_allow_html=True,
         )
 
@@ -320,10 +427,16 @@ with col_droite:
                     f"📅 {len(df_offres)} articles en spécial chez **{banniere_active}** (valide jusqu'au {date_fin})"
                 )
 
+                rayon_filtre = st.selectbox(
+                    "📂 Filtrer par rayon :",
+                    ["Tous les rayons"]
+                    + sorted(df_offres["rayon_auto"].unique().tolist()),
+                )
+
                 c_rech, c_tri = st.columns([1.4, 1.0])
                 with c_rech:
                     recherche_article = st.text_input(
-                        f"🔍 Filtrer les spéciaux ({banniere_active}) :",
+                        f"🔍 Mot-clé ({banniere_active}) :",
                         placeholder="Ex: poulet, beurre, café...",
                     )
                 with c_tri:
@@ -336,6 +449,11 @@ with col_droite:
                             "Ordre alphabétique",
                         ],
                     )
+
+                if rayon_filtre != "Tous les rayons":
+                    df_offres = df_offres[
+                        df_offres["rayon_auto"] == rayon_filtre
+                    ]
 
                 if recherche_article:
                     df_offres = df_offres[
@@ -367,35 +485,41 @@ with col_droite:
                 for _, item in df_offres.iterrows():
                     with st.container(border=True):
                         col_info, col_prix, col_btn = st.columns(
-                            [2.2, 1.0, 1.1]
+                            [2.2, 1.1, 1.0]
                         )
 
                         with col_info:
-                            titre = f"**{item['produit']}**"
+                            icone_rayon = item["rayon_auto"].split(" ")[0]
+                            titre = f"{icone_rayon} **{item['produit']}**"
                             if item["marque"]:
                                 titre += f" ({item['marque']})"
                             st.markdown(titre)
 
-                            sous_infos = []
+                            sous_infos = [item["rayon_auto"]]
                             if item["format"]:
                                 sous_infos.append(f"📦 {item['format']}")
                             if item["condition"]:
                                 sous_infos.append(f"🏷️ {item['condition']}")
-                            if sous_infos:
-                                st.caption("  |  ".join(sous_infos))
+                            st.caption("  |  ".join(sous_infos))
 
                         with col_prix:
                             prix_num = float(item["prix_circulaire_num"])
-                            st.markdown(f"**{prix_num:.2f} $**")
+                            unite = str(item.get("unite_prix") or "").strip()
+                            st.markdown(
+                                f"**{prix_num:.2f} $** <small>{unite}</small>",
+                                unsafe_allow_html=True,
+                            )
                             if (
                                 item["prix_regulier"]
                                 and int(item["rabais_pourcent"]) > 0
                             ):
                                 st.caption(
-                                    f"~~{item['prix_regulier']} $~~ (-{item['rabais_pourcent']}%)"
+                                    f"~~{item['prix_regulier']} $ {unite}~~ (-{item['rabais_pourcent']}%)"
                                 )
                             elif item["prix_regulier"]:
-                                st.caption(f"~~{item['prix_regulier']} $~~")
+                                st.caption(
+                                    f"~~{item['prix_regulier']} $ {unite}~~"
+                                )
 
                         with col_btn:
                             if st.button(
@@ -407,10 +531,12 @@ with col_droite:
                                 nom_final = item["produit"]
                                 if item["format"]:
                                     nom_final += f" ({item['format']})"
+                                if unite:
+                                    nom_final += f" [{unite}]"
 
                                 st.session_state["panier_achats"].append({
                                     "magasin": banniere_active,
-                                    "catégorie": "🏷️ Spécial Circulaire",
+                                    "catégorie": item["rayon_auto"],
                                     "produit": nom_final,
                                     "prix": prix_num,
                                 })

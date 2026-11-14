@@ -322,15 +322,19 @@ with col_gauche:
 
         if st.session_state["panier_achats"]:
             df_panier = pd.DataFrame(st.session_state["panier_achats"])
+            if "upc" not in df_panier.columns:
+                df_panier["upc"] = ""
 
             df_affichage = df_panier.rename(
                 columns={
                     "magasin": "Magasin",
                     "catégorie": "Rayon",
                     "produit": "Article",
+                    "upc": "Code UPC",
                     "prix": "Prix",
                 }
             )
+
             df_affichage["Prix"] = df_affichage["Prix"].map("{:.2f} $".format)
             st.dataframe(df_affichage, use_container_width=True, hide_index=True)
 

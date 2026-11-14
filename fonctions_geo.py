@@ -22,28 +22,46 @@ def calculer_distance(lat1, lon1, lat2, lon2):
     return R * c
 
 
+def _trouver_colonne_cp(df):
+    for col in df.columns:
+        nom_propre = col.strip().lower().replace("_", " ")
+        if "code postal" in nom_propre or nom_propre in [
+            "cp",
+            "postal code",
+            "codepostal",
+        ]:
+            return col
+    return df.columns[0]
+
+
 @st.cache_data
 def charger_donnees():
     """Charge et nettoie les fichiers de codes postaux et de magasins."""
     try:
         df_coords = pd.read_csv(
-            "codes_qc.csv", sep=";", encoding="utf-8-sig", low_memory=False
+            "codes_qc.csv", sep=None, engine="python", encoding="utf-8-sig"
         )
         df_magasins = pd.read_csv(
             "disponibilite_magasins.csv",
-            sep=",",
+            sep=None,
+            engine="python",
             encoding="utf-8-sig",
-            low_memory=False,
         )
 
         df_coords.columns = df_coords.columns.str.strip()
         df_magasins.columns = df_magasins.columns.str.strip()
 
+        col_cp_coords = _trouver_colonne_cp(df_coords)
+        col_cp_mag = _trouver_colonne_cp(df_magasins)
+
         df_coords["Code postal"] = (
-            df_coords["Code postal"].astype(str).str.replace(" ", "").str.upper()
+            df_coords[col_cp_coords]
+            .astype(str)
+            .str.replace(" ", "")
+            .str.upper()
         )
         df_magasins["Code postal"] = (
-            df_magasins["Code_Postal"]
+            df_magasins[col_cp_mag]
             .astype(str)
             .str.replace(" ", "")
             .str.upper()

@@ -14,6 +14,7 @@ from app import (
     get_flyer_items,
     get_grocery_flyer_id,
 )
+from upc_matcher import enrichir_avec_codes_upc
 
 # Pôles régionaux pour couvrir toutes les circulaires du Québec
 POLES_REGIONAUX_QC = [
@@ -270,6 +271,11 @@ def executer_mise_a_jour():
     df = df.drop_duplicates(
         subset=["marchand", "produit_norm", "prix_circulaire"]
     ).drop(columns=["produit_norm"])
+
+    df = pd.DataFrame(tous_les_articles)
+    df = df.drop_duplicates(subset=["marchand", "produit", "prix_circulaire"])
+
+    df = enrichir_avec_codes_upc(df, inclure_variantes_superc=True)
 
     df["prix_circulaire_num"] = pd.to_numeric(
         df["prix_unitaire"], errors="coerce"

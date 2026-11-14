@@ -551,8 +551,10 @@ with col_droite:
                                     "magasin": banniere_active,
                                     "catégorie": item["rayon_auto"],
                                     "produit": nom_final,
+                                    "upc": str(item.get("code_upc", "")).strip(),
                                     "prix": prix_num,
                                 })
+
                                 st.toast(
                                     f"✅ {nom_final} ajouté à votre facture !",
                                     icon="🛒",

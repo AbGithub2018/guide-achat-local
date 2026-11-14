@@ -147,7 +147,6 @@ def valider_prix_regulier(
     if not prix_regulier_str or prix_special <= 0:
         return ""
     val_reg = extraire_prix_regulier_numerique(prix_regulier_str)
-    # Un rabais réel en épicerie se situe entre 3 % et 70 % maximum
     if val_reg <= prix_special * 1.03 or val_reg > prix_special * 3.33:
         return ""
     return prix_regulier_str
@@ -265,7 +264,12 @@ def executer_mise_a_jour():
         return
 
     df = pd.DataFrame(tous_les_articles)
-    df = df.drop_duplicates(subset=["marchand", "produit", "prix_circulaire"])
+
+    # Suppression intelligente des doublons insensible à la casse (majuscules/minuscules)
+    df["produit_norm"] = df["produit"].astype(str).str.strip().str.lower()
+    df = df.drop_duplicates(
+        subset=["marchand", "produit_norm", "prix_circulaire"]
+    ).drop(columns=["produit_norm"])
 
     df["prix_circulaire_num"] = pd.to_numeric(
         df["prix_unitaire"], errors="coerce"

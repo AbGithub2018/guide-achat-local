@@ -255,7 +255,7 @@ st.markdown(
 
 st.link_button(
     "⚙️ Ouvrir l'application Mon Guide d'Achat Local (Scanner un Code-Barres / Pays d'Origine)",
-    "https://streamlit.app",
+    "https://achatquebec-circulaires.streamlit.app",
     type="primary",
     use_container_width=True,
 )

@@ -379,24 +379,19 @@ with col_droite:
         )
         code_postal_url = urllib.parse.quote(code_recherche)
 
-        if cle_recherche in [
-            "MARCHÉ AMI",
-            "MARCHÉ BONICHOIX",
-            "MARCHÉ RICHELIEU",
-            "MARCHÉ TRADITION",
-            "COSTCO",
-        ]:
-            url_final_site = f"https://google.com{urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
-        elif "superc" in url_base_site or "metro" in url_base_site:
-            url_final_site = f"{url_base_site}?search={code_postal_url}"
+        if "superc" in url_base_site or "metro" in url_base_site:
+            url_final_site = f"{url_base_site}/trouver-une-epicerie"
         elif "maxi" in url_base_site or "provigo" in url_base_site:
-            url_final_site = f"{url_base_site}?searchQuery={code_postal_url}"
+            url_final_site = f"{url_base_site}/store-locator"
+        elif "iga" in url_base_site:
+            url_final_site = f"{url_base_site}/fr/trouver_un_magasin"
         elif "walmart" in url_base_site or "gianttiger" in url_base_site:
-            url_final_site = f"{url_base_site}?q={code_postal_url}"
+            url_final_site = f"{url_base_site}/fr/magasins"
         elif "dollarama" in url_base_site:
-            url_final_site = f"{url_base_site}?localisation={code_postal_url}"
+            url_final_site = f"{url_base_site}/fr-CA/trouver-un-magasin"
         else:
             url_final_site = url_base_site
+
 
 
         col_l1, col_l2 = st.columns(2)

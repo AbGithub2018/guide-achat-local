@@ -4,7 +4,8 @@ import unicodedata
 from difflib import SequenceMatcher
 import pandas as pd
 
-FICHIER_BASE_QC = "base_upc_qc.csv"
+DOSSIER_SCRIPT = os.path.dirname(os.path.abspath(__file__))
+FICHIER_BASE_QC = os.path.join(DOSSIER_SCRIPT, "base_upc_qc.csv")
 
 MOTS_FAIBLES = {
     "rouge", "vert", "jaune", "blanc", "noir", "rose", "orange", "bleu", "dore",
@@ -58,11 +59,12 @@ def _extraire_upc_url(url: str) -> str:
         return code[1:]
     return code.zfill(12)
 def _charger_base_permanente_qc() -> list:
-    """Charge instantanément le dictionnaire permanent des produits québécois."""
     if not os.path.exists(FICHIER_BASE_QC):
+        print(f"ALERTE : Fichier introuvable a {FICHIER_BASE_QC}")
         return []
     df = pd.read_csv(FICHIER_BASE_QC, dtype=str).fillna("")
     if "product-details-link href" not in df.columns:
+        print("ALERTE : Colonne 'product-details-link href' absente de base_upc_qc.csv")
         return []
 
     df["code_upc"] = df["product-details-link href"].apply(_extraire_upc_url)
@@ -83,11 +85,12 @@ def _charger_base_permanente_qc() -> list:
                 "mots": mots,
                 "forts": forts,
             })
+    print(f"Base permanente QC chargee : {len(catalogue)} produits avec UPC.")
     return catalogue
 
 
 def _chercher_dans_base_qc(marque: str, produit: str, catalogue: list) -> str:
-    premier_produit = produit.split(",")[0].strip()
+    premier_produit = str(produit).split(",")[0].strip()
     texte_f = f"{marque} {premier_produit}".strip()
     mots_f = _mots_significatifs(texte_f)
     forts_f = mots_f - MOTS_FAIBLES
@@ -95,7 +98,7 @@ def _chercher_dans_base_qc(marque: str, produit: str, catalogue: list) -> str:
         return ""
 
     marque_f = _normaliser(marque)
-    mots_sans_marque = mots_f - _mots_significatifs(marque_f)
+    titre_norm = _normaliser(premier_produit)
 
     meilleur_upc = ""
     meilleur_score = 0.0
@@ -110,16 +113,13 @@ def _chercher_dans_base_qc(marque: str, produit: str, catalogue: list) -> str:
         if not communs_forts:
             continue
 
-        communs_totaux = mots_sans_marque.intersection(item["mots"])
-        if mots_sans_marque and not communs_totaux:
-            continue
+        sim = SequenceMatcher(None, titre_norm, item["nom_norm"]).ratio()
+        score = len(communs_forts) * 20 + (sim * 30)
 
-        sim = SequenceMatcher(None, _normaliser(texte_f), item["nom_norm"]).ratio()
-        score = len(communs_forts) * 20 + len(communs_totaux) * 10 + (sim * 25)
-        if marque_f and item["marque_norm"]:
-            score += 20
+        if item["marque_norm"] and len(item["marque_norm"]) >= 3 and item["marque_norm"] in titre_norm:
+            score += 25
 
-        if score > meilleur_score and score >= 45:
+        if score > meilleur_score and score >= 30:
             meilleur_score = score
             meilleur_upc = item["upc"]
 
@@ -127,14 +127,15 @@ def _chercher_dans_base_qc(marque: str, produit: str, catalogue: list) -> str:
 
 
 def enrichir_avec_codes_upc(df_global: pd.DataFrame, inclure_variantes_superc: bool = True) -> pd.DataFrame:
-    """Enrichit toutes les bannières en moins d'une seconde sans appel réseau externe."""
     df_global = df_global.copy()
     if "code_upc" not in df_global.columns:
         df_global["code_upc"] = ""
 
     catalogue_qc = _charger_base_permanente_qc()
-    memoire_locale = {}
+    if not catalogue_qc:
+        return df_global
 
+    memoire_locale = {}
     for idx, row in df_global.iterrows():
         marque = str(row.get("marque") or "").strip()
         produit = str(row.get("produit") or "").strip()
@@ -151,5 +152,5 @@ def enrichir_avec_codes_upc(df_global: pd.DataFrame, inclure_variantes_superc: b
         df_global.at[idx, "code_upc"] = code
 
     nb_upc = df_global["code_upc"].astype(bool).sum()
-    print(f"Codes UPC associés instantanément : {nb_upc} / {len(df_global)} produits.")
+    print(f"Codes UPC associes : {nb_upc} / {len(df_global)} produits.")
     return df_global

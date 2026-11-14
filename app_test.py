@@ -387,7 +387,7 @@ with col_droite:
             "COSTCO",
         ]:
             url_final_site = f"https://google.com/search?q={urllib.parse.quote(f'{banniere_active} {code_recherche}')}"
-       elif "superc" in url_base_site:
+        elif "superc" in url_base_site:
             url_final_site = f"https://superc.ca/trouver-un-magasin?search={code_postal_url}"
         elif "metro" in url_base_site:
             url_final_site = f"https://metro.ca/trouver-un-magasin?search={code_postal_url}"

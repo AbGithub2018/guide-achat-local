@@ -482,6 +482,14 @@ with col_droite:
                     df_offres = df_offres.sort_values(
                         by="produit", ascending=True
                     )
+                                # Évite tout doublon résiduel majuscule/minuscule dès maintenant
+                df_offres["produit_norm"] = (
+                    df_offres["produit"].astype(str).str.strip().str.lower()
+                )
+                df_offres = df_offres.drop_duplicates(
+                    subset=["produit_norm", "prix_circulaire_num"]
+                )
+
                 for _, item in df_offres.iterrows():
                     with st.container(border=True):
                         col_info, col_prix, col_btn = st.columns(
@@ -513,12 +521,14 @@ with col_droite:
                                 item["prix_regulier"]
                                 and int(item["rabais_pourcent"]) > 0
                             ):
-                                st.caption(
-                                    f"~~{item['prix_regulier']} $ {unite}~~ (-{item['rabais_pourcent']}%)"
+                                st.markdown(
+                                    f"<small style='color: #6B7280;'><span style='text-decoration: line-through;'>{item['prix_regulier']} $ {unite}</span> <b style='color: #16A34A;'>(-{item['rabais_pourcent']}%)</b></small>",
+                                    unsafe_allow_html=True,
                                 )
                             elif item["prix_regulier"]:
-                                st.caption(
-                                    f"~~{item['prix_regulier']} $ {unite}~~"
+                                st.markdown(
+                                    f"<small style='color: #6B7280; text-decoration: line-through;'>{item['prix_regulier']} $ {unite}</small>",
+                                    unsafe_allow_html=True,
                                 )
 
                         with col_btn:

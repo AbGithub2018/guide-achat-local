@@ -508,7 +508,10 @@ with col_droite:
                                 sous_infos.append(f"📦 {item['format']}")
                             if item["condition"]:
                                 sous_infos.append(f"🏷️ {item['condition']}")
+                            if str(item.get("code_upc", "")).strip():
+                                sous_infos.append(f"🔢 UPC: {item['code_upc']}")
                             st.caption("  |  ".join(sous_infos))
+
 
                         with col_prix:
                             prix_num = float(item["prix_circulaire_num"])

@@ -144,9 +144,17 @@ def charger_circulaires_qc():
     fichier = "circulaires_qc.csv"
     if not os.path.exists(fichier):
         return None
-    df = pd.read_csv(fichier).fillna("")
+    df = pd.read_csv(fichier, dtype=str).fillna("")
     if "unite_prix" not in df.columns:
         df["unite_prix"] = ""
+    if "code_upc" not in df.columns:
+        df["code_upc"] = ""
+    df["code_upc"] = (
+        df["code_upc"]
+        .str.replace(r"\.0$", "", regex=True)
+        .str.strip()
+        .apply(lambda x: x.zfill(12) if x.isdigit() else x)
+    )
     df["marchand_norm"] = df["marchand"].astype(str).str.strip().str.upper()
     df["marchand_norm"] = df["marchand_norm"].replace({
         "TIGRE GEANT": "TIGRE GÉANT",
@@ -155,6 +163,7 @@ def charger_circulaires_qc():
     })
     df["rayon_auto"] = df["produit"].apply(classer_rayon)
     return df
+
 
 
 df_coords, df_magasins = charger_donnees()

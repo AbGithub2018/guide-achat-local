@@ -5,13 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon Guide d'Achat Local Québec | Scanner UPC & Comparateur de Prix Épicerie</title>
     <link rel="icon" type="image/png" href="fleur_de_lys_blanche.png">
-    <meta name="description" content="Application citoyenne gratuite au Québec pour scanner les codes-barres (UPC), repérer les produits faits au Québec et comparer les prix d'épicerie.">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#003366">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Épicerie QC">
+    <meta name="description" content="Application citoyenne gratuite au Québec pour scanner les codes-barres (UPC), repérer les produits faits au Québec et comparer les prix d'épicerie (IGA, Maxi, Metro, Super C, Walmart, Provigo).">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 850px; margin: 0 auto; padding: 20px; background-color: #f9fafb; }
         header { text-align: center; padding: 30px 15px; background: #003366; color: white; border-radius: 12px; margin-bottom: 25px; }
@@ -28,23 +22,37 @@
     </style>
 </head>
 <body>
+
 <header>
-    <h1><img src="fleur_de_lys_blanche.png" alt="Fleur de lys" class="header-logo"> Mon Guide d'Achat Local</h1>
+    <h1>
+        <img src="fleur_de_lys_blanche.png" alt="Fleur de lys" class="header-logo">
+        Mon Guide d'Achat Local
+    </h1>
     <p class="subtitle">Acheter Québécois & Comparateur de Prix Épicerie au Québec</p>
 </header>
+
 <div class="cta-container">
-    <a href="https://streamlit.app" class="btn btn-primary"><span>🔍</span> Guide d'Achat Local (Scanner & Produits) ➔</a>
-    <a href="https://streamlit.app" class="btn btn-secondary"><span>🛒</span> Planificateur Anti-Inflation ➔</a>
+    <a href="https://achatquebec.streamlit.app" class="btn btn-primary">
+        <span>🔍</span> Ouvrir le Guide d'Achat Local (Scanner & 10 500+ produits) ➔
+    </a>
+    <a href="https://achatquebec-circulaires.streamlit.app" class="btn btn-secondary">
+        <span>🛒</span> Ouvrir le Planificateur Anti-Inflation (Circulaires & Panier) ➔
+    </a>
 </div>
+
 <div class="card">
     <h2>Pourquoi utiliser cette application citoyenne ?</h2>
-    <p>Initiative bénévole pour identifier les produits québécois et comparer les prix (IGA, Maxi, Metro, Super C, Walmart, Provigo).</p>
+    <p><strong>Mon Guide d'Achat Local</strong> est une initiative bénévole, gratuite et indépendante créée pour aider les consommateurs du Québec à repérer l'origine des produits alimentaires et à réduire le coût de leur panier d'épicerie.</p>
+    <ul>
+        <li><strong>Scanner de code-barres (UPC) :</strong> Vérifiez instantanément si un produit est québécois ou canadien directement depuis l'allée du supermarché.</li>
+        <li><strong>Soutien à l'emploi local :</strong> Repérez le badge « Emploi au Québec Confirmé » et découvrez l'impact sur les usines d'ici.</li>
+        <li><strong>Comparateur de prix multi-bannières :</strong> Comparez les prix entre IGA, Maxi, Metro, Super C, Provigo, Walmart, Tigre Géant et Dollarama.</li>
+    </ul>
 </div>
+
 <footer>
-    <p>Projet citoyen — Contact : <a href="mailto:monguide.d.achatlocal@gmail.com">monguide.d.achatlocal@gmail.com</a></p>
+    <p>Projet citoyen bénévole — Contact : <a href="mailto:monguide.d.achatlocal@gmail.com">monguide.d.achatlocal@gmail.com</a></p>
 </footer>
-<script>
-  if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
-</script>
+
 </body>
 </html>

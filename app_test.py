@@ -2,6 +2,9 @@ import os
 import urllib.parse
 import pandas as pd
 import streamlit as st
+from io import BytesIO
+import barcode
+from barcode.writer import ImageWriter
 
 from fonctions_geo import calculer_distance, charger_donnees
 

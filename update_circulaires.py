@@ -189,8 +189,11 @@ def traiter_article_ameliore(item, merchant, flyer_id):
         ]
     )
 
-    img_array = telecharger_et_preparer_image(image_url) if image_url else None
-    texte_ocr = lire_texte_ocr(img_array)
+    if merchant in ["Walmart", "Tigre Geant"]:
+        texte_ocr = ""
+    else:
+        img_array = telecharger_et_preparer_image(image_url) if image_url else None
+        texte_ocr = lire_texte_ocr(img_array)
     texte_global = f"{champs_texte} {texte_ocr}".strip()
 
     condition, qte_multi = extraire_condition_et_multi(texte_global, prix_float)

@@ -31,7 +31,9 @@ POLES_REGIONAUX_QC = [
 NORMALISATION_MARCHANDS = {
     "Tradition": "Marché Tradition",
     "Tigre Géant": "Tigre Geant",
+    "Giant Tiger": "Tigre Geant",
 }
+
 
 MOTEUR_OCR = RapidOCR()
 VERROU_OCR = threading.Lock()

@@ -625,10 +625,16 @@ with col_gauche:
             if concurrents_a_montrer:
                 lignes_export.append("\n📑 CIRCULAIRES À MONTRER À LA CAISSE :")
                 for conc in sorted(concurrents_a_montrer):
-                    lien_conc = LIENS_OFFICIELS.get(conc, f"https://flipp.com{urllib.parse.quote(conc)}")
+                    lien_conc = LIENS_OFFICIELS.get(conc, f"https://flipp.com/fr-ca")
                     lignes_export.append(f"  • {conc} : {lien_conc}")
 
             texte_export = "\n".join(lignes_export)
+            if concurrents_a_montrer:
+                st.markdown("**📑 Ouvrir les circulaires à montrer à la caisse :**")
+                for conc in sorted(concurrents_a_montrer):
+                    lien_conc = LIENS_OFFICIELS.get(conc, f"https://flipp.com/fr-ca")
+                    st.link_button(f"📖 Voir la circulaire {conc}", lien_conc, use_container_width=True)
+
 
 
             col_dl, col_raz = st.columns(2)

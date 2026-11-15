@@ -848,7 +848,12 @@ with col_droite:
                                     "catégorie": item["rayon_auto"],
                                     "produit": nom_final,
                                     "upc": str(item.get("code_upc", "")).strip(),
+                                    "quantite": 1,
                                     "prix": prix_num,
+                                    "economie": float(item.get("economie_dollar", 0.0)),
+                                    "valide_au": str(item.get("valide_au", "")).strip(),
+                                    "achete": False,
+
                                 })
 
                                 st.toast(

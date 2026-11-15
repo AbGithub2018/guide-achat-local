@@ -209,6 +209,7 @@ def charger_circulaires_qc():
         .str.strip()
         .apply(lambda x: x.zfill(12) if x.isdigit() else x)
     )
+    df["marchand_norm"] = df["marchand"].astype(str).str.strip().str.upper()
     df["marchand_norm"] = df["marchand_norm"].replace({
         "TIGRE GEANT": "TIGRE GÉANT",
         "GIANT TIGER": "TIGRE GÉANT",
@@ -222,6 +223,7 @@ def charger_circulaires_qc():
         axis=1,
     )
     return df
+
 
 
 

@@ -350,6 +350,20 @@ with col_gauche:
             df_affichage["Prix"] = df_affichage["Prix"].map("{:.2f} $".format)
             st.dataframe(df_affichage, use_container_width=True, hide_index=True)
 
+            articles_avec_upc = [
+                a for a in st.session_state["panier_achats"]
+                if str(a.get("upc", "")).strip().isdigit() and len(str(a.get("upc", "")).strip()) == 12
+            ]
+            if articles_avec_upc:
+                with st.expander(f"📷 Codes-barres scannables ({len(articles_avec_upc)})", expanded=True):
+                    for art in articles_avec_upc:
+                        tampon_img = BytesIO()
+                        code_barre = barcode.get("upca", str(art["upc"]).strip(), writer=ImageWriter())
+                        code_barre.write(tampon_img, options={"module_height": 8.0, "font_size": 8, "text_distance": 3.0, "quiet_zone": 2.0})
+                        st.markdown(f"**{art['produit']}**")
+                        st.image(tampon_img.getvalue(), width=210)
+
+
             st.markdown(
                 "<h4 style='font-size: 16px; color: #4B5563; font-weight: bold; margin-top: 15px;'>📊 Répartition de mes dépenses par enseigne :</h4>",
                 unsafe_allow_html=True,

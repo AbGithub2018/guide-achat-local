@@ -12,3 +12,4 @@ geopy>=2.4.1
 numpy
 pillow
 rapidocr_onnxruntime
+python-barcode

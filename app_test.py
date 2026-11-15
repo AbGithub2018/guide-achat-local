@@ -502,15 +502,26 @@ with col_droite:
     st.write("")
 
     if df_circulaires is not None:
-        df_offres = df_circulaires[
-            df_circulaires["marchand_norm"] == cle_recherche
-        ].copy()
+        mode_global = st.toggle(
+            "🌎 Comparer dans toutes les bannières simultanément",
+            value=False,
+            help="Activez cette option pour trouver le meilleur prix parmi toutes les épiceries.",
+        )
+
+        if mode_global:
+            df_offres = df_circulaires.copy()
+            titre_section = "toutes les bannières"
+        else:
+            df_offres = df_circulaires[
+                df_circulaires["marchand_norm"] == cle_recherche
+            ].copy()
+            titre_section = banniere_active
 
         if not df_offres.empty:
             with st.container(border=True):
-                date_fin = df_offres["valide_au"].iloc[0]
+                date_fin = df_offres["valide_au"].head(1).squeeze()
                 st.caption(
-                    f"📅 {len(df_offres)} articles en spécial chez **{banniere_active}** (valide jusqu'au {date_fin})"
+                    f"📅 {len(df_offres)} articles en spécial dans **{titre_section}** (valide jusqu'au {date_fin})"
                 )
 
                 rayon_filtre = st.selectbox(
@@ -522,7 +533,7 @@ with col_droite:
                 c_rech, c_tri = st.columns([1.4, 1.0])
                 with c_rech:
                     recherche_article = st.text_input(
-                        f"🔍 Mot-clé ({banniere_active}) :",
+                        f"🔍 Mot-clé ({titre_section}) :",
                         placeholder="Ex: poulet, beurre, café...",
                     )
                 with c_tri:
@@ -551,6 +562,10 @@ with col_droite:
                         )
                     ]
 
+                df_offres["prix_circulaire_num"] = pd.to_numeric(df_offres["prix_circulaire_num"], errors="coerce").fillna(0.0)
+                df_offres["rabais_pourcent"] = pd.to_numeric(df_offres["rabais_pourcent"], errors="coerce").fillna(0)
+                df_offres["economie_dollar"] = pd.to_numeric(df_offres["economie_dollar"], errors="coerce").fillna(0.0)
+
                 if tri_option == "Meilleur % de rabais":
                     df_offres = df_offres.sort_values(
                         by=["rabais_pourcent", "prix_circulaire_num"],
@@ -568,12 +583,12 @@ with col_droite:
                     df_offres = df_offres.sort_values(
                         by="produit", ascending=True
                     )
-                                # Évite tout doublon résiduel majuscule/minuscule dès maintenant
+
                 df_offres["produit_norm"] = (
                     df_offres["produit"].astype(str).str.strip().str.lower()
                 )
                 df_offres = df_offres.drop_duplicates(
-                    subset=["produit_norm", "prix_circulaire_num"]
+                    subset=["marchand_norm", "produit_norm", "prix_circulaire_num"]
                 )
 
                 for _, item in df_offres.iterrows():
@@ -583,22 +598,26 @@ with col_droite:
                         )
 
                         with col_info:
-                            icone_rayon = item["rayon_auto"].split(" ")[0]
+                            icone_rayon = item["rayon_auto"].split(" ").pop(0)
+                            magasin_item = item["marchand_norm"]
                             titre = f"{icone_rayon} **{item['produit']}**"
                             if item["marque"]:
                                 titre += f" ({item['marque']})"
+                            if mode_global:
+                                titre += f" — 🏪 `{magasin_item}`"
                             st.markdown(titre)
 
                             sous_infos = [item["rayon_auto"]]
                             if item["format"]:
                                 sous_infos.append(f"📦 {item['format']}")
+                            if item.get("prix_unitaire_calc"):
+                                sous_infos.append(f"⚖️ **{item['prix_unitaire_calc']}**")
                             if item["condition"]:
                                 sous_infos.append(f"🏷️ {item['condition']}")
                             if str(item.get("code_upc", "")).strip():
                                 sous_infos.append(f"🔢 UPC:\u00A0{item['code_upc']}")
 
                             st.caption("  |  ".join(sous_infos))
-
 
                         with col_prix:
                             prix_num = float(item["prix_circulaire_num"])
@@ -612,7 +631,7 @@ with col_droite:
                                 and int(item["rabais_pourcent"]) > 0
                             ):
                                 st.markdown(
-                                    f"<small style='color: #6B7280;'><span style='text-decoration: line-through;'>{item['prix_regulier']} $ {unite}</span> <b style='color: #16A34A;'>(-{item['rabais_pourcent']}%)</b></small>",
+                                    f"<small style='color: #6B7280;'><span style='text-decoration: line-through;'>{item['prix_regulier']} $ {unite}</span> <b style='color: #16A34A;'>(-{int(item['rabais_pourcent'])}%)</b></small>",
                                     unsafe_allow_html=True,
                                 )
                             elif item["prix_regulier"]:
@@ -624,7 +643,7 @@ with col_droite:
                         with col_btn:
                             if st.button(
                                 "➕ Ajouter",
-                                key=f"add_spec_{item['id_produit']}",
+                                key=f"add_spec_{item['id_produit']}_{magasin_item}",
                                 use_container_width=True,
                                 type="primary",
                             ):
@@ -635,7 +654,7 @@ with col_droite:
                                     nom_final += f" [{unite}]"
 
                                 st.session_state["panier_achats"].append({
-                                    "magasin": banniere_active,
+                                    "magasin": magasin_item,
                                     "catégorie": item["rayon_auto"],
                                     "produit": nom_final,
                                     "upc": str(item.get("code_upc", "")).strip(),
@@ -643,14 +662,14 @@ with col_droite:
                                 })
 
                                 st.toast(
-                                    f"✅ {nom_final} ajouté à votre facture !",
+                                    f"✅ {nom_final} ({magasin_item}) ajouté à votre facture !",
                                     icon="🛒",
                                 )
                                 st.rerun()
         else:
             with st.container(border=True):
                 st.info(
-                    f"Aucun spécial extrait automatiquement pour **{banniere_active}** cette semaine. Utilisez le bouton ci-dessus pour consulter la circulaire sur le site officiel !"
+                    f"Aucun spécial extrait automatiquement pour **{titre_section}** cette semaine. Utilisez le bouton ci-dessus pour consulter la circulaire sur le site officiel !"
                 )
     else:
         with st.container(border=True):

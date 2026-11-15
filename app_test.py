@@ -209,12 +209,13 @@ def charger_circulaires_qc():
         .str.strip()
         .apply(lambda x: x.zfill(12) if x.isdigit() else x)
     )
-    df["marchand_norm"] = df["marchand"].astype(str).str.strip().str.upper()
     df["marchand_norm"] = df["marchand_norm"].replace({
         "TIGRE GEANT": "TIGRE GÉANT",
+        "GIANT TIGER": "TIGRE GÉANT",
         "MARCHE TRADITION": "MARCHÉ TRADITION",
         "MARCHE AMI": "MARCHÉ AMI",
     })
+
     df["rayon_auto"] = df["produit"].apply(classer_rayon)
     df["prix_unitaire_calc"] = df.apply(
         lambda r: calculer_prix_unitaire(r.get("prix_circulaire_num", 0), r.get("format", "")),

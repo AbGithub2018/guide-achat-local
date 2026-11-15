@@ -142,6 +142,45 @@ def classer_rayon(nom_produit: str) -> str:
     return "📦 Épicerie / Boîtes"
 
 
+import re
+
+
+def calculer_prix_unitaire(prix_str, format_str):
+    """Calcule le prix par 100g ou 100ml pour déjouer la réduflation."""
+    try:
+        prix = float(prix_str)
+        txt = str(format_str).lower().replace(",", ".")
+        if prix <= 0 or not txt:
+            return ""
+
+        multi = 1.0
+        match_multi = re.search(r"(\d+)\s*[x*]\s*(\d+(?:\.\d+)?)", txt)
+        if match_multi:
+            multi = float(match_multi.group(1))
+            val = float(match_multi.group(2))
+        else:
+            match_val = re.search(r"(\d+(?:\.\d+)?)", txt)
+            if not match_val:
+                return ""
+            val = float(match_val.group(1))
+
+        quantite_totale = multi * val
+        if quantite_totale <= 0:
+            return ""
+
+        if "kg" in txt:
+            return f"{(prix / (quantite_totale * 1000)) * 100:.2f} $ / 100g"
+        elif "g" in txt and "mg" not in txt:
+            return f"{(prix / quantite_totale) * 100:.2f} $ / 100g"
+        elif "ml" in txt:
+            return f"{(prix / quantite_totale) * 100:.2f} $ / 100ml"
+        elif "l" in txt:
+            return f"{(prix / (quantite_totale * 1000)) * 100:.2f} $ / 100ml"
+        return ""
+    except Exception:
+        return ""
+
+
 @st.cache_data(ttl=3600)
 def charger_circulaires_qc():
     fichier = "circulaires_qc.csv"
@@ -165,6 +204,10 @@ def charger_circulaires_qc():
         "MARCHE AMI": "MARCHÉ AMI",
     })
     df["rayon_auto"] = df["produit"].apply(classer_rayon)
+    df["prix_unitaire_calc"] = df.apply(
+        lambda r: calculer_prix_unitaire(r.get("prix_circulaire_num", 0), r.get("format", "")),
+        axis=1,
+    )
     return df
 
 

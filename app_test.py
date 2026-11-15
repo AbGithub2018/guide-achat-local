@@ -596,6 +596,8 @@ with col_gauche:
                 )
 
             lignes_export = [f"MA LISTE D'ÉPICERIE ({datetime.now().strftime('%Y-%m-%d')})", "=" * 42]
+            concurrents_a_montrer = set()
+
             for mag in sorted(df_panier["magasin"].unique()):
                 sous_df_mag = df_panier[df_panier["magasin"] == mag].sort_values(by=["catégorie", "produit"])
                 lignes_export.append(f"\n🏪 {mag.upper()} (Total : {sous_df_mag['Sous-total'].sum():.2f} $)")
@@ -606,15 +608,28 @@ with col_gauche:
                         rayon_actuel = row_exp["catégorie"]
                         lignes_export.append(f"  [{rayon_actuel}]")
                     etat = "☑" if row_exp["achete"] else "☐"
+                    src = str(row_exp.get("magasin_source", "")).strip()
+                    mention_match = ""
+                    if src and src.upper() != str(mag).upper():
+                        mention_match = f" [🤝 Égaler {src}]"
+                        concurrents_a_montrer.add(src.upper())
                     lignes_export.append(
-                        f"   {etat} {row_exp['quantite']}x {row_exp['produit']} - {row_exp['Sous-total']:.2f} $"
+                        f"   {etat} {row_exp['quantite']}x {row_exp['produit']}{mention_match} - {row_exp['Sous-total']:.2f} $"
                     )
+
             lignes_export.append("\n" + "=" * 42)
             lignes_export.append(f"TOTAL ESTIMÉ (taxes incl.) : {total_final:.2f} $")
             if total_economies > 0:
                 lignes_export.append(f"ÉCONOMIES CIRCULAIRES : {total_economies:.2f} $")
 
+            if concurrents_a_montrer:
+                lignes_export.append("\n📑 CIRCULAIRES À MONTRER À LA CAISSE :")
+                for conc in sorted(concurrents_a_montrer):
+                    lien_conc = LIENS_OFFICIELS.get(conc, f"https://flipp.com{urllib.parse.quote(conc)}")
+                    lignes_export.append(f"  • {conc} : {lien_conc}")
+
             texte_export = "\n".join(lignes_export)
+
 
             col_dl, col_raz = st.columns(2)
             with col_dl:
@@ -866,6 +881,7 @@ with col_droite:
 
                                 st.session_state["panier_achats"].append({
                                     "magasin": magasin_panier,
+                                    "magasin_source": magasin_item,
                                     "catégorie": item["rayon_auto"],
                                     "produit": nom_final,
                                     "upc": str(item.get("code_upc", "")).strip(),

@@ -181,6 +181,18 @@ def calculer_prix_unitaire(prix_str, format_str):
         return ""
 
 
+import unicodedata
+
+
+def normaliser_texte(texte: str) -> str:
+    """Enlève les accents et met en minuscules pour faciliter la recherche."""
+    txt = str(texte).lower().strip()
+    return "".join(
+        c for c in unicodedata.normalize("NFD", txt)
+        if unicodedata.category(c) != "Mn"
+    )
+
+
 @st.cache_data(ttl=3600)
 def charger_circulaires_qc():
     fichier = "circulaires_qc.csv"
@@ -209,6 +221,7 @@ def charger_circulaires_qc():
         axis=1,
     )
     return df
+
 
 
 
@@ -553,14 +566,22 @@ with col_droite:
                     ]
 
                 if recherche_article:
-                    df_offres = df_offres[
-                        df_offres["produit"].str.contains(
-                            recherche_article, case=False, na=False
-                        )
-                        | df_offres["marque"].str.contains(
-                            recherche_article, case=False, na=False
-                        )
-                    ]
+                    requete_norm = normaliser_texte(recherche_article)
+                    requete_norm = requete_norm.replace("coke", "coca")
+                    mots_cles = requete_norm.split()
+
+                    texte_complet = (
+                        df_offres["produit"].apply(normaliser_texte)
+                        + " "
+                        + df_offres["marque"].apply(normaliser_texte)
+                    )
+
+                    masque = pd.Series(True, index=df_offres.index)
+                    for mot in mots_cles:
+                        masque = masque & texte_complet.str.contains(mot, regex=False, na=False)
+
+                    df_offres = df_offres[masque]
+
 
                 df_offres["prix_circulaire_num"] = pd.to_numeric(df_offres["prix_circulaire_num"], errors="coerce").fillna(0.0)
                 df_offres["rabais_pourcent"] = pd.to_numeric(df_offres["rabais_pourcent"], errors="coerce").fillna(0)

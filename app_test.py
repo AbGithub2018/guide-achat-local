@@ -417,55 +417,117 @@ with col_gauche:
         )
 
         if st.session_state["panier_achats"]:
-            # Sécurise les colonnes pour tous les articles du panier
+            aujourd_hui = datetime.now().strftime("%Y-%m-%d")
+            panier_valide = []
+            nb_expires = 0
+
             for item_p in st.session_state["panier_achats"]:
                 item_p.setdefault("upc", "")
                 item_p.setdefault("quantite", 1)
                 item_p.setdefault("economie", 0.0)
+                item_p.setdefault("valide_au", "")
+                item_p.setdefault("achete", False)
+
+                date_exp = str(item_p["valide_au"]).strip()
+                if date_exp and len(date_exp) >= 10 and date_exp[:10] < aujourd_hui:
+                    nb_expires += 1
+                else:
+                    panier_valide.append(item_p)
+
+            if nb_expires > 0:
+                st.session_state["panier_achats"] = panier_valide
+                st.warning(f"⏰ {nb_expires} article(s) expiré(s) ont été retirés automatiquement de votre liste.")
+                st.rerun()
+
+            vue_panier = st.radio(
+                "Mode d'affichage :",
+                ["📊 Facture & Quantités", "🛒 Checklist en magasin (par épicerie)"],
+                horizontal=True,
+                label_visibility="collapsed",
+            )
 
             df_panier = pd.DataFrame(st.session_state["panier_achats"])
             df_panier["Sous-total"] = df_panier["prix"] * df_panier["quantite"]
-            df_panier["Supprimer"] = False
 
-            df_editeur = df_panier[
-                ["Supprimer", "quantite", "produit", "magasin", "catégorie", "prix", "Sous-total"]
-            ].rename(
-                columns={
-                    "quantite": "Qté",
-                    "produit": "Article",
-                    "magasin": "Magasin",
-                    "catégorie": "Rayon",
-                    "prix": "Prix unit.",
-                }
-            )
+            if vue_panier == "📊 Facture & Quantités":
+                df_panier["Supprimer"] = False
+                df_editeur = df_panier[
+                    ["Supprimer", "quantite", "produit", "magasin", "catégorie", "prix", "Sous-total"]
+                ].rename(
+                    columns={
+                        "quantite": "Qté",
+                        "produit": "Article",
+                        "magasin": "Magasin",
+                        "catégorie": "Rayon",
+                        "prix": "Prix unit.",
+                    }
+                )
 
-            st.caption("💡 Modifiez une quantité directement dans le tableau ou cochez « Supprimer » pour retirer un article.")
-            df_modifie = st.data_editor(
-                df_editeur,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Supprimer": st.column_config.CheckboxColumn("🗑️", default=False, width="small"),
-                    "Qté": st.column_config.NumberColumn("Qté", min_value=1, max_value=99, step=1, width="small"),
-                    "Article": st.column_config.TextColumn("Article", disabled=True),
-                    "Magasin": st.column_config.TextColumn("Magasin", disabled=True),
-                    "Rayon": st.column_config.TextColumn("Rayon", disabled=True),
-                    "Prix unit.": st.column_config.NumberColumn("Prix unit.", format="%.2f $", disabled=True),
-                    "Sous-total": st.column_config.NumberColumn("Total", format="%.2f $", disabled=True),
-                },
-                key="editeur_panier",
-            )
+                st.caption("💡 Modifiez une quantité ou cochez 🗑️ pour retirer un article.")
+                df_modifie = st.data_editor(
+                    df_editeur,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Supprimer": st.column_config.CheckboxColumn("🗑️", default=False, width="small"),
+                        "Qté": st.column_config.NumberColumn("Qté", min_value=1, max_value=99, step=1, width="small"),
+                        "Article": st.column_config.TextColumn("Article", disabled=True),
+                        "Magasin": st.column_config.TextColumn("Magasin", disabled=True),
+                        "Rayon": st.column_config.TextColumn("Rayon", disabled=True),
+                        "Prix unit.": st.column_config.NumberColumn("Prix unit.", format="%.2f $", disabled=True),
+                        "Sous-total": st.column_config.NumberColumn("Total", format="%.2f $", disabled=True),
+                    },
+                    key="editeur_panier",
+                )
 
-            # Applique immédiatement les suppressions ou changements de quantité
-            if df_modifie["Supprimer"].any() or not df_modifie["Qté"].equals(df_editeur["Qté"]):
-                nouveau_panier = []
-                for idx in range(len(df_modifie)):
-                    if not df_modifie["Supprimer"].iloc[idx]:
-                        ligne = st.session_state["panier_achats"][idx].copy()
-                        ligne["quantite"] = int(df_modifie["Qté"].iloc[idx])
-                        nouveau_panier.append(ligne)
-                st.session_state["panier_achats"] = nouveau_panier
-                st.rerun()
+                if df_modifie["Supprimer"].any() or not df_modifie["Qté"].equals(df_editeur["Qté"]):
+                    nouveau_panier = []
+                    for idx in range(len(df_modifie)):
+                        if not df_modifie["Supprimer"].iloc[idx]:
+                            ligne = st.session_state["panier_achats"][idx].copy()
+                            ligne["quantite"] = int(df_modifie["Qté"].iloc[idx])
+                            nouveau_panier.append(ligne)
+                    st.session_state["panier_achats"] = nouveau_panier
+                    st.rerun()
+
+            else:
+                st.caption("✅ Cochez les articles au fur et à mesure que vous les mettez dans votre panier :")
+                magasins_uniques = sorted(df_panier["magasin"].unique())
+
+                for mag in magasins_uniques:
+                    st.markdown(f"#### 🏪 {mag}")
+                    indices_mag = [
+                        i for i, a in enumerate(st.session_state["panier_achats"]) if a["magasin"] == mag
+                    ]
+                    indices_mag.sort(key=lambda idx: st.session_state["panier_achats"][idx]["catégorie"])
+
+                    rayon_courant = ""
+                    for idx in indices_mag:
+                        art = st.session_state["panier_achats"][idx]
+                        if art["catégorie"] != rayon_courant:
+                            rayon_courant = art["catégorie"]
+                            st.markdown(f"<small style='color:#4B5563; font-weight:bold;'>{rayon_courant}</small>", unsafe_allow_html=True)
+
+                        libelle = f"{art['quantite']}x {art['produit']} — **{art['prix'] * art['quantite']:.2f} $**"
+                        if art["achete"]:
+                            libelle = f"~~{libelle}~~"
+
+                        coche = st.checkbox(
+                            libelle,
+                            value=art["achete"],
+                            key=f"chk_magasin_{idx}",
+                        )
+                        if coche != art["achete"]:
+                            st.session_state["panier_achats"][idx]["achete"] = coche
+                            st.rerun()
+
+                if any(a["achete"] for a in st.session_state["panier_achats"]):
+                    if st.button("🧹 Effacer les articles achetés (cochés)", use_container_width=True):
+                        st.session_state["panier_achats"] = [
+                            a for a in st.session_state["panier_achats"] if not a["achete"]
+                        ]
+                        st.rerun()
+
 
             articles_avec_upc = [
                 a for a in st.session_state["panier_achats"]
@@ -532,9 +594,44 @@ with col_gauche:
                     unsafe_allow_html=True,
                 )
 
-            if st.button("🗑️ Réinitialiser ma liste", use_container_width=True):
-                st.session_state["panier_achats"] = []
-                st.rerun()
+            lignes_export = [f"MA LISTE D'ÉPICERIE ({datetime.now().strftime('%Y-%m-%d')})", "=" * 42]
+            for mag in sorted(df_panier["magasin"].unique()):
+                sous_df_mag = df_panier[df_panier["magasin"] == mag].sort_values(by=["catégorie", "produit"])
+                lignes_export.append(f"\n🏪 {mag.upper()} (Total : {sous_df_mag['Sous-total'].sum():.2f} $)")
+                lignes_export.append("-" * 35)
+                rayon_actuel = ""
+                for _, row_exp in sous_df_mag.iterrows():
+                    if row_exp["catégorie"] != rayon_actuel:
+                        rayon_actuel = row_exp["catégorie"]
+                        lignes_export.append(f"  [{rayon_actuel}]")
+                    etat = "☑" if row_exp["achete"] else "☐"
+                    lignes_export.append(
+                        f"   {etat} {row_exp['quantite']}x {row_exp['produit']} - {row_exp['Sous-total']:.2f} $"
+                    )
+            lignes_export.append("\n" + "=" * 42)
+            lignes_export.append(f"TOTAL ESTIMÉ (taxes incl.) : {total_final:.2f} $")
+            if total_economies > 0:
+                lignes_export.append(f"ÉCONOMIES CIRCULAIRES : {total_economies:.2f} $")
+
+            texte_export = "\n".join(lignes_export)
+
+            col_dl, col_raz = st.columns(2)
+            with col_dl:
+                st.download_button(
+                    "📲 Télécharger (.txt)",
+                    data=texte_export,
+                    file_name=f"liste_epicerie_{datetime.now().strftime('%Y-%m-%d')}.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
+            with col_raz:
+                if st.button("🗑️ Tout effacer", use_container_width=True):
+                    st.session_state["panier_achats"] = []
+                    st.rerun()
+
+            with st.expander("📋 Copier la liste en 1 clic (Notes / SMS)", expanded=False):
+                st.code(texte_export, language=None)
+
         else:
             st.info(
                 "Votre liste d'épicerie est vide pour le moment. Trouvez des rabais à droite et ajoutez-les ici !"

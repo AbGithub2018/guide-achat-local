@@ -383,10 +383,15 @@ with col_gauche:
                         f"💡 **Meilleur prix repéré :** {meilleur['produit']} à **{meilleur['prix_num_temp']:.2f} $** chez **{meilleur['marchand_norm']}** !"
                     )
 
-        prix_article = st.number_input(
-            "Prix en spécial ($) :", value=0.00, step=0.01, key="input_prix"
-        )
-
+        col_p, col_q = st.columns([1.5, 1.0])
+        with col_p:
+            prix_article = st.number_input(
+                "Prix unitaire ($) :", value=0.00, step=0.01, key="input_prix"
+            )
+        with col_q:
+            qte_article = st.number_input(
+                "Quantité :", min_value=1, value=1, step=1, key="input_qte"
+            )
 
         if st.button("✨ Enregistrer l'article", use_container_width=True):
             if nom_article:
@@ -394,7 +399,10 @@ with col_gauche:
                     "magasin": banniere_active,
                     "catégorie": categorie,
                     "produit": nom_article,
-                    "prix": prix_article,
+                    "upc": "",
+                    "quantite": int(qte_article),
+                    "prix": float(prix_article),
+                    "economie": 0.0,
                 })
                 st.toast("Article enregistré !", icon="✅")
                 st.rerun()
@@ -409,22 +417,55 @@ with col_gauche:
         )
 
         if st.session_state["panier_achats"]:
-            df_panier = pd.DataFrame(st.session_state["panier_achats"])
-            if "upc" not in df_panier.columns:
-                df_panier["upc"] = ""
+            # Sécurise les colonnes pour tous les articles du panier
+            for item_p in st.session_state["panier_achats"]:
+                item_p.setdefault("upc", "")
+                item_p.setdefault("quantite", 1)
+                item_p.setdefault("economie", 0.0)
 
-            df_affichage = df_panier.rename(
+            df_panier = pd.DataFrame(st.session_state["panier_achats"])
+            df_panier["Sous-total"] = df_panier["prix"] * df_panier["quantite"]
+            df_panier["Supprimer"] = False
+
+            df_editeur = df_panier[
+                ["Supprimer", "quantite", "produit", "magasin", "catégorie", "prix", "Sous-total"]
+            ].rename(
                 columns={
+                    "quantite": "Qté",
+                    "produit": "Article",
                     "magasin": "Magasin",
                     "catégorie": "Rayon",
-                    "produit": "Article",
-                    "upc": "Code UPC",
-                    "prix": "Prix",
+                    "prix": "Prix unit.",
                 }
             )
 
-            df_affichage["Prix"] = df_affichage["Prix"].map("{:.2f} $".format)
-            st.dataframe(df_affichage, use_container_width=True, hide_index=True)
+            st.caption("💡 Modifiez une quantité directement dans le tableau ou cochez « Supprimer » pour retirer un article.")
+            df_modifie = st.data_editor(
+                df_editeur,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Supprimer": st.column_config.CheckboxColumn("🗑️", default=False, width="small"),
+                    "Qté": st.column_config.NumberColumn("Qté", min_value=1, max_value=99, step=1, width="small"),
+                    "Article": st.column_config.TextColumn("Article", disabled=True),
+                    "Magasin": st.column_config.TextColumn("Magasin", disabled=True),
+                    "Rayon": st.column_config.TextColumn("Rayon", disabled=True),
+                    "Prix unit.": st.column_config.NumberColumn("Prix unit.", format="%.2f $", disabled=True),
+                    "Sous-total": st.column_config.NumberColumn("Total", format="%.2f $", disabled=True),
+                },
+                key="editeur_panier",
+            )
+
+            # Applique immédiatement les suppressions ou changements de quantité
+            if df_modifie["Supprimer"].any() or not df_modifie["Qté"].equals(df_editeur["Qté"]):
+                nouveau_panier = []
+                for idx in range(len(df_modifie)):
+                    if not df_modifie["Supprimer"].iloc[idx]:
+                        ligne = st.session_state["panier_achats"][idx].copy()
+                        ligne["quantite"] = int(df_modifie["Qté"].iloc[idx])
+                        nouveau_panier.append(ligne)
+                st.session_state["panier_achats"] = nouveau_panier
+                st.rerun()
 
             articles_avec_upc = [
                 a for a in st.session_state["panier_achats"]
@@ -436,34 +477,60 @@ with col_gauche:
                         tampon_img = BytesIO()
                         code_barre = barcode.get("upca", str(art["upc"]).strip(), writer=ImageWriter())
                         code_barre.write(tampon_img, options={"module_height": 8.0, "font_size": 8, "text_distance": 3.0, "quiet_zone": 2.0})
-                        st.markdown(f"**{art['produit']}**")
+                        st.markdown(f"**{art['produit']}** (Qté : {art['quantite']})")
                         st.image(tampon_img.getvalue(), width=210)
-
 
             st.markdown(
                 "<h4 style='font-size: 16px; color: #4B5563; font-weight: bold; margin-top: 15px;'>📊 Répartition de mes dépenses par enseigne :</h4>",
                 unsafe_allow_html=True,
             )
             df_comparatif = (
-                df_panier.groupby("magasin")["prix"].sum().reset_index()
+                df_panier.groupby("magasin")["Sous-total"].sum().reset_index()
             )
 
             for _, rangee in df_comparatif.iterrows():
                 magasin_nom = rangee["magasin"]
-                total_magasin = rangee["prix"]
+                total_magasin = rangee["Sous-total"]
                 st.markdown(
                     f"🔹 Total estimé chez **{magasin_nom}** : `{total_magasin:.2f} $`"
                 )
 
+            inclure_taxes = st.checkbox(
+                "🧾 Inclure l'estimation des taxes (TPS/TVQ 14,975 %) sur les articles non alimentaires (« Entretien / Autre »)",
+                value=True,
+            )
+
+            sous_total_general = float(df_panier["Sous-total"].sum())
+            montant_taxable = float(
+                df_panier[df_panier["catégorie"].str.contains("Entretien|Autre", case=False, na=False)]["Sous-total"].sum()
+            )
+            taxes_estimees = round(montant_taxable * 0.14975, 2) if inclure_taxes else 0.0
+            total_final = sous_total_general + taxes_estimees
+
+            if inclure_taxes and taxes_estimees > 0:
+                st.caption(f"Sous-total avant taxes : **{sous_total_general:.2f} $** | Taxes estimées (TPS/TVQ) : **{taxes_estimees:.2f} $**")
+
             st.markdown(
                 f"""
-                <div style="background-color: #FEF2F2; border: 2px dashed #EF4444; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px; margin-bottom: 15px;">
+                <div style="background-color: #FEF2F2; border: 2px dashed #EF4444; padding: 15px; border-radius: 8px; text-align: center; margin-top: 15px; margin-bottom: 12px;">
                     <span style="color: #991B1B; font-size: 16px; font-weight: bold; display: block; text-transform: uppercase; letter-spacing: 1px;">Estimation totale cumulée</span>
-                    <span style="color: #DC2626; font-size: 36px; font-weight: 900; font-family: monospace;">{df_panier['prix'].sum():.2f} $</span>
+                    <span style="color: #DC2626; font-size: 36px; font-weight: 900; font-family: monospace;">{total_final:.2f} $</span>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+
+            total_economies = float((df_panier["economie"] * df_panier["quantite"]).sum())
+            if total_economies > 0:
+                st.markdown(
+                    f"""
+                    <div style="background-color: #ECFDF5; border: 2px solid #10B981; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <span style="color: #065F46; font-size: 14px; font-weight: bold; display: block;">🎉 Économies réalisées grâce aux circulaires</span>
+                        <span style="color: #059669; font-size: 24px; font-weight: 900; font-family: monospace;">{total_economies:.2f} $</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             if st.button("🗑️ Réinitialiser ma liste", use_container_width=True):
                 st.session_state["panier_achats"] = []
@@ -473,6 +540,7 @@ with col_gauche:
                 "Votre liste d'épicerie est vide pour le moment. Trouvez des rabais à droite et ajoutez-les ici !"
             )
 with col_droite:
+
     with st.container(border=True):
         st.markdown(
             f"<h2 style='font-size: 24px; color: #1E3A8A; font-weight: 600; margin-top: 0px;'>🏷️ Spéciaux et Liens : {banniere_active}</h2>",

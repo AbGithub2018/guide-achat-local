@@ -230,10 +230,11 @@ def traiter_article_ameliore(item, merchant, flyer_id):
 def executer_mise_a_jour():
     debut = time.time()
     flyers_deja_traites = set()
+    marchands_nationaux_faits = set()
     tous_les_articles = []
 
     for cp in POLES_REGIONAUX_QC:
-        print(f"Vérification des circulaires pour {cp}...")
+        print(f"Vérification des circulaires pour {cp}...", flush=True)
         flyers = get_grocery_flyer_id(cp)
         if not flyers:
             continue
@@ -246,7 +247,12 @@ def executer_mise_a_jour():
 
             if flyer_id in flyers_deja_traites:
                 continue
+            if merchant in ["Walmart", "Tigre Geant"] and merchant in marchands_nationaux_faits:
+                continue
+
             flyers_deja_traites.add(flyer_id)
+            marchands_nationaux_faits.add(merchant)
+
 
             items = get_flyer_items(flyer_id)
             print(

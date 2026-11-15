@@ -684,13 +684,25 @@ with col_droite:
     st.write("")
 
     if df_circulaires is not None:
-        mode_global = st.toggle(
-            "🌎 Comparer dans toutes les bannières simultanément",
-            value=False,
-            help="Activez cette option pour trouver le meilleur prix parmi toutes les épiceries.",
-        )
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            mode_global = st.toggle(
+                "🌎 Comparer toutes les bannières",
+                value=False,
+                help="Affiche les rabais de toutes les épiceries côte à côte.",
+            )
+        with col_t2:
+            mode_price_match = st.toggle(
+                "🤝 Prix égalé (Maxi / Walmart)",
+                value=False,
+                help="Regroupe tous les rabais des concurrents pour les égaler à la caisse chez Maxi ou Walmart (une seule épicerie à faire !).",
+            )
 
-        if mode_global:
+        if mode_price_match:
+            df_offres = df_circulaires.copy()
+            cible_match = banniere_active if cle_recherche in ["MAXI", "WALMART"] else "MAXI / WALMART"
+            titre_section = f"Prix égalé chez {cible_match}"
+        elif mode_global:
             df_offres = df_circulaires.copy()
             titre_section = "toutes les bannières"
         else:
@@ -698,6 +710,7 @@ with col_droite:
                 df_circulaires["marchand_norm"] == cle_recherche
             ].copy()
             titre_section = banniere_active
+
 
         if not df_offres.empty:
             with st.container(border=True):
@@ -790,12 +803,20 @@ with col_droite:
                         with col_info:
                             icone_rayon = item["rayon_auto"].split(" ").pop(0)
                             magasin_item = item["marchand_norm"]
+                            magasin_panier = (
+                                (banniere_active if cle_recherche in ["MAXI", "WALMART"] else "MAXI")
+                                if mode_price_match
+                                else magasin_item
+                            )
                             titre = f"{icone_rayon} **{item['produit']}**"
                             if item["marque"]:
                                 titre += f" ({item['marque']})"
-                            if mode_global:
+                            if mode_price_match and magasin_item != magasin_panier:
+                                titre += f" — 🤝 `Égalé {magasin_panier} (Circulaire {magasin_item})`"
+                            elif mode_global or mode_price_match:
                                 titre += f" — 🏪 `{magasin_item}`"
                             st.markdown(titre)
+
 
                             sous_infos = [item["rayon_auto"]]
                             if item["format"]:
@@ -844,7 +865,7 @@ with col_droite:
                                     nom_final += f" [{unite}]"
 
                                 st.session_state["panier_achats"].append({
-                                    "magasin": magasin_item,
+                                    "magasin": magasin_panier,
                                     "catégorie": item["rayon_auto"],
                                     "produit": nom_final,
                                     "upc": str(item.get("code_upc", "")).strip(),

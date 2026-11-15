@@ -12,10 +12,12 @@ FLYER_ITEMS = 'https://flyers-ng.flippback.com/api/flipp/flyers/{}/flyer_items?l
 # Test ciblé sur Super C (remettez toutes les bannières une fois validé)
 GROCERY_STORES = {
     'Maxi', 'IGA', 'Super C', 'Metro', 'Provigo', 
-    'Intermarché', 'Marché Tradition', 'Tradition', 'Bonichoix',
-    'Walmart', 'Giant Tiger', 'Tigre Géant', 'Marché Adonis', 'Adonis', 'Marché Richelieu'
+    'Intermarché', 'Marché Tradition', 'Tradition', 
+    'Bonichoix', 'Marché Bonichoix',
+    'Marché Ami', 'Marche Ami',
+    'Walmart', 'Giant Tiger', 'Tigre Géant', 
+    'Marché Adonis', 'Adonis', 'Marché Richelieu'
 }
-
 SESSION_HTTP = requests.Session()
 
 def generate_sid():
@@ -36,16 +38,11 @@ def get_grocery_flyer_id(postal_code: str):
     grocery_flyers = []
     for flyer in response_data['flyers']:
         merchant = flyer.get('merchant')
-        categories = flyer.get('categories', [])
-        if isinstance(categories, str):
-            categories = [cat.strip() for cat in categories.split(',')]
-        
         if merchant in GROCERY_STORES:
-            if any(cat in categories for cat in ['Groceries', 'Épicerie', 'Pharmacie', 'Pharmacy', 'Marchandise générale', 'General Merchandise']):
-                grocery_flyers.append({
-                    'id': flyer['id'],
-                    'merchant': merchant
-                })
+            grocery_flyers.append({
+                'id': flyer['id'],
+                'merchant': merchant
+            })
     return grocery_flyers if grocery_flyers else None
 
 def get_flyer_items(flyer_id: int):

@@ -12,8 +12,10 @@ FLYER_ITEMS = 'https://flyers-ng.flippback.com/api/flipp/flyers/{}/flyer_items?l
 # Test ciblé sur Super C (remettez toutes les bannières une fois validé)
 GROCERY_STORES = {
     'Maxi', 'IGA', 'Super C', 'Metro', 'Provigo', 
-    'Intermarché', 'Marché Tradition', 'Tradition', 'Bonichoix'
+    'Intermarché', 'Marché Tradition', 'Tradition', 'Bonichoix',
+    'Walmart', 'Giant Tiger', 'Tigre Géant', 'Marché Adonis', 'Adonis', 'Marché Richelieu'
 }
+
 SESSION_HTTP = requests.Session()
 
 def generate_sid():

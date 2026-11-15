@@ -518,7 +518,8 @@ with col_droite:
                             if item["condition"]:
                                 sous_infos.append(f"🏷️ {item['condition']}")
                             if str(item.get("code_upc", "")).strip():
-                                sous_infos.append(f"🔢 UPC: {item['code_upc']}")
+                                sous_infos.append(f"🔢 UPC:\u00A0{item['code_upc']}")
+
                             st.caption("  |  ".join(sous_infos))
 
 

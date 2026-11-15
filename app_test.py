@@ -351,9 +351,26 @@ with col_gauche:
             placeholder="Ex: Banane, Beurre...",
             key="input_nom",
         )
+
+        if nom_article and len(nom_article.strip()) >= 3 and df_circulaires is not None:
+            correspondances = df_circulaires[
+                df_circulaires["produit"].str.contains(nom_article.strip(), case=False, na=False)
+            ].copy()
+            if not correspondances.empty:
+                correspondances["prix_num_temp"] = pd.to_numeric(
+                    correspondances["prix_circulaire_num"], errors="coerce"
+                )
+                correspondances = correspondances.dropna(subset=["prix_num_temp"]).sort_values(by="prix_num_temp")
+                if not correspondances.empty:
+                    meilleur = correspondances.head(1).squeeze()
+                    st.info(
+                        f"💡 **Meilleur prix repéré :** {meilleur['produit']} à **{meilleur['prix_num_temp']:.2f} $** chez **{meilleur['marchand_norm']}** !"
+                    )
+
         prix_article = st.number_input(
             "Prix en spécial ($) :", value=0.00, step=0.01, key="input_prix"
         )
+
 
         if st.button("✨ Enregistrer l'article", use_container_width=True):
             if nom_article:

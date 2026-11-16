@@ -147,6 +147,9 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                                         """,
                                         unsafe_allow_html=True,
                                     )
+                                    if st.button("🔍 Agrandir", key=f"zoom_deal_{i}", use_container_width=True):
+                                        agrandir_photo_deal(d_img, d_prod, d_prix, d_mag, d_ville)
+                                    
 
                             with c_txt:
                                 st.markdown(f"**{d_prod}**")

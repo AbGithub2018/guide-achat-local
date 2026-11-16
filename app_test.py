@@ -8,6 +8,7 @@ import barcode
 from barcode.writer import ImageWriter
 
 from fonctions_geo import calculer_distance, charger_donnees
+from deals_extra import afficher_section_deals_extra
 
 st.set_page_config(
     page_title="Planificateur Budget Épicerie",
@@ -264,15 +265,18 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
+ville_detectee = ""
 if code_recherche:
     point_origine = df_coords[df_coords["Code postal"] == code_recherche]
 
     if not point_origine.empty:
         lat_centre = float(point_origine["Latitude"].iloc[0])
         lon_centre = float(point_origine["Longitude"].iloc[0])
+        ville_detectee = str(point_origine["Ville"].iloc[0])
         st.sidebar.caption(
-            f"Position détectée : {point_origine['Ville'].iloc[0]}"
+            f"Position détectée : {ville_detectee}"
         )
+
 
         df_magasins_gps = pd.merge(
             df_magasins,

@@ -93,7 +93,11 @@ def charger_deals_extra(_conn):
     except Exception:
         return pd.DataFrame()
 
-
+@st.dialog("🔍 Aperçu de la trouvaille")
+def agrandir_photo_deal(url_img: str, produit: str, prix: float, magasin: str, ville: str):
+    st.image(url_img, use_container_width=True)
+    st.markdown(f"### {produit} — :red[{prix:.2f} $]")
+    st.caption(f"🏪 {magasin}" + (f" | 📍 {ville}" if ville else ""))
 def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, liens_officiels: dict, classer_rayon_fn):
     """Affiche le module communautaire Le Deal Extra."""
     conn_gsheets = st.connection("gsheets", type=GSheetsConnection)

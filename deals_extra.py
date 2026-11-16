@@ -1,36 +1,80 @@
 from datetime import datetime
 from io import BytesIO
 import base64
+import uuid
+import requests
 from PIL import Image
 import pandas as pd
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
 
-def convertir_photo_en_base64(fichier_photo) -> str:
-    """Compresse la photo en miniature légère pour la stocker directement dans Google Sheets."""
-    try:
-        img = Image.open(fichier_photo)
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-        
-        # Redimensionnement pour tenir dans une cellule Google Sheets (< 50 000 caractères)
-        img.thumbnail((420, 420))
-        
-        qualite = 70
-        while qualite >= 25:
+def compresser_photo_50ko(fichier_photo) -> bytes:
+    """Redimensionne et compresse la photo pour qu'elle pèse <= 50 Ko."""
+    fichier_photo.seek(0)
+    img = Image.open(fichier_photo)
+    if img.mode in ("RGBA", "P", "LA"):
+        img = img.convert("RGB")
+
+    for dimension in [(800, 800), (640, 640), (480, 480)]:
+        img_copie = img.copy()
+        img_copie.thumbnail(dimension)
+        for qualite in:
             tampon = BytesIO()
-            img.save(tampon, format="JPEG", quality=qualite, optimize=True)
-            b64_str = base64.b64encode(tampon.getvalue()).decode("utf-8")
-            data_url = f"data:image/jpeg;base64,{b64_str}"
-            if len(data_url) < 48000:
-                return data_url
-            qualite -= 15
-        return ""
-    except Exception:
-        return ""
+            img_copie.save(tampon, format="JPEG", quality=qualite, optimize=True)
+            donnees = tampon.getvalue()
+            if len(donnees) <= 51200:
+                return donnees
+
+    tampon = BytesIO()
+    img_copie.save(tampon, format="JPEG", quality=25, optimize=True)
+    return tampon.getvalue()
 
 
+def televerser_vers_github(fichier_photo) -> str:
+    """Envoie la photo compressée (< 50 Ko) dans image_circulaire/ sur GitHub."""
+    try:
+        token = st.secrets.get("GITHUB_TOKEN", "")
+        if not token:
+            st.warning("⚠️ Secret GITHUB_TOKEN manquant.")
+            return ""
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+        }
+
+        res_user = requests.get("https://github.com", headers=headers, timeout=10)
+        if res_user.status_code != 200:
+            st.warning("⚠️ Impossible de vérifier le compte GitHub.")
+            return ""
+        pseudo_github = res_user.json().get("login", "")
+        repo = f"{pseudo_github}/guide-achat-local"
+        branch = "main"
+
+        octets_image = compresser_photo_50ko(fichier_photo)
+        contenu_b64 = base64.b64encode(octets_image).decode("utf-8")
+
+        horodatage_nom = datetime.now().strftime("%Y%m%d_%H%M%S")
+        id_court = uuid.uuid4().hex[:6]
+        chemin_fichier = f"image_circulaire/deal_{horodatage_nom}_{id_court}.jpg"
+
+        url_api = f"https://github.com{repo}/contents/{chemin_fichier}"
+        payload = {
+            "message": f"Ajout photo Deal Extra ({chemin_fichier})",
+            "content": contenu_b64,
+            "branch": branch,
+        }
+
+        reponse = requests.put(url_api, headers=headers, json=payload, timeout=15)
+        if reponse.status_code in (200, 201):
+            return f"https://githubusercontent.com{repo}/{branch}/{chemin_fichier}"
+        else:
+            st.warning(f"⚠️ GitHub a refusé l'envoi ({reponse.status_code}).")
+            return ""
+    except Exception as e:
+        st.warning(f"⚠️ Erreur photo : {e}")
+        return ""
 @st.cache_data(ttl=300)
 def charger_deals_extra(_conn):
     """Charge les Deals Extra approuvés depuis Google Sheets."""
@@ -39,6 +83,7 @@ def charger_deals_extra(_conn):
         if df is None or df.empty:
             return pd.DataFrame()
         df.columns = [str(c).strip().lower() for c in df.columns]
+        df = df.loc[:, ~df.columns.duplicated()]
         if "statut" not in df.columns:
             return pd.DataFrame()
         df_approuves = df[df["statut"].fillna("").astype(str).str.strip().str.upper() == "APPROUVE"].copy()
@@ -48,7 +93,7 @@ def charger_deals_extra(_conn):
 
 
 def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, liens_officiels: dict, classer_rayon_fn):
-    """Affiche le module communautaire Le Deal Extra avec prise de photo mobile."""
+    """Affiche le module communautaire Le Deal Extra."""
     conn_gsheets = st.connection("gsheets", type=GSheetsConnection)
     df_deals_extra = charger_deals_extra(conn_gsheets)
     nb_deals = len(df_deals_extra)
@@ -84,7 +129,7 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                             except ValueError:
                                 d_prix = 0.0
 
-                            if d_img and (d_img.startswith("http") or d_img.startswith("data:image")):
+                            if d_img and d_img.startswith("http"):
                                 st.image(d_img, use_container_width=True)
 
                             st.markdown(f"**{d_prod}**")
@@ -131,24 +176,33 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                     photo_cell = st.file_uploader(
                         "📸 Prendre une photo ou choisir dans la galerie",
                         type=["jpg", "jpeg", "png", "webp"],
-                        help="Sur téléphone, appuyez ici pour ouvrir l'appareil photo.",
+                        help="Sur téléphone, appuyez ici pour ouvrir l'appareil photo (max 50 Ko).",
                     )
 
                 if st.form_submit_button("🚀 Envoyer mon Deal Extra", type="primary", use_container_width=True):
                     if not deal_produit.strip() or not deal_ville.strip() or deal_prix <= 0:
                         st.error("⚠️ Veuillez remplir le produit, le prix et la ville.")
                     else:
-                        image_encodee = ""
+                        lien_github = ""
                         if photo_cell is not None:
-                            with st.spinner("📸 Traitement de la photo..."):
-                                image_encodee = convertir_photo_en_base64(photo_cell)
+                            with st.spinner("📤 Compression (max 50 Ko) et sauvegarde dans GitHub..."):
+                                lien_github = televerser_vers_github(photo_cell)
 
                         try:
+                            colonnes_propres = [
+                                "statut", "date_soumission", "pseudo", "magasin", "ville", "produit", "prix", "lien_image"
+                            ]
                             df_existant = conn_gsheets.read(worksheet="Deals_Extra", ttl=0)
-                            if df_existant is None:
-                                df_existant = pd.DataFrame(columns=[
-                                    "statut", "date_soumission", "pseudo", "magasin", "ville", "produit", "prix", "lien_image"
-                                ])
+                            if df_existant is None or df_existant.empty:
+                                df_existant = pd.DataFrame(columns=colonnes_propres)
+                            else:
+                                df_existant.columns = [str(c).strip().lower() for c in df_existant.columns]
+                                df_existant = df_existant.loc[:, ~df_existant.columns.duplicated()]
+                                for col in colonnes_propres:
+                                    if col not in df_existant.columns:
+                                        df_existant[col] = ""
+                                df_existant = df_existant[colonnes_propres]
+
                             nouvelle_entree = pd.DataFrame([{
                                 "statut": "EN_ATTENTE",
                                 "date_soumission": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -157,7 +211,7 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                                 "ville": deal_ville.strip(),
                                 "produit": deal_produit.strip(),
                                 "prix": f"{deal_prix:.2f}",
-                                "lien_image": image_encodee,
+                                "lien_image": lien_github,
                             }])
                             df_maj = pd.concat([df_existant, nouvelle_entree], ignore_index=True)
                             conn_gsheets.update(worksheet="Deals_Extra", data=df_maj)

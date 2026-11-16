@@ -1,7 +1,34 @@
 from datetime import datetime
+from io import BytesIO
+import base64
+from PIL import Image
 import pandas as pd
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
+
+
+def convertir_photo_en_base64(fichier_photo) -> str:
+    """Compresse la photo en miniature légère pour la stocker directement dans Google Sheets."""
+    try:
+        img = Image.open(fichier_photo)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        
+        # Redimensionnement pour tenir dans une cellule Google Sheets (< 50 000 caractères)
+        img.thumbnail((420, 420))
+        
+        qualite = 70
+        while qualite >= 25:
+            tampon = BytesIO()
+            img.save(tampon, format="JPEG", quality=qualite, optimize=True)
+            b64_str = base64.b64encode(tampon.getvalue()).decode("utf-8")
+            data_url = f"data:image/jpeg;base64,{b64_str}"
+            if len(data_url) < 48000:
+                return data_url
+            qualite -= 15
+        return ""
+    except Exception:
+        return ""
 
 
 @st.cache_data(ttl=300)
@@ -21,7 +48,7 @@ def charger_deals_extra(_conn):
 
 
 def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, liens_officiels: dict, classer_rayon_fn):
-    """Affiche le module communautaire Le Deal Extra."""
+    """Affiche le module communautaire Le Deal Extra avec prise de photo mobile."""
     conn_gsheets = st.connection("gsheets", type=GSheetsConnection)
     df_deals_extra = charger_deals_extra(conn_gsheets)
     nb_deals = len(df_deals_extra)
@@ -57,7 +84,7 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                             except ValueError:
                                 d_prix = 0.0
 
-                            if d_img and d_img.startswith("http"):
+                            if d_img and (d_img.startswith("http") or d_img.startswith("data:image")):
                                 st.image(d_img, use_container_width=True)
 
                             st.markdown(f"**{d_prod}**")
@@ -88,7 +115,7 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                                 st.rerun()
 
         with tab_ajouter:
-            st.caption("Vous avez repéré une liquidation ou un rabais non annoncé en circulaire ? Partagez-le ici !")
+            st.caption("Prenez l'étiquette ou le produit en photo avec votre cellulaire et partagez le rabais avec la communauté !")
             with st.form("form_soumission_deal_extra", clear_on_submit=True):
                 c_f1, c_f2 = st.columns(2)
                 liste_magasins = sorted(list(liens_officiels.keys())) + ["AUTRE"]
@@ -101,12 +128,21 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                 with c_f2:
                     deal_ville = st.text_input("Ville / Succursale *", value=ville_detectee, placeholder="Ex: Saint-Georges")
                     deal_pseudo = st.text_input("Votre prénom ou pseudo (optionnel)", placeholder="Ex: Marc Q.")
-                    deal_image = st.text_input("Lien vers une photo (optionnel)", placeholder="https://...")
+                    photo_cell = st.file_uploader(
+                        "📸 Prendre une photo ou choisir dans la galerie",
+                        type=["jpg", "jpeg", "png", "webp"],
+                        help="Sur téléphone, appuyez ici pour ouvrir l'appareil photo.",
+                    )
 
-                if st.form_submit_button("🚀 Envoyer mon Deal Extra pour validation", type="primary", use_container_width=True):
+                if st.form_submit_button("🚀 Envoyer mon Deal Extra", type="primary", use_container_width=True):
                     if not deal_produit.strip() or not deal_ville.strip() or deal_prix <= 0:
                         st.error("⚠️ Veuillez remplir le produit, le prix et la ville.")
                     else:
+                        image_encodee = ""
+                        if photo_cell is not None:
+                            with st.spinner("📸 Traitement de la photo..."):
+                                image_encodee = convertir_photo_en_base64(photo_cell)
+
                         try:
                             df_existant = conn_gsheets.read(worksheet="Deals_Extra", ttl=0)
                             if df_existant is None:
@@ -121,10 +157,10 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                                 "ville": deal_ville.strip(),
                                 "produit": deal_produit.strip(),
                                 "prix": f"{deal_prix:.2f}",
-                                "lien_image": deal_image.strip(),
+                                "lien_image": image_encodee,
                             }])
                             df_maj = pd.concat([df_existant, nouvelle_entree], ignore_index=True)
                             conn_gsheets.update(worksheet="Deals_Extra", data=df_maj)
-                            st.success("🎉 Merci ! Votre Deal Extra sera publié dès sa validation par un modérateur.")
+                            st.success("🎉 Merci ! Votre Deal Extra a été envoyé et sera publié dès sa validation.")
                         except Exception as err_gs:
                             st.error(f"❌ Erreur lors de l'envoi vers Google Sheets : {err_gs}")

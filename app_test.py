@@ -854,10 +854,22 @@ with col_droite:
                         with col_prix:
                             prix_num = float(item["prix_circulaire_num"])
                             unite = str(item.get("unite_prix") or "").strip()
-                            st.markdown(
-                                f"**{prix_num:.2f} $** <small>{unite}</small>",
+                            f"**{prix_num:.2f} $** <small>{unite}</small>",
                                 unsafe_allow_html=True,
                             )
+                            unite_clean = unite.replace("/", "").strip().lower()
+                            if unite_clean in ["lb", "la lb", "livre", "livres"]:
+                                prix_kg = prix_num * 2.20462
+                                st.markdown(
+                                    f"<small style='color:#4B5563;'>ou en kilo = <b>{prix_kg:.2f} $ / kg</b></small>",
+                                    unsafe_allow_html=True,
+                                )
+                            elif unite_clean in ["kg", "le kg", "kilo", "kilos", "kilogramme"]:
+                                prix_lb = prix_num / 2.20462
+                                st.markdown(
+                                    f"<small style='color:#4B5563;'>ou en livre = <b>{prix_lb:.2f} $ / lb</b></small>",
+                                    unsafe_allow_html=True,
+                                )
                             if (
                                 item["prix_regulier"]
                                 and int(item["rabais_pourcent"]) > 0

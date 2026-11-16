@@ -33,45 +33,48 @@ def compresser_photo_50ko(fichier_photo) -> bytes:
 
 
 def televerser_vers_github(fichier_photo) -> str:
-    """Envoie la photo compressée (< 50 Ko) dans image_circulaire/ sur GitHub."""
+    """Envoie la photo compressée (< 50 Ko) dans image_circulaire/ sur GitHub (modèle app_web.py)."""
     try:
-        token = st.secrets.get("GITHUB_TOKEN", "").strip()
-        if not token:
-            st.warning("⚠️ Secret GITHUB_TOKEN manquant.")
-            return ""
-
-        repo = "AbGithub2018/guide-achat-local"
-        branch = "main"
-
-        headers = {
-            "Authorization": f"token {token}",
-            "Accept": "application/vnd.github+json",
-        }
+        UTILISATEUR_GH = "abgithub2018"
+        DEPOT_GH = "guide-achat-local"
+        TOKEN_GH = st.secrets["GITHUB_TOKEN"]
 
         octets_image = compresser_photo_50ko(fichier_photo)
-        contenu_b64 = base64.b64encode(octets_image).decode("utf-8")
+        image_base64 = base64.b64encode(octets_image).decode("utf-8")
 
-        horodatage_nom = datetime.now().strftime("%Y%m%d_%H%M%S")
+        horodatage_nom = pd.Timestamp.now(tz="America/Toronto").strftime("%Y%m%d_%H%M%S")
         id_court = uuid.uuid4().hex[:6]
-        chemin_fichier = f"image_circulaire/deal_{horodatage_nom}_{id_court}.jpg"
+        nom_fichier_image = f"deal_{horodatage_nom}_{id_court}.jpg"
 
-        url_api = f"https://github.com{repo}/contents/{chemin_fichier}"
-        payload = {
-            "message": f"Ajout photo Deal Extra ({chemin_fichier})",
-            "content": contenu_b64,
-            "branch": branch,
+        url_api_github = f"https://github.com{UTILISATEUR_GH}/{DEPOT_GH}/contents/image_circulaire/{nom_fichier_image}"
+        headers_gh = {
+            "Authorization": f"token {TOKEN_GH}",
+            "Accept": "application/vnd.github.v3+json",
         }
 
-        reponse = requests.put(url_api, headers=headers, json=payload, timeout=15)
-        if reponse.status_code in (200, 201):
-            return f"https://githubusercontent.com{repo}/{branch}/{chemin_fichier}"
-        else:
-            detail = reponse.json().get("message", reponse.text)
-            st.warning(f"⚠️ GitHub a refusé ({reponse.status_code}) : {detail}")
-            return ""
+        reponse_get = requests.get(url_api_github, headers=headers_gh)
+        sha_fichier = None
+        if reponse_get.status_code == 200:
+            sha_fichier = reponse_get.json().get("sha")
+
+        donnees_envoi = {
+            "message": f"📸 Ajout photo Deal Extra ({nom_fichier_image}) via mobile",
+            "content": image_base64,
+        }
+        if sha_fichier:
+            donnees_envoi["sha"] = sha_fichier
+
+        envoi_gh = requests.put(url_api_github, headers=headers_gh, json=donnees_envoi)
+        if envoi_gh.status_code not in (200, 201):
+            raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
+
+        lien_public_github = f"https://githubusercontent.com{UTILISATEUR_GH}/{DEPOT_GH}/main/image_circulaire/{nom_fichier_image}"
+        return lien_public_github
+
     except Exception as e:
-        st.warning(f"⚠️ Erreur photo : {e}")
+        st.error(f"Erreur lors de la sauvegarde sur GitHub : {e}")
         return ""
+
 
 @st.cache_data(ttl=300)
 def charger_deals_extra(_conn):

@@ -46,7 +46,7 @@ def televerser_vers_github(fichier_photo) -> str:
         id_court = uuid.uuid4().hex[:6]
         nom_fichier_image = f"deal_{horodatage_nom}_{id_court}.jpg"
 
-        url_api_github = f"https://github.com{UTILISATEUR_GH}/{DEPOT_GH}/contents/image_circulaire/{nom_fichier_image}"
+        url_api_github = f"https://api.github.com/repos/{UTILISATEUR_GH}/{DEPOT_GH}/contents/image_circulaire/{nom_fichier_image}"
         headers_gh = {
             "Authorization": f"token {TOKEN_GH}",
             "Accept": "application/vnd.github.v3+json",
@@ -68,7 +68,7 @@ def televerser_vers_github(fichier_photo) -> str:
         if envoi_gh.status_code not in (200, 201):
             raise Exception(f"GitHub a répondu avec le code {envoi_gh.status_code}")
 
-        lien_public_github = f"https://githubusercontent.com{UTILISATEUR_GH}/{DEPOT_GH}/main/image_circulaire/{nom_fichier_image}"
+        lien_public_github = f"https://raw.githubusercontent.com/{UTILISATEUR_GH}/{DEPOT_GH}/main/image_circulaire/{nom_fichier_image}"
         return lien_public_github
 
     except Exception as e:

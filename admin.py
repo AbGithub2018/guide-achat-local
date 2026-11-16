@@ -349,8 +349,9 @@ with onglet_deals:
                             st.rerun()
                             
                     with col_d_visuel:
-                        if d_image and d_image.startswith("http"):
+                        if d_image and (d_image.startswith("http") or d_image.startswith("data:image")):
                             st.image(d_image, caption="Preuve photo soumise", use_container_width=True)
                         else:
                             st.caption("📷 Aucune photo jointe à cette trouvaille.")
+
 

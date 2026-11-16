@@ -855,7 +855,7 @@ with col_droite:
                             prix_num = float(item["prix_circulaire_num"])
                             unite = str(item.get("unite_prix") or "").strip()
                             f"**{prix_num:.2f} $** <small>{unite}</small>",
-                                unsafe_allow_html=True,
+                            unsafe_allow_html=True,
                             )
                             unite_clean = unite.replace("/", "").strip().lower()
                             if unite_clean in ["lb", "la lb", "livre", "livres"]:

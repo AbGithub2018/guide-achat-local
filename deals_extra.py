@@ -132,7 +132,14 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                                 d_prix = 0.0
 
                             if d_img and d_img.startswith("http"):
-                                st.image(d_img, use_container_width=True)
+                                st.markdown(
+                                    f"""
+                                    <div style="width:100%; height:180px; overflow:hidden; border-radius:8px; margin-bottom:10px; background-color:#f8fafc; display:flex; align-items:center; justify-content:center;">
+                                        <img src="{d_img}" style="width:100%; height:100%; object-fit:cover;" alt="{d_prod}" />
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True,
+                                )
 
                             st.markdown(f"**{d_prod}**")
                             st.markdown(

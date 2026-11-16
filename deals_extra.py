@@ -19,12 +19,13 @@ def compresser_photo_50ko(fichier_photo) -> bytes:
     for dimension in [(800, 800), (640, 640), (480, 480)]:
         img_copie = img.copy()
         img_copie.thumbnail(dimension)
-        for qualite in:
+        for qualite in (80, 65, 50, 35):
             tampon = BytesIO()
             img_copie.save(tampon, format="JPEG", quality=qualite, optimize=True)
             donnees = tampon.getvalue()
             if len(donnees) <= 51200:
                 return donnees
+
 
     tampon = BytesIO()
     img_copie.save(tampon, format="JPEG", quality=25, optimize=True)

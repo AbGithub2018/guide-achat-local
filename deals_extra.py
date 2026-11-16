@@ -3,16 +3,17 @@ from io import BytesIO
 import base64
 import uuid
 import requests
-from PIL import Image
+from PIL import Image, ImageOps
 import pandas as pd
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
 
 def compresser_photo_50ko(fichier_photo) -> bytes:
-    """Redimensionne et compresse la photo pour qu'elle pèse <= 50 Ko."""
+    """Redimensionne, redresse et compresse la photo pour qu'elle pèse <= 50 Ko."""
     fichier_photo.seek(0)
     img = Image.open(fichier_photo)
+    img = ImageOps.exif_transpose(img)
     if img.mode in ("RGBA", "P", "LA"):
         img = img.convert("RGB")
 

@@ -131,26 +131,31 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                             except ValueError:
                                 d_prix = 0.0
 
-                            if d_img and d_img.startswith("http"):
+                            c_img, c_txt = st.columns([1, 1.6])
+
+                            with c_img:
+                                if d_img and d_img.startswith("http"):
+                                    st.markdown(
+                                        f"""
+                                        <div style="width:100%; height:130px; border-radius:8px; background-color:#f8fafc; display:flex; align-items:center; justify-content:center; padding:4px;">
+                                            <img src="{d_img}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:6px;" alt="{d_prod}" />
+                                        </div>
+                                        """,
+                                        unsafe_allow_html=True,
+                                    )
+
+                            with c_txt:
+                                st.markdown(f"**{d_prod}**")
                                 st.markdown(
-                                    f"""
-                                    <div style="width:100%; height:180px; overflow:hidden; border-radius:8px; margin-bottom:10px; background-color:#f8fafc; display:flex; align-items:center; justify-content:center;">
-                                        <img src="{d_img}" style="width:100%; height:100%; object-fit:cover;" alt="{d_prod}" />
-                                    </div>
-                                    """,
+                                    f"<span style='color:#DC2626; font-size:20px; font-weight:900;'>{d_prix:.2f} $</span> — 🏪 **{d_mag}**",
                                     unsafe_allow_html=True,
                                 )
+                                infos_sub = [f"📍 {d_ville}"] if d_ville else []
+                                infos_sub.append(f"👤 {d_pseudo}")
+                                if d_date:
+                                    infos_sub.append(f"📅 {d_date[:10]}")
+                                st.caption(" | ".join(infos_sub))
 
-                            st.markdown(f"**{d_prod}**")
-                            st.markdown(
-                                f"<span style='color:#DC2626; font-size:22px; font-weight:900;'>{d_prix:.2f} $</span> — 🏪 **{d_mag}**",
-                                unsafe_allow_html=True,
-                            )
-                            infos_sub = [f"📍 {d_ville}"] if d_ville else []
-                            infos_sub.append(f"👤 {d_pseudo}")
-                            if d_date:
-                                infos_sub.append(f"📅 {d_date[:10]}")
-                            st.caption(" | ".join(infos_sub))
 
                             if st.button("➕ Ajouter à ma liste", key=f"btn_add_deal_{i}", use_container_width=True):
                                 st.session_state["panier_achats"].append({

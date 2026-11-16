@@ -35,23 +35,18 @@ def compresser_photo_50ko(fichier_photo) -> bytes:
 def televerser_vers_github(fichier_photo) -> str:
     """Envoie la photo compressée (< 50 Ko) dans image_circulaire/ sur GitHub."""
     try:
-        token = st.secrets.get("GITHUB_TOKEN", "")
+        token = st.secrets.get("GITHUB_TOKEN", "").strip()
         if not token:
             st.warning("⚠️ Secret GITHUB_TOKEN manquant.")
             return ""
 
+        repo = "AbGithub2018/guide-achat-local"
+        branch = "main"
+
         headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"token {token}",
             "Accept": "application/vnd.github+json",
         }
-
-        res_user = requests.get("https://github.com", headers=headers, timeout=10)
-        if res_user.status_code != 200:
-            st.warning("⚠️ Impossible de vérifier le compte GitHub.")
-            return ""
-        pseudo_github = res_user.json().get("login", "")
-        repo = f"{pseudo_github}/guide-achat-local"
-        branch = "main"
 
         octets_image = compresser_photo_50ko(fichier_photo)
         contenu_b64 = base64.b64encode(octets_image).decode("utf-8")
@@ -71,11 +66,13 @@ def televerser_vers_github(fichier_photo) -> str:
         if reponse.status_code in (200, 201):
             return f"https://githubusercontent.com{repo}/{branch}/{chemin_fichier}"
         else:
-            st.warning(f"⚠️ GitHub a refusé l'envoi ({reponse.status_code}).")
+            detail = reponse.json().get("message", reponse.text)
+            st.warning(f"⚠️ GitHub a refusé ({reponse.status_code}) : {detail}")
             return ""
     except Exception as e:
         st.warning(f"⚠️ Erreur photo : {e}")
         return ""
+
 @st.cache_data(ttl=300)
 def charger_deals_extra(_conn):
     """Charge les Deals Extra approuvés depuis Google Sheets."""

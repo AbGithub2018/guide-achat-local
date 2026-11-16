@@ -854,6 +854,7 @@ with col_droite:
                         with col_prix:
                             prix_num = float(item["prix_circulaire_num"])
                             unite = str(item.get("unite_prix") or "").strip()
+                            st.markdown(
                             f"**{prix_num:.2f} $** <small>{unite}</small>",
                             unsafe_allow_html=True,
                             )

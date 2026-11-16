@@ -353,3 +353,4 @@ with onglet_deals:
                             st.image(d_image, caption="Preuve photo soumise", use_container_width=True)
                         else:
                             st.caption("📷 Aucune photo jointe à cette trouvaille.")
+

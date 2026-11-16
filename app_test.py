@@ -337,7 +337,11 @@ st.link_button(
 )
 st.write("---")
 
+afficher_section_deals_extra(banniere_active, ville_detectee, LIENS_OFFICIELS, classer_rayon)
+st.write("---")
+
 col_gauche, col_droite = st.columns([1.0, 1.0])
+
 
 with col_gauche:
     with st.container(border=True):

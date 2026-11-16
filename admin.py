@@ -40,28 +40,29 @@ if st.sidebar.button("🔴 Se déconnecter", use_container_width=True):
     st.session_state["admin_prive_connecte"] = False
     st.rerun()
 
-# 1. Chargement des deux onglets cloud indispensables et lissage des colonnes
+# 1. Chargement des onglets cloud indispensables et lissage des colonnes
 try:
     df_sheet1 = conn.read(worksheet="Sheet1", ttl=0)
     df_sheet1.columns = [str(c).strip().lower() for c in df_sheet1.columns]
     
     df_historique = conn.read(worksheet="Historique_Prix", ttl=0)
     df_historique.columns = [str(c).strip().lower() for c in df_historique.columns]
+
+    df_deals = conn.read(worksheet="Deals_Extra", ttl=0)
+    df_deals.columns = [str(c).strip().lower() for c in df_deals.columns]
 except Exception as e:
     st.error(f"❌ Erreur lors de la synchronisation avec Google Sheets : {e}")
     st.stop()
 
-# =====================================================================
-# 2. Séparation de la file d'attente en trois onglets visuels larges
-# =====================================================================
-onglet_nouveaux, onglet_prix, onglet_photos = st.tabs([
+# 2. Séparation de la file d'attente en quatre onglets visuels larges
+onglet_nouveaux, onglet_prix, onglet_photos, onglet_deals = st.tabs([
     "✨ Nouveaux produits à ajouter", 
     "💰 Prix suggérés à corriger",
-    "📸 Photos à valider"
+    "📸 Photos à valider",
+    "🔥 Deals Extra (Communauté)"
 ])
-
 # =====================================================================
-# GESTION DES NOUVEAUX PRODUITS
+# GESTION DES NOUVEAUX PRODUITS (Onglet 1)
 # =====================================================================
 with onglet_nouveaux:
     if df_historique.empty:
@@ -133,133 +134,13 @@ with onglet_nouveaux:
                         st.rerun()
 
 # =====================================================================
-# =====================================================================
-# GESTION DES PHOTOS UNIQUEMENT (Onglet 3)
-# =====================================================================
-with onglet_photos:
-    if df_historique.empty:
-        st.info("L'historique est complètement vide.")
-    else:
-        # 1. Nettoyage et sécurisation des colonnes pivots pour le filtrage
-        action_securisee = df_historique['source'].fillna("").astype(str)
-        cup_historique_nettoye = df_historique['code_upc'].fillna("").astype(str).str.strip()
-        
-        # Filtre : modification_photo_cell et non traité
-        df_photos_attente = df_historique[
-            (action_securisee == 'modification_photo_cell') & 
-            (cup_historique_nettoye != "") &
-            (~action_securisee.str.startswith("APPROUVE_")) & 
-            (~action_securisee.str.startswith("REFUSE_"))
-        ]
-        
-        if df_photos_attente.empty:
-            st.success("🎉 Aucune modification de photo en attente de validation.")
-        else:
-            st.warning(f"Il y a {len(df_photos_attente)} photo(s) soumise(s) à valider.")
-            
-            for idx, ligne_p in df_photos_attente.iterrows():
-                # cup_p contient la valeur saisie (ex: "51500051962" ou "sundae syrup")
-                cup_p = str(ligne_p['code_upc']).strip()
-                url_photo = str(ligne_p['photo']).strip()
-                horodatage_p = str(ligne_p['horodatage'])
-                
-                with st.container(border=True):
-                    st.markdown(f"### 📸 Demande de mise à jour photo")
-                    col_p_info, col_p_visuel = st.columns(2)
-                    
-                    with col_p_info:
-                        st.markdown(f"**Recherche principale (UPC / Nom) :** `{cup_p}`")
-                        st.markdown(f"**Soumis le :** {horodatage_p}")
-                        st.write("")
-                        
-                        c_p_valider, c_p_rejeter = st.columns(2)
-                        
-                        # LOGIQUE BOUTON ACCEPTER
-                        if c_p_valider.button("✅ Valider & Appliquer", key=f"btn_val_photo_{idx}", use_container_width=True):
-                            idx_produit = None
-                            methode_trouvee = ""
-                            
-                            # Préparation des colonnes de Sheet1 pour une comparaison propre
-                            df_sheet1_prive = df_sheet1.copy()
-                            if 'code_upc' in df_sheet1_prive.columns:
-                                df_sheet1_prive['code_upc_clean'] = df_sheet1_prive['code_upc'].fillna("").astype(str).str.strip()
-                            if 'nom' in df_sheet1_prive.columns:
-                                df_sheet1_prive['nom_clean'] = df_sheet1_prive['nom'].fillna("").astype(str).str.strip().str.lower()
-                            
-                            # --- ÉTAPE 1 : Recherche principale par Code UPC ---
-                            if 'code_upc_clean' in df_sheet1_prive.columns:
-                                match_upc = df_sheet1_prive[df_sheet1_prive['code_upc_clean'] == cup_p].index
-                                if not match_upc.empty:
-                                    idx_produit = match_upc
-                                    methode_trouvee = "le code UPC"
-                            
-                            # --- ÉTAPE 2 : Recherche secondaire par Nom (si UPC n'a rien donné) ---
-                            if idx_produit is None and 'nom_clean' in df_sheet1_prive.columns:
-                                match_nom = df_sheet1_prive[df_sheet1_prive['nom_clean'] == cup_p.lower()].index
-                                if not match_nom.empty:
-                                    idx_produit = match_nom
-                                    methode_trouvee = "le nom du produit"
-                            
-                            # --- ÉTAPE 3 : Application de la modification si trouvé ---
-                            if idx_produit is not None:
-                                try:
-                                    # 1. Forcer le type en chaîne de caractères (String)
-                                    df_sheet1['photo'] = df_sheet1['photo'].astype(str)
-                                    df_sheet1.loc[idx_produit, 'photo'] = url_photo
-                                    
-                                    # 2. Exécuter la mise à jour cloud
-                                    conn.update(worksheet="Sheet1", data=df_sheet1)
-                                    
-                                    # 3. Mettre à jour l'historique pour archiver le traitement
-                                    df_historique.loc[idx, 'source'] = "APPROUVE_PHOTO"
-                                    conn.update(worksheet="Historique_Prix", data=df_historique)
-                                    
-                                    # Effacer les caches pour forcer la mise à jour immédiate à l'écran
-                                    st.cache_data.clear()
-                                    st.success(f"🎉 Image appliquée avec succès pour {cup_p} !")
-                                    
-                                    # Pause plus longue pour laisser le temps à l'interface d'afficher le succès
-                                    time.sleep(2)
-                                    st.rerun()
-                                    
-                                except Exception as error_sheets:
-                                    st.error(f"⚠️ Erreur lors de la synchronisation Google Sheets : {error_sheets}")
-                            else:
-                                st.error(f"⚠️ Impossible de trouver '{cup_p}' dans le catalogue (ni dans code_upc, ni dans nom).")
-
-
-                            
-                            st.cache_data.clear()
-                            time.sleep(1)
-                            st.rerun()
-                            
-                        # LOGIQUE BOUTON REJETER
-                        if c_p_rejeter.button("❌ Rejeter la photo", key=f"btn_rej_photo_{idx}", use_container_width=True):
-                            df_historique.loc[idx, 'source'] = "REFUSE_PHOTO"
-                            conn.update(worksheet="Historique_Prix", data=df_historique)
-                            st.error("Changement de photo refusé.")
-                            time.sleep(1)
-                            st.rerun()
-                                
-                    with col_p_visuel:
-                        if url_photo and url_photo.startswith("http"):
-                            st.image(url_photo, caption=f"Aperçu pour : {cup_p}", use_container_width=True)
-                        else:
-                            st.error("⚠️ Aucun lien d'image valide pour ce scan.")
-
-
-# =====================================================================
-# =====================================================================
 # GESTION DES PRIX SUGGÉRÉS (Onglet 2)
 # =====================================================================
 with onglet_prix:
     if df_historique.empty:
         st.info("L'historique est complètement vide.")
     else:
-        # Sécurisation de la colonne source (colonne E) pour le filtrage
         source_securisee = df_historique['source'].fillna("").astype(str)
-        
-        # Filtre : On récupère les lignes 'PROPOSITION_PRIX' non encore validées ou refusées
         df_prix_attente = df_historique[
             (source_securisee == 'PROPOSITION_PRIX') & 
             (~source_securisee.str.startswith("APPROUVE_")) & 
@@ -274,7 +155,7 @@ with onglet_prix:
             for idx, ligne_pr in df_prix_attente.iterrows():
                 cup_pr = str(ligne_pr['code_upc']).strip()
                 nouveau_prix = str(ligne_pr['prix']).strip()
-                colonne_cible = str(ligne_pr['distribution']).strip() # contient par ex: 'prix_super_c'
+                colonne_cible = str(ligne_pr['distribution']).strip()
                 horodatage_pr = str(ligne_pr['horodatage'])
                 
                 with st.container(border=True):
@@ -286,7 +167,6 @@ with onglet_prix:
                     
                     c_pr_valider, c_pr_rejeter = st.columns(2)
                     
-                    # LOGIQUE DE VALIDATION DU PRIX (Double vérification UPC / Nom)
                     if c_pr_valider.button("✅ Appliquer ce prix", key=f"btn_val_prix_unique_{idx}", use_container_width=True):
                         idx_produit = None
                         methode_trouvee = ""
@@ -295,13 +175,11 @@ with onglet_prix:
                         df_sheet1_prive['code_upc_clean'] = df_sheet1_prive['code_upc'].fillna("").astype(str).str.strip()
                         df_sheet1_prive['nom_clean'] = df_sheet1_prive['nom'].fillna("").astype(str).str.strip().str.lower()
                         
-                        # 1. Recherche par Code UPC
                         match_upc = df_sheet1_prive[df_sheet1_prive['code_upc_clean'] == cup_pr].index
                         if not match_upc.empty:
                             idx_produit = match_upc
                             methode_trouvee = "le code UPC"
                         else:
-                            # 2. Recherche par Nom si l'UPC n'a rien donné
                             match_nom = df_sheet1_prive[df_sheet1_prive['nom_clean'] == cup_pr.lower()].index
                             if not match_nom.empty:
                                 idx_produit = match_nom
@@ -309,11 +187,8 @@ with onglet_prix:
                                 
                         if idx_produit is not None:
                             try:
-                                # Validation de la présence de la colonne de prix dans Sheet1
                                 if colonne_cible in df_sheet1.columns:
                                     df_sheet1.loc[idx_produit, colonne_cible] = nouveau_prix
-                                    
-                                    # Envois successifs au cloud pour éviter la désynchronisation
                                     conn.update(worksheet="Sheet1", data=df_sheet1)
                                     df_historique.loc[idx, 'source'] = "APPROUVE_PRIX"
                                     conn.update(worksheet="Historique_Prix", data=df_historique)
@@ -329,11 +204,152 @@ with onglet_prix:
                         else:
                             st.error("⚠️ Impossible de lier ce prix à un produit existant (Vérifiez l'UPC ou le Nom).")
                             
-                    # LOGIQUE DE REJET
                     if c_pr_rejeter.button("❌ Rejeter", key=f"btn_rej_prix_unique_{idx}", use_container_width=True):
                         df_historique.loc[idx, 'source'] = "REFUSE_PRIX"
                         conn.update(worksheet="Historique_Prix", data=df_historique)
                         st.error("Proposition de prix rejetée.")
                         time.sleep(2)
                         st.rerun()
-                                         
+# =====================================================================
+# GESTION DES PHOTOS UNIQUEMENT (Onglet 3)
+# =====================================================================
+with onglet_photos:
+    if df_historique.empty:
+        st.info("L'historique est complètement vide.")
+    else:
+        action_securisee = df_historique['source'].fillna("").astype(str)
+        cup_historique_nettoye = df_historique['code_upc'].fillna("").astype(str).str.strip()
+        
+        df_photos_attente = df_historique[
+            (action_securisee == 'modification_photo_cell') & 
+            (cup_historique_nettoye != "") &
+            (~action_securisee.str.startswith("APPROUVE_")) & 
+            (~action_securisee.str.startswith("REFUSE_"))
+        ]
+        
+        if df_photos_attente.empty:
+            st.success("🎉 Aucune modification de photo en attente de validation.")
+        else:
+            st.warning(f"Il y a {len(df_photos_attente)} photo(s) soumise(s) à valider.")
+            
+            for idx, ligne_p in df_photos_attente.iterrows():
+                cup_p = str(ligne_p['code_upc']).strip()
+                url_photo = str(ligne_p['photo']).strip()
+                horodatage_p = str(ligne_p['horodatage'])
+                
+                with st.container(border=True):
+                    st.markdown(f"### 📸 Demande de mise à jour photo")
+                    col_p_info, col_p_visuel = st.columns(2)
+                    
+                    with col_p_info:
+                        st.markdown(f"**Recherche principale (UPC / Nom) :** `{cup_p}`")
+                        st.markdown(f"**Soumis le :** {horodatage_p}")
+                        st.write("")
+                        
+                        c_p_valider, c_p_rejeter = st.columns(2)
+                        
+                        if c_p_valider.button("✅ Valider & Appliquer", key=f"btn_val_photo_{idx}", use_container_width=True):
+                            idx_produit = None
+                            df_sheet1_prive = df_sheet1.copy()
+                            if 'code_upc' in df_sheet1_prive.columns:
+                                df_sheet1_prive['code_upc_clean'] = df_sheet1_prive['code_upc'].fillna("").astype(str).str.strip()
+                            if 'nom' in df_sheet1_prive.columns:
+                                df_sheet1_prive['nom_clean'] = df_sheet1_prive['nom'].fillna("").astype(str).str.strip().str.lower()
+                            
+                            if 'code_upc_clean' in df_sheet1_prive.columns:
+                                match_upc = df_sheet1_prive[df_sheet1_prive['code_upc_clean'] == cup_p].index
+                                if not match_upc.empty:
+                                    idx_produit = match_upc
+                            
+                            if idx_produit is None and 'nom_clean' in df_sheet1_prive.columns:
+                                match_nom = df_sheet1_prive[df_sheet1_prive['nom_clean'] == cup_p.lower()].index
+                                if not match_nom.empty:
+                                    idx_produit = match_nom
+                            
+                            if idx_produit is not None:
+                                try:
+                                    df_sheet1['photo'] = df_sheet1['photo'].astype(str)
+                                    df_sheet1.loc[idx_produit, 'photo'] = url_photo
+                                    conn.update(worksheet="Sheet1", data=df_sheet1)
+                                    
+                                    df_historique.loc[idx, 'source'] = "APPROUVE_PHOTO"
+                                    conn.update(worksheet="Historique_Prix", data=df_historique)
+                                    
+                                    st.cache_data.clear()
+                                    st.success(f"🎉 Image appliquée avec succès pour {cup_p} !")
+                                    time.sleep(2)
+                                    st.rerun()
+                                except Exception as error_sheets:
+                                    st.error(f"⚠️ Erreur lors de la synchronisation Google Sheets : {error_sheets}")
+                            else:
+                                st.error(f"⚠️ Impossible de trouver '{cup_p}' dans le catalogue.")
+                            
+                        if c_p_rejeter.button("❌ Rejeter la photo", key=f"btn_rej_photo_{idx}", use_container_width=True):
+                            df_historique.loc[idx, 'source'] = "REFUSE_PHOTO"
+                            conn.update(worksheet="Historique_Prix", data=df_historique)
+                            st.error("Changement de photo refusé.")
+                            time.sleep(1)
+                            st.rerun()
+                                
+                    with col_p_visuel:
+                        if url_photo and url_photo.startswith("http"):
+                            st.image(url_photo, caption=f"Aperçu pour : {cup_p}", use_container_width=True)
+                        else:
+                            st.error("⚠️ Aucun lien d'image valide pour ce scan.")
+
+# =====================================================================
+# GESTION DES DEALS EXTRA (Onglet 4)
+# =====================================================================
+with onglet_deals:
+    if df_deals.empty or 'statut' not in df_deals.columns:
+        st.info("Aucun Deal Extra soumis pour le moment.")
+    else:
+        statut_deal = df_deals['statut'].fillna("").astype(str).str.strip().str.upper()
+        df_deals_attente = df_deals[statut_deal == "EN_ATTENTE"]
+        
+        if df_deals_attente.empty:
+            st.success("🎉 Aucun Deal Extra en attente de validation.")
+        else:
+            st.warning(f"Il y a {len(df_deals_attente)} Deal(s) Extra soumis par la communauté à vérifier.")
+            
+            for idx, deal in df_deals_attente.iterrows():
+                d_date = str(deal.get('date_soumission', '')).strip()
+                d_pseudo = str(deal.get('pseudo', 'Anonyme')).strip()
+                d_magasin = str(deal.get('magasin', '')).strip()
+                d_ville = str(deal.get('ville', '')).strip()
+                d_produit = str(deal.get('produit', '')).strip()
+                d_prix = str(deal.get('prix', '')).strip()
+                d_image = str(deal.get('lien_image', '')).strip()
+                
+                with st.container(border=True):
+                    st.markdown(f"### 🔥 {d_produit} — **{d_prix} $** chez **{d_magasin}**")
+                    col_d_info, col_d_visuel = st.columns([1.3, 1.0])
+                    
+                    with col_d_info:
+                        st.markdown(f"**Ville / Succursale :** {d_ville}")
+                        st.markdown(f"**Partagé par :** {d_pseudo}")
+                        st.markdown(f"**Date :** {d_date}")
+                        st.write("")
+                        
+                        c_d_valider, c_d_rejeter = st.columns(2)
+                        if c_d_valider.button("✅ Publier le Deal", key=f"btn_val_deal_{idx}", use_container_width=True, type="primary"):
+                            df_deals.loc[idx, 'statut'] = "APPROUVE"
+                            conn.update(worksheet="Deals_Extra", data=df_deals)
+                            st.cache_data.clear()
+                            st.success("🎉 Deal Extra publié en direct sur l'application !")
+                            time.sleep(1.5)
+                            st.rerun()
+                            
+                        if c_d_rejeter.button("❌ Rejeter", key=f"btn_rej_deal_{idx}", use_container_width=True):
+                            df_deals.loc[idx, 'statut'] = "REFUSE"
+                            conn.update(worksheet="Deals_Extra", data=df_deals)
+                            st.cache_data.clear()
+                            st.error("Deal Extra rejeté.")
+                            time.sleep(1.5)
+                            st.rerun()
+                            
+                    with col_d_visuel:
+                        if d_image and d_image.startswith("http"):
+                            st.image(d_image, caption="Preuve photo soumise", use_container_width=True)
+                        else:
+                            st.caption("📷 Aucune photo jointe à cette trouvaille.")

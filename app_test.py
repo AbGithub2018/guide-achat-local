@@ -9,6 +9,22 @@ from barcode.writer import ImageWriter
 
 from fonctions_geo import calculer_distance, charger_donnees
 from deals_extra import afficher_section_deals_extra
+def inject_google_verification():
+    index_path = os.path.join(os.path.dirname(st.__file__), "static", "index.html")
+    meta_tag = '<meta name="google-site-verification" content="cfTwKf7hM8Nr0bJomqM3R4iLgaNI_8Mhb9nKGTLvPDE" />'
+    
+    try:
+        with open(index_path, "r", encoding="utf-8") as f:
+            html = f.read()
+            
+        if meta_tag not in html:
+            html = html.replace("<head>", f"<head>\n    {meta_tag}")
+            with open(index_path, "w", encoding="utf-8") as f:
+                f.write(html)
+    except Exception:
+        pass
+
+inject_google_verification()
 
 st.set_page_config(
     page_title="Planificateur Budget Épicerie",

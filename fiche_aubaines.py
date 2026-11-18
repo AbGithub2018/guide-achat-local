@@ -147,7 +147,6 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
     """
     return html
 
-
 def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     """Affiche l'interface de configuration et l'aperçu de la fiche dans Streamlit."""
     
@@ -159,6 +158,13 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     df_clean["prix_circulaire_num"] = pd.to_numeric(df_clean["prix_circulaire_num"], errors="coerce").fillna(0.0)
     df_clean["rabais_pourcent"] = pd.to_numeric(df_clean["rabais_pourcent"], errors="coerce").fillna(0)
     df_clean = df_clean[df_clean["prix_circulaire_num"] > 0]
+
+    # --- AJOUTEZ CES 4 LIGNES ICI ---
+    if "valide_au" in df_clean.columns:
+        df_clean["valide_au_clean"] = df_clean["valide_au"].astype(str).str.strip().str.slice(0, 10)
+        dates_max = df_clean.groupby("marchand_norm")["valide_au_clean"].transform("max")
+        df_clean = df_clean[df_clean["valide_au_clean"] == dates_max]
+
 
     col1, col2, col3 = st.columns([1.5, 1.0, 1.0])
     with col1:

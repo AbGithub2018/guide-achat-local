@@ -9,6 +9,7 @@ from barcode.writer import ImageWriter
 
 from fonctions_geo import calculer_distance, charger_donnees
 from deals_extra import afficher_section_deals_extra
+from fiche_aubaines import afficher_generateur_fiche  # <--- AJOUTEZ CETTE LIGNE
 def inject_google_verification():
     index_path = os.path.join(os.path.dirname(st.__file__), "static", "index.html")
     meta_tag = '<meta name="google-site-verification" content="cfTwKf7hM8Nr0bJomqM3R4iLgaNI_8Mhb9nKGTLvPDE" />'
@@ -355,6 +356,11 @@ st.write("---")
 
 afficher_section_deals_extra(banniere_active, ville_detectee, LIENS_OFFICIELS, classer_rayon)
 st.write("---")
+# <--- AJOUTEZ CES 3 LIGNES ICI :
+with st.expander("📰 Générer la fiche des meilleures aubaines de la semaine (Format Facebook / Impression)", expanded=False):
+    afficher_generateur_fiche(df_circulaires)
+
+col_gauche, col_droite = st.columns([1.0, 1.0])
 
 col_gauche, col_droite = st.columns([1.0, 1.0])
 

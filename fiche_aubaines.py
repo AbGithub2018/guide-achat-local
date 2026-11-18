@@ -53,41 +53,49 @@ def obtenir_variantes_recherche(mot_cle: str) -> list:
 
 
 def calculer_equivalence_prix(prix: float, format_str: str, unite_str: str) -> str:
-    """Calcule le prix par 100g/100ml ou convertit kg <-> lb pour comparer équitablement."""
+    """Convertit /lb <-> /kg et calcule le prix au 100g/100ml avec garde-fou."""
     unite_clean = str(unite_str).replace("/", "").strip().lower()
-    if unite_clean in ["kg", "le kg", "kilo", "kilos"]:
+    if unite_clean in ["kg", "le kg", "kilo", "kilos", "kilogramme"]:
         return f"({prix / 2.20462:.2f}$/lb)"
     if unite_clean in ["lb", "la lb", "livre", "livres"]:
         return f"({prix * 2.20462:.2f}$/kg)"
 
-    txt = str(format_str).lower().replace(",", ".")
+    txt = str(format_str).lower().replace(",", ".").strip()
     if prix <= 0 or not txt:
         return ""
 
-    multi = 1.0
-    m_multi = re.search(r"(\d+)\s*[x*]\s*(\d+(?:\.\d+)?)", txt)
-    if m_multi:
-        multi = float(m_multi.group(1))
-        val = float(m_multi.group(2))
-    else:
-        m_val = re.search(r"(\d+(?:\.\d+)?)", txt)
-        if not m_val:
-            return ""
-        val = float(m_val.group(1))
+    if "-" in txt or ("/" in txt and not re.search(r"^\d+/\d+", txt)):
+        return ""
+
+    match = re.search(r"^(?:(\d+)\s*[x*/]\s*)?(\d+(?:\.\d+)?)\s*(kg|g|ml|l)$", txt)
+    if not match:
+        return ""
+
+    multi = float(match.group(1)) if match.group(1) else 1.0
+    val = float(match.group(2))
+    unite = match.group(3)
 
     qte = multi * val
     if qte <= 0:
         return ""
 
-    if "kg" in txt:
-        return f"({(prix / (qte * 1000)) * 100:.2f}$/100g)"
-    if "g" in txt and "mg" not in txt:
-        return f"({(prix / qte) * 100:.2f}$/100g)"
-    if "ml" in txt:
-        return f"({(prix / qte) * 100:.2f}$/100ml)"
-    if "l" in txt and "lb" not in txt:
-        return f"({(prix / (qte * 1000)) * 100:.2f}$/100ml)"
-    return ""
+    if unite == "kg":
+        res = (prix / (qte * 1000)) * 100
+        label = "100g"
+    elif unite == "g":
+        res = (prix / qte) * 100
+        label = "100g"
+    elif unite == "ml":
+        res = (prix / qte) * 100
+        label = "100ml"
+    else:
+        res = (prix / (qte * 1000)) * 100
+        label = "100ml"
+
+    if res < 0.05 or res > 15.0:
+        return ""
+
+    return f"({res:.2f}$/{label})"
 def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str, filtre_recherche: str = "") -> str:
     """Génère une fiche HTML multi-colonnes prête à imprimer ou enregistrer en PDF."""
     sous_titre = f"Offres valides jusqu'au {date_fin} • Généré via Mon Planificateur Anti-Inflation"
@@ -219,7 +227,7 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str, filtre_recherc
             if unite:
                 prix_txt += f" <small style='font-weight:normal;'>{unite}</small>"
 
-            equiv = calculer_equivalence_prix(prix, fmt if fmt else nom, unite)
+            equiv = calculer_equivalence_prix(prix, fmt, unite)
             equiv_html = f"<span class='prix-equiv'>{equiv}</span>" if equiv else ""
 
             html += f"""

@@ -159,45 +159,53 @@ def classer_rayon(nom_produit: str) -> str:
     ):
         return "🧼 Entretien / Autre"
     return "📦 Épicerie / Boîtes"
-
-
 import re
 
-
 def calculer_prix_unitaire(prix_str, format_str):
-    """Calcule le prix par 100g ou 100ml pour déjouer la réduflation."""
+    """Calcule le prix par 100g ou 100ml uniquement sur les formats exacts et réalistes."""
     try:
         prix = float(prix_str)
-        txt = str(format_str).lower().replace(",", ".")
+        txt = str(format_str).lower().replace(",", ".").strip()
         if prix <= 0 or not txt:
             return ""
 
-        multi = 1.0
-        match_multi = re.search(r"(\d+)\s*[x*]\s*(\d+(?:\.\d+)?)", txt)
-        if match_multi:
-            multi = float(match_multi.group(1))
-            val = float(match_multi.group(2))
-        else:
-            match_val = re.search(r"(\d+(?:\.\d+)?)", txt)
-            if not match_val:
-                return ""
-            val = float(match_val.group(1))
+        # Ignore les plages variables (ex: 200-350g) ou formats alternatifs (ex: 148/156g)
+        if "-" in txt or ("/" in txt and not re.search(r"^\d+/\d+", txt)):
+            return ""
+
+        match = re.search(r"^(?:(\d+)\s*[x*/]\s*)?(\d+(?:\.\d+)?)\s*(kg|g|ml|l)$", txt)
+        if not match:
+            return ""
+
+        multi = float(match.group(1)) if match.group(1) else 1.0
+        val = float(match.group(2))
+        unite = match.group(3)
 
         quantite_totale = multi * val
         if quantite_totale <= 0:
             return ""
 
-        if "kg" in txt:
-            return f"{(prix / (quantite_totale * 1000)) * 100:.2f} $ / 100g"
-        elif "g" in txt and "mg" not in txt:
-            return f"{(prix / quantite_totale) * 100:.2f} $ / 100g"
-        elif "ml" in txt:
-            return f"{(prix / quantite_totale) * 100:.2f} $ / 100ml"
-        elif "l" in txt:
-            return f"{(prix / (quantite_totale * 1000)) * 100:.2f} $ / 100ml"
-        return ""
+        if unite == "kg":
+            res = (prix / (quantite_totale * 1000)) * 100
+            label = "100g"
+        elif unite == "g":
+            res = (prix / quantite_totale) * 100
+            label = "100g"
+        elif unite == "ml":
+            res = (prix / quantite_totale) * 100
+            label = "100ml"
+        else:
+            res = (prix / (quantite_totale * 1000)) * 100
+            label = "100ml"
+
+        # Garde-fou contre les erreurs de lecture du CSV (ex: 3883l ou 28kg)
+        if res < 0.05 or res > 15.0:
+            return ""
+
+        return f"{res:.2f} $ / {label}"
     except Exception:
         return ""
+
 
 
 import unicodedata

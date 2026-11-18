@@ -1,3 +1,5 @@
+import re
+import unicodedata
 import streamlit as st
 import pandas as pd
 
@@ -120,7 +122,6 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
                 <span class="badge-nb">{len(groupe)} aubaines</span>
             </div>
         """
-        import re
         for _, row in groupe.iterrows():
             nom = str(row["produit"]).strip()
             nom = re.sub(r"\(\d{8,}\s*[a-zA-Z]*\)", "", nom).strip()
@@ -141,7 +142,6 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
                 <span class="prix-prod">{prix_txt}</span>
             </div>
             """
-
         html += "</div>"
 
     html += """
@@ -151,9 +151,9 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
     """
     return html
 
+
 def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     """Affiche l'interface de configuration et l'aperçu de la fiche dans Streamlit."""
-    
     if df_circulaires is None or df_circulaires.empty:
         st.warning("Aucune donnée de circulaire disponible pour générer la fiche.")
         return
@@ -163,12 +163,10 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     df_clean["rabais_pourcent"] = pd.to_numeric(df_clean["rabais_pourcent"], errors="coerce").fillna(0)
     df_clean = df_clean[df_clean["prix_circulaire_num"] > 0]
 
-    # --- AJOUTEZ CES 4 LIGNES ICI ---
     if "valide_au" in df_clean.columns:
         df_clean["valide_au_clean"] = df_clean["valide_au"].astype(str).str.strip().str.slice(0, 10)
         dates_max = df_clean.groupby("marchand_norm")["valide_au_clean"].transform("max")
         df_clean = df_clean[df_clean["valide_au_clean"] == dates_max]
-
 
     col1, col2, col3 = st.columns([1.5, 1.0, 1.0])
     with col1:
@@ -181,7 +179,7 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     with col2:
         nb_max_par_magasin = st.slider(
             "📊 Aubaines max par magasin :",
-            min_value=8,
+            min_value=5,
             max_value=100,
             value=25,
             step=5,
@@ -195,6 +193,7 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     if not magasins_choisis:
         st.info("Sélectionnez au moins une bannière pour afficher la fiche.")
         return
+
     df_filtre = df_clean[df_clean["marchand_norm"].isin(magasins_choisis)].copy()
 
     if "flyer_id" in df_filtre.columns:
@@ -202,7 +201,6 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     else:
         df_filtre["nb_items_flyer"] = 0
 
-    import unicodedata
     def clean_key(txt):
         s = "".join(c for c in unicodedata.normalize("NFD", str(txt).lower().strip()) if unicodedata.category(c) != "Mn")
         return s[:35]
@@ -240,5 +238,5 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
         type="primary",
     )
 
-       with st.container(border=True):
+    with st.container(border=True):
         st.components.v1.html(html_rendu, height=750, scrolling=True)

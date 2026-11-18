@@ -171,10 +171,10 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     with col2:
         nb_max_par_magasin = st.slider(
             "📊 Aubaines max par magasin :",
-            min_value=5,
-            max_value=30,
-            value=15,
-            step=1,
+            min_value=8,
+            max_value=100,
+            value=25,
+            step=5,
         )
     with col3:
         critere_tri = st.selectbox(

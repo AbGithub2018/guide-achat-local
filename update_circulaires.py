@@ -283,9 +283,6 @@ def executer_mise_a_jour():
         subset=["marchand", "produit_norm", "prix_circulaire"]
     ).drop(columns=["produit_norm"])
 
-    df = pd.DataFrame(tous_les_articles)
-    df = df.drop_duplicates(subset=["marchand", "produit", "prix_circulaire"])
-
     df = enrichir_avec_codes_upc(df, inclure_variantes_superc=True)
 
     df["prix_circulaire_num"] = pd.to_numeric(

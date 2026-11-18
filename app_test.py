@@ -774,14 +774,14 @@ with col_droite:
             )
         with col_t2:
             mode_price_match = st.toggle(
-                "🤝 Prix égalé (Maxi / Walmart)",
+                "🤝 Prix égalé (Maxi)",
                 value=False,
                 help="Regroupe tous les rabais des concurrents pour les égaler à la caisse chez Maxi ou Walmart (une seule épicerie à faire !).",
             )
 
         if mode_price_match:
             df_offres = df_circulaires.copy()
-            cible_match = banniere_active if cle_recherche in ["MAXI", "WALMART"] else "MAXI / WALMART"
+            cible_match = banniere_active if cle_recherche in ["MAXI"] else "MAXI"
             titre_section = f"Prix égalé chez {cible_match}"
         elif mode_global:
             df_offres = df_circulaires.copy()

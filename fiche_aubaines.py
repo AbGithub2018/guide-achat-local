@@ -243,34 +243,5 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     with st.container(border=True):
         st.components.v1.html(html_rendu, height=750, scrolling=True)
 
-
-    df_filtre = df_clean[df_clean["marchand_norm"].isin(magasins_choisis)].copy()
-    
-    df_filtre["produit_norm"] = df_filtre["produit"].astype(str).str.strip().str.lower()
-    df_filtre = df_filtre.drop_duplicates(subset=["marchand_norm", "produit_norm", "prix_circulaire_num"])
-
-    if critere_tri == "Meilleurs % de rabais":
-        df_filtre = df_filtre.sort_values(by=["rabais_pourcent", "prix_circulaire_num"], ascending=[False, True])
-    else:
-        df_filtre = df_filtre.sort_values(by="prix_circulaire_num", ascending=True)
-
-    df_top = df_filtre.groupby("marchand_norm").head(nb_max_par_magasin)
-    date_fin = (
-        str(df_top["valide_au"].dropna().iloc[0])
-        if "valide_au" in df_top.columns and not df_top["valide_au"].dropna().empty
-        else "cette semaine"
-    )
-
-    html_rendu = generer_html_fiche(df_top, date_fin)
-
-    st.download_button(
-        "📥 Télécharger la fiche interactive (.html) pour impression ou capture d'écran",
-        data=html_rendu,
-        file_name=f"aubaines_semaine_{date_fin}.html",
-        mime="text/html",
-        use_container_width=True,
-        type="primary",
-    )
-
     with st.container(border=True):
         st.components.v1.html(html_rendu, height=750, scrolling=True)

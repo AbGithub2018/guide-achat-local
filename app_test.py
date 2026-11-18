@@ -352,17 +352,39 @@ st.link_button(
     type="primary",
     use_container_width=True,
 )
-st.write("---")
 
 afficher_section_deals_extra(banniere_active, ville_detectee, LIENS_OFFICIELS, classer_rayon)
-st.write("---")
-# <--- AJOUTEZ CES 3 LIGNES ICI :
-with st.expander("📰 Générer la fiche des meilleures aubaines de la semaine (Impression)", expanded=False):
-    afficher_generateur_fiche(df_circulaires)
+
+st.markdown("""
+<style>
+.st-key-bloc_fiche_aubaines div[data-testid="stExpander"] {
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%) !important;
+    border: 2px solid #2563EB !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15) !important;
+    margin: 5px 0 20px 0 !important;
+}
+.st-key-bloc_fiche_aubaines div[data-testid="stExpander"] details summary {
+    padding: 18px 22px !important;
+}
+.st-key-bloc_fiche_aubaines div[data-testid="stExpander"] details summary p {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: #1E3A8A !important;
+}
+.st-key-bloc_fiche_aubaines div[data-testid="stExpander"]:hover {
+    border-color: #1D4ED8 !important;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+with st.container(key="bloc_fiche_aubaines"):
+    with st.expander("📰 Générer la fiche des meilleures aubaines de la semaine (Format Impression)", expanded=False):
+        afficher_generateur_fiche(df_circulaires)
 
 col_gauche, col_droite = st.columns([1.0, 1.0])
 
-col_gauche, col_droite = st.columns([1.0, 1.0])
 
 
 with col_gauche:

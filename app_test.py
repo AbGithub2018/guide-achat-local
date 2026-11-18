@@ -357,7 +357,7 @@ st.write("---")
 afficher_section_deals_extra(banniere_active, ville_detectee, LIENS_OFFICIELS, classer_rayon)
 st.write("---")
 # <--- AJOUTEZ CES 3 LIGNES ICI :
-with st.expander("📰 Générer la fiche des meilleures aubaines de la semaine (Format Facebook / Impression)", expanded=False):
+with st.expander("📰 Générer la fiche des meilleures aubaines de la semaine (Impression)", expanded=False):
     afficher_generateur_fiche(df_circulaires)
 
 col_gauche, col_droite = st.columns([1.0, 1.0])

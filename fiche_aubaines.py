@@ -15,8 +15,85 @@ COULEURS_BANNIERES = {
     "MARCHÉ ADONIS": "#16A34A",
 }
 
-def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
+SYNONYMES_EPICERIE = {
+    "poulet": ["poulet", "poitrine", "cuisse", "pilon", "aile", "chicken"],
+    "boeuf": ["boeuf", "bœuf", "hache", "bifteck", "steak", "roti", "beef"],
+    "porc": ["porc", "cotelette", "filet", "bacon", "jambon", "saucisse", "pork"],
+    "patate": ["patate", "pomme de terre", "pommes de terre", "potato"],
+    "fromage": ["fromage", "cheddar", "mozzarella", "brie", "feta", "gouda", "cheese"],
+    "beurre": ["beurre", "butter"],
+    "lait": ["lait", "milk"],
+    "oeuf": ["oeuf", "œuf", "egg"],
+    "coke": ["coke", "coca", "pepsi", "boisson gazeuse", "soft drink"],
+    "jus": ["jus", "juice", "oasis", "tropicana", "simply"],
+    "cafe": ["cafe", "café", "coffee", "nespresso", "k-cup", "tassimo"],
+    "pain": ["pain", "bagel", "muffin", "baguette", "bread", "tortilla"],
+    "papier": ["papier", "hygienique", "essuie-tout", "mouchoir", "cashmere", "royale", "bounty"],
+    "savon": ["savon", "detergent", "lessive", "tide", "gain", "palmolive"],
+}
+
+
+def normaliser_texte(texte: str) -> str:
+    """Enlève les accents et met en minuscules pour faciliter la recherche."""
+    txt = str(texte).lower().strip()
+    return "".join(
+        c for c in unicodedata.normalize("NFD", txt)
+        if unicodedata.category(c) != "Mn"
+    )
+
+
+def obtenir_variantes_recherche(mot_cle: str) -> list:
+    """Retourne les synonymes associés à un mot-clé d'épicerie."""
+    mot_norm = normaliser_texte(mot_cle)
+    variantes = {mot_norm}
+    for cle, liste_syn in SYNONYMES_EPICERIE.items():
+        if mot_norm == cle or mot_norm in liste_syn:
+            variantes.update(liste_syn)
+    return list(variantes)
+
+
+def calculer_equivalence_prix(prix: float, format_str: str, unite_str: str) -> str:
+    """Calcule le prix par 100g/100ml ou convertit kg <-> lb pour comparer équitablement."""
+    unite_clean = str(unite_str).replace("/", "").strip().lower()
+    if unite_clean in ["kg", "le kg", "kilo", "kilos"]:
+        return f"({prix / 2.20462:.2f}$/lb)"
+    if unite_clean in ["lb", "la lb", "livre", "livres"]:
+        return f"({prix * 2.20462:.2f}$/kg)"
+
+    txt = str(format_str).lower().replace(",", ".")
+    if prix <= 0 or not txt:
+        return ""
+
+    multi = 1.0
+    m_multi = re.search(r"(\d+)\s*[x*]\s*(\d+(?:\.\d+)?)", txt)
+    if m_multi:
+        multi = float(m_multi.group(1))
+        val = float(m_multi.group(2))
+    else:
+        m_val = re.search(r"(\d+(?:\.\d+)?)", txt)
+        if not m_val:
+            return ""
+        val = float(m_val.group(1))
+
+    qte = multi * val
+    if qte <= 0:
+        return ""
+
+    if "kg" in txt:
+        return f"({(prix / (qte * 1000)) * 100:.2f}$/100g)"
+    if "g" in txt and "mg" not in txt:
+        return f"({(prix / qte) * 100:.2f}$/100g)"
+    if "ml" in txt:
+        return f"({(prix / qte) * 100:.2f}$/100ml)"
+    if "l" in txt and "lb" not in txt:
+        return f"({(prix / (qte * 1000)) * 100:.2f}$/100ml)"
+    return ""
+def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str, filtre_recherche: str = "") -> str:
     """Génère une fiche HTML multi-colonnes prête à imprimer ou enregistrer en PDF."""
+    sous_titre = f"Offres valides jusqu'au {date_fin} • Généré via Mon Planificateur Anti-Inflation"
+    if filtre_recherche:
+        sous_titre += f" • Recherche : « {filtre_recherche} »"
+
     html = f"""
     <!DOCTYPE html>
     <html lang="fr">
@@ -80,7 +157,7 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
             justify-content: space-between;
             align-items: flex-start;
             font-size: 11px;
-            padding: 3px 0;
+            padding: 4px 0;
             border-bottom: 1px dotted #E5E7EB;
         }}
         .nom-prod {{
@@ -92,6 +169,12 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
             white-space: nowrap;
             text-align: right;
         }}
+        .prix-equiv {{
+            display: block;
+            font-size: 9.5px;
+            font-weight: normal;
+            color: #059669;
+        }}
         @media print {{
             body {{ margin: 0; }}
             .no-print {{ display: none; }}
@@ -102,7 +185,7 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
         <div class="banniere-entete">
             <div>
                 <h1>🍎 Liste des meilleures aubaines de la semaine</h1>
-                <p>Offres valides jusqu'au {date_fin} • Généré via Mon Planificateur Anti-Inflation</p>
+                <p>{sous_titre}</p>
             </div>
             <button class="no-print" onclick="window.print()" style="background:#10B981; color:white; border:none; padding:10px 16px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:14px;">
                 🖨️ Imprimer / Sauver en PDF
@@ -112,7 +195,7 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
     """
 
     for magasin in sorted(df_selection["marchand_norm"].unique()):
-        groupe = df_selection[df_selection["marchand_norm"] == magasin].sort_values(by="produit")
+        groupe = df_selection[df_selection["marchand_norm"] == magasin].sort_values(by="prix_circulaire_num")
         couleur = COULEURS_BANNIERES.get(magasin, "#1E3A8A")
         
         html += f"""
@@ -136,10 +219,13 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
             if unite:
                 prix_txt += f" <small style='font-weight:normal;'>{unite}</small>"
 
+            equiv = calculer_equivalence_prix(prix, fmt if fmt else nom, unite)
+            equiv_html = f"<span class='prix-equiv'>{equiv}</span>" if equiv else ""
+
             html += f"""
             <div class="ligne-produit">
                 <span class="nom-prod">☐ {nom}</span>
-                <span class="prix-prod">{prix_txt}</span>
+                <span class="prix-prod">{prix_txt}{equiv_html}</span>
             </div>
             """
         html += "</div>"
@@ -190,6 +276,20 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
             ["Meilleurs % de rabais", "Prix les plus bas"],
         )
 
+    activer_recherche = st.checkbox(
+        "🔍 Filtrer et comparer des produits précis (avec synonymes et prix au 100g / lb)",
+        value=False,
+        key="chk_activer_recherche_fiche",
+    )
+
+    recherche_fiche = ""
+    if activer_recherche:
+        recherche_fiche = st.text_input(
+            "Entrez vos produits (séparez par une virgule pour plusieurs articles) :",
+            placeholder="Ex: poulet, beurre, fromage, patate, coke...",
+            key="recherche_fiche_aubaines",
+        )
+
     if not magasins_choisis:
         st.info("Sélectionnez au moins une bannière pour afficher la fiche.")
         return
@@ -201,13 +301,26 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     else:
         df_filtre["nb_items_flyer"] = 0
 
-    def clean_key(txt):
-        s = "".join(c for c in unicodedata.normalize("NFD", str(txt).lower().strip()) if unicodedata.category(c) != "Mn")
-        return s[:35]
-
-    df_filtre["cle_dedup"] = df_filtre["produit"].apply(clean_key)
+    df_filtre["cle_dedup"] = df_filtre["produit"].apply(lambda t: normaliser_texte(t)[:35])
     df_filtre = df_filtre.sort_values(by=["nb_items_flyer", "prix_circulaire_num"], ascending=[False, True])
     df_filtre = df_filtre.drop_duplicates(subset=["marchand_norm", "cle_dedup"])
+
+    termes_saisis = [t.strip() for t in recherche_fiche.split(",") if t.strip()]
+    if termes_saisis:
+        texte_searchable = (
+            df_filtre["produit"].apply(normaliser_texte)
+            + " "
+            + df_filtre["marque"].apply(normaliser_texte)
+        )
+        masque = pd.Series(False, index=df_filtre.index)
+        for terme in termes_saisis:
+            for variante in obtenir_variantes_recherche(terme):
+                masque = masque | texte_searchable.str.contains(variante, regex=False, na=False)
+        df_filtre = df_filtre[masque]
+
+        if df_filtre.empty:
+            st.warning(f"Aucun rabais trouvé pour « {recherche_fiche} » dans les bannières sélectionnées.")
+            return
 
     if critere_tri == "Meilleurs % de rabais":
         df_filtre = df_filtre.sort_values(
@@ -220,14 +333,15 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
             ascending=[False, True],
         )
 
-    df_top = df_filtre.groupby("marchand_norm").head(nb_max_par_magasin)
+    df_top = df_filtre if termes_saisis else df_filtre.groupby("marchand_norm").head(nb_max_par_magasin)
+
     date_fin = (
         str(df_top["valide_au"].dropna().iloc[0])
         if "valide_au" in df_top.columns and not df_top["valide_au"].dropna().empty
         else "cette semaine"
     )
 
-    html_rendu = generer_html_fiche(df_top, date_fin)
+    html_rendu = generer_html_fiche(df_top, date_fin, recherche_fiche.strip())
 
     st.download_button(
         "📥 Télécharger la fiche interactive (.html) pour impression ou capture d'écran",

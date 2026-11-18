@@ -151,7 +151,7 @@ def generer_html_fiche(df_selection: pd.DataFrame, date_fin: str) -> str:
 def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     """Affiche l'interface de configuration et l'aperçu de la fiche dans Streamlit."""
     st.markdown(
-        "<h2 style='font-size: 24px; color: #1E3A8A; font-weight: 600;'>📰 Fiche récapitulative des aubaines (Format Facebook / Impression)</h2>",
+        "<h2 style='font-size: 24px; color: #1E3A8A; font-weight: 600;'>📰 Fiche récapitulative des aubaines (Format Impression)</h2>",
         unsafe_allow_html=True,
     )
 

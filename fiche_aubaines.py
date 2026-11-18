@@ -240,8 +240,5 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
         type="primary",
     )
 
-    with st.container(border=True):
-        st.components.v1.html(html_rendu, height=750, scrolling=True)
-
-    with st.container(border=True):
+       with st.container(border=True):
         st.components.v1.html(html_rendu, height=750, scrolling=True)

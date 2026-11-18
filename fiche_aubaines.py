@@ -192,7 +192,6 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
 
     df_filtre = df_clean[df_clean["marchand_norm"].isin(magasins_choisis)].copy()
     
-    # Déduplication identique à votre code principal
     df_filtre["produit_norm"] = df_filtre["produit"].astype(str).str.strip().str.lower()
     df_filtre = df_filtre.drop_duplicates(subset=["marchand_norm", "produit_norm", "prix_circulaire_num"])
 
@@ -201,9 +200,12 @@ def afficher_generateur_fiche(df_circulaires: pd.DataFrame):
     else:
         df_filtre = df_filtre.sort_values(by="prix_circulaire_num", ascending=True)
 
-    # Garder le top N par magasin
     df_top = df_filtre.groupby("marchand_norm").head(nb_max_par_magasin)
-    date_fin = str(df_top["valide_au"].dropna().iloc[0]) if "valide_au" in df_top.columns and not df_top["valide_au"].dropna().empty else "cette semaine"
+    date_fin = (
+        str(df_top["valide_au"].dropna().iloc[0])
+        if "valide_au" in df_top.columns and not df_top["valide_au"].dropna().empty
+        else "cette semaine"
+    )
 
     html_rendu = generer_html_fiche(df_top, date_fin)
 

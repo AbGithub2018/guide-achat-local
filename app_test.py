@@ -389,11 +389,16 @@ st.markdown("""
 
 with st.container(key="bloc_fiche_aubaines"):
     with st.expander("📰 Générer la fiche des meilleures aubaines de la semaine (Format Impression)", expanded=False):
-        afficher_generateur_fiche(df_circulaires)
+        if df_circulaires is not None:
+            aujourd_hui_str = datetime.now().strftime("%Y-%m-%d")
+            df_valides_fiche = df_circulaires[
+                (df_circulaires["valide_au"] == "") | (df_circulaires["valide_au"] >= aujourd_hui_str)
+            ]
+            afficher_generateur_fiche(df_valides_fiche)
+        else:
+            afficher_generateur_fiche(None)
 
 col_gauche, col_droite = st.columns([1.0, 1.0])
-
-
 
 with col_gauche:
     with st.container(border=True):
@@ -765,6 +770,34 @@ with col_droite:
     st.write("")
 
     if df_circulaires is not None:
+        aujourd_hui_str = datetime.now().strftime("%Y-%m-%d")
+
+        # 1. Filtrer uniquement les offres non expirées
+        df_valides = df_circulaires[
+            (df_circulaires["valide_au"] == "") | (df_circulaires["valide_au"] >= aujourd_hui_str)
+        ].copy()
+
+        # 2. Détecter si des circulaires futures (aperçus du mercredi) sont présentes
+        df_futures = df_valides[df_valides["valide_du"] > aujourd_hui_str]
+        a_des_apercus = not df_futures.empty
+
+        if a_des_apercus:
+            periode_choisie = st.radio(
+                "📅 Quelle circulaire consulter ?",
+                ["🟢 En vigueur aujourd'hui", "🔮 Aperçu (Entrée en vigueur jeudi)"],
+                horizontal=True,
+            )
+            if periode_choisie == "🟢 En vigueur aujourd'hui":
+                df_periode = df_valides[
+                    (df_valides["valide_du"] <= aujourd_hui_str)
+                ].copy()
+            else:
+                df_periode = df_futures.copy()
+                date_debut = df_periode["valide_du"].min()
+                st.info(f"🔮 **Mode Aperçu :** Ces rabais entreront en vigueur en magasin le **{date_debut}**.")
+        else:
+            df_periode = df_valides.copy()
+
         col_t1, col_t2 = st.columns(2)
         with col_t1:
             mode_global = st.toggle(
@@ -780,15 +813,15 @@ with col_droite:
             )
 
         if mode_price_match:
-            df_offres = df_circulaires.copy()
+            df_offres = df_periode.copy()
             cible_match = banniere_active if cle_recherche in ["MAXI"] else "MAXI"
             titre_section = f"Prix égalé chez {cible_match}"
         elif mode_global:
-            df_offres = df_circulaires.copy()
+            df_offres = df_periode.copy()
             titre_section = "toutes les bannières"
         else:
-            df_offres = df_circulaires[
-                df_circulaires["marchand_norm"] == cle_recherche
+            df_offres = df_periode[
+                df_periode["marchand_norm"] == cle_recherche
             ].copy()
             titre_section = banniere_active
 

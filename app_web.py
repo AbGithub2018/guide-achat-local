@@ -528,7 +528,7 @@ if "tableau_consommateur" in st.session_state and st.session_state["tableau_cons
             with st.sidebar.spinner("Recherche de la photo sur Open Food Facts..."):
                 url_api = f"https://openfoodfacts.org/api/v0/product/{cup_actuel}.json"
                 headers = {"User-Agent": "AchatQuebecApp - Web - Version1.0"}
-                reponse = requests.get(url_api, headers=headers, timeout=8)
+                reponse = requests.get(url_api, headers=headers, timeout=6)
                 if reponse.status_code == 200:
                     donnees = reponse.json()
                     if donnees.get("status") == 1 and "product" in donnees and "image_url" in donnees["product"]:

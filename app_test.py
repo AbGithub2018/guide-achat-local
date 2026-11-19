@@ -261,6 +261,20 @@ if df_coords is None or df_magasins is None:
     st.stop()
 
 df_circulaires = charger_circulaires_qc()
+# Affichage de la période de validité sur la page principale
+if (
+    not df_circulaires.empty
+    and "valide_du" in df_circulaires.columns
+    and "valide_au" in df_circulaires.columns
+):
+    dates_du = df_circulaires["valide_du"].replace("", pd.NA).dropna()
+    dates_au = df_circulaires["valide_au"].replace("", pd.NA).dropna()
+    if not dates_du.empty and not dates_au.empty:
+        date_debut = dates_du.mode()[0]
+        date_fin = dates_au.mode()[0]
+        st.info(
+            f"📅 **Circulaires de la semaine en vigueur :** du **{date_debut}** au **{date_fin}**"
+        )
 st.sidebar.markdown(
     "<h2 style='font-size: 22px; color: #1E3A8A; margin-bottom: 10px;'>⚙️ Critères de recherche</h2>",
     unsafe_allow_html=True,

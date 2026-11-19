@@ -33,8 +33,13 @@ POLES_REGIONAUX_QC = [
 
 NORMALISATION_MARCHANDS = {
     "Tradition": "Marché Tradition",
+    "Marche Tradition": "Marché Tradition",
     "Tigre Géant": "Tigre Geant",
     "Giant Tiger": "Tigre Geant",
+    "Adonis": "Marché Adonis",
+    "Richelieu": "Marché Richelieu",
+    "Ami": "Marché Ami",
+    "Bonichoix": "Marché Bonichoix",
 }
 
 
@@ -144,8 +149,6 @@ def extraire_prix_regulier_numerique(val: str) -> float:
         return 0.0
     m = re.search(r"(\d+\.\d{2})", val)
     return float(m.group(1)) if m else 0.0
-
-
 def valider_prix_regulier(
     prix_special: float, prix_regulier_str: str
 ) -> str:
@@ -256,7 +259,6 @@ def executer_mise_a_jour():
             flyers_deja_traites.add(flyer_id)
             marchands_nationaux_faits.add(merchant)
 
-
             items = get_flyer_items(flyer_id)
             print(
                 f"  -> Extraction {merchant} (ID: {flyer_id}) : {len(items)} articles..."
@@ -280,10 +282,10 @@ def executer_mise_a_jour():
 
     df = pd.DataFrame(tous_les_articles)
 
-    # Suppression intelligente des doublons insensible à la casse (majuscules/minuscules)
+    # Suppression intelligente des doublons insensible à la casse (en gardant distincts semaine actuelle et aperçu)
     df["produit_norm"] = df["produit"].astype(str).str.strip().str.lower()
     df = df.drop_duplicates(
-        subset=["marchand", "produit_norm", "prix_circulaire"]
+        subset=["marchand", "produit_norm", "prix_circulaire", "valide_du"]
     ).drop(columns=["produit_norm"])
 
     df = enrichir_avec_codes_upc(df, inclure_variantes_superc=True)
@@ -342,7 +344,6 @@ def executer_mise_a_jour():
     print(
         f"Terminé en {duree}s : {len(df_final)} produits ({compteur_reg} prix réguliers) sauvegardés."
     )
-
 
 
 if __name__ == "__main__":

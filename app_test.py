@@ -238,7 +238,9 @@ def charger_circulaires_qc():
         "GIANT TIGER": "TIGRE GÉANT",
         "MARCHE TRADITION": "MARCHÉ TRADITION",
         "MARCHE AMI": "MARCHÉ AMI",
+        "ADONIS": "MARCHÉ ADONIS",
     })
+
 
     df["rayon_auto"] = df["produit"].apply(classer_rayon)
     df["prix_unitaire_calc"] = df.apply(

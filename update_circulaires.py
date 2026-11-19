@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from io import BytesIO
 import os
 import re
@@ -312,7 +313,7 @@ def executer_mise_a_jour():
 
     # --- FUSION AVEC LES CIRCULAIRES ENCORE VALIDES (CYCLE MERCREDI / JEUDI) ---
     fichier_csv = "circulaires_qc.csv"
-    aujourd_hui = datetime.now().strftime("%Y-%m-%d")
+    aujourd_hui = datetime.now(ZoneInfo("America/Montreal")).strftime("%Y-%m-%d")
 
     if os.path.exists(fichier_csv):
         df_ancien = pd.read_csv(fichier_csv, dtype=str).fillna("")

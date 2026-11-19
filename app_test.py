@@ -948,21 +948,41 @@ with col_droite:
                     subset=["marchand_norm", "produit_norm", "prix_circulaire_num"]
                 )
 
-                for _, item in df_offres.iterrows():
+                @st.dialog("Aperçu du produit")
+                def afficher_zoom_produit(nom_prod, image_lien):
+                    st.markdown(
+                        f"<div style='text-align: center;'><img src='{image_lien}' style='max-width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px;'></div>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        f"<h4 style='text-align: center; margin-top: 10px;'>{nom_prod}</h4>",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button("⬅️ Retour aux circulaires", type="primary", use_container_width=True):
+                        st.rerun()
+
+                for idx_prod, item in df_offres.iterrows():
                     with st.container(border=True):
                         col_img, col_info, col_prix, col_btn = st.columns(
-                            [0.7, 2.0, 1.1, 1.0]
+                            [0.85, 1.95, 1.0, 1.2]
                         )
 
                         with col_img:
                             url_img = str(item.get("image_url", "")).strip()
                             if url_img.startswith("http"):
-                                st.image(url_img, width=70)
-                            else:
                                 st.markdown(
-                                    "<div style='font-size: 28px; text-align: center; padding-top: 10px;'>🛒</div>",
+                                    f"<img src='{url_img}' style='width: 80px; border-radius: 6px; object-fit: contain; display: block; margin: 0 auto;'>",
                                     unsafe_allow_html=True,
                                 )
+                                cle_zoom = f"zoom_{item.get('id_produit', idx_prod)}_{idx_prod}"
+                                if st.button("🔍", key=cle_zoom, help="Agrandir la photo", use_container_width=True):
+                                    afficher_zoom_produit(item["produit"], url_img)
+                            else:
+                                st.markdown(
+                                    "<div style='font-size: 32px; text-align: center; padding-top: 10px;'>🛒</div>",
+                                    unsafe_allow_html=True,
+                                )
+
 
                         with col_info:
                             icone_rayon = item["rayon_auto"].split(" ").pop(0)

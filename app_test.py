@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import urllib.parse
 import pandas as pd
 import streamlit as st
@@ -390,7 +391,7 @@ st.markdown("""
 with st.container(key="bloc_fiche_aubaines"):
     with st.expander("📰 Générer la fiche des meilleures aubaines de la semaine (Format Impression)", expanded=False):
         if df_circulaires is not None:
-            aujourd_hui_str = datetime.now().strftime("%Y-%m-%d")
+            aujourd_hui_str = datetime.now(ZoneInfo("America/Montreal")).strftime("%Y-%m-%d")
             df_valides_fiche = df_circulaires[
                 (df_circulaires["valide_au"] == "") | (df_circulaires["valide_au"] >= aujourd_hui_str)
             ]
@@ -770,7 +771,7 @@ with col_droite:
     st.write("")
 
     if df_circulaires is not None:
-        aujourd_hui_str = datetime.now().strftime("%Y-%m-%d")
+        aujourd_hui_str = datetime.now(ZoneInfo("America/Montreal")).strftime("%Y-%m-%d")
 
         # 1. Filtrer uniquement les offres non expirées
         df_valides = df_circulaires[

@@ -1091,3 +1091,20 @@ with col_droite:
             st.warning(
                 "⏳ Le fichier des spéciaux de la semaine (`circulaires_qc.csv`) n'est pas encore disponible dans le dossier."
             )
+
+st.markdown("---")
+st.markdown(
+    """
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 18px 22px; margin-top: 25px; font-size: 13.5px; color: #475569; line-height: 1.6;">
+        <h4 style="margin-top: 0px; margin-bottom: 8px; color: #1E3A8A; font-size: 16px;">🤝 Initiative citoyenne, bénévole et 100 % gratuite</h4>
+        <p style="margin-bottom: 8px;">
+            <strong>Mon Planificateur Anti-Inflation</strong> est un projet communautaire développé bénévolement et offert gratuitement à toute la population du Québec afin d'aider les familles et les citoyens à comparer les rabais et à économiser sur leur panier d'épicerie. Cette application ne génère aucun revenu, ne contient aucune publicité et n'est affiliée à aucune chaîne d'alimentation.
+        </p>
+        <p style="margin-bottom: 0px; font-size: 12.5px; color: #64748B;">
+            <strong>Avis important :</strong> Les prix, promotions, formats et visuels sont extraits automatiquement à titre indicatif à partir des circulaires publiques des marchands concernés. Les noms de bannières, logos et photographies de produits demeurent la propriété exclusive de leurs propriétaires respectifs. En cas de différence entre les données affichées ici et l'affichage en magasin, <strong>le prix officiel en vigueur chez le marchand prévaut toujours</strong>.
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+

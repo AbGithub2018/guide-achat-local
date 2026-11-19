@@ -57,7 +57,6 @@ LIENS_OFFICIELS = {
     "DOLLARAMA": "https://dollarama.com",
 }
 
-
 def classer_rayon(nom_produit: str) -> str:
     """Attribue automatiquement un rayon et une icône visuelle sans image protégée."""
     txt = str(nom_produit).lower()
@@ -207,10 +206,7 @@ def calculer_prix_unitaire(prix_str, format_str):
     except Exception:
         return ""
 
-
-
 import unicodedata
-
 
 def normaliser_texte(texte: str) -> str:
     """Enlève les accents et met en minuscules pour faciliter la recherche."""
@@ -219,7 +215,6 @@ def normaliser_texte(texte: str) -> str:
         c for c in unicodedata.normalize("NFD", txt)
         if unicodedata.category(c) != "Mn"
     )
-
 
 @st.cache_data(ttl=3600)
 def charger_circulaires_qc():
@@ -252,29 +247,39 @@ def charger_circulaires_qc():
     )
     return df
 
-
-
-
-
 df_coords, df_magasins = charger_donnees()
 if df_coords is None or df_magasins is None:
     st.stop()
 
 df_circulaires = charger_circulaires_qc()
-# Affichage de la période de validité sur la page principale
+
+# Affichage de la période de validité (et des aperçus du mercredi) sur la page principale
 if (
     not df_circulaires.empty
     and "valide_du" in df_circulaires.columns
     and "valide_au" in df_circulaires.columns
 ):
-    dates_du = df_circulaires["valide_du"].replace("", pd.NA).dropna()
-    dates_au = df_circulaires["valide_au"].replace("", pd.NA).dropna()
+    aujourd_hui_str = datetime.now(ZoneInfo("America/Montreal")).strftime("%Y-%m-%d")
+    df_en_cours = df_circulaires[df_circulaires["valide_du"] <= aujourd_hui_str]
+    df_apercu = df_circulaires[df_circulaires["valide_du"] > aujourd_hui_str]
+
+    dates_du = df_en_cours["valide_du"].replace("", pd.NA).dropna()
+    dates_au = df_en_cours["valide_au"].replace("", pd.NA).dropna()
+
+    message_bandeau = ""
     if not dates_du.empty and not dates_au.empty:
         date_debut = dates_du.mode()[0]
         date_fin = dates_au.mode()[0]
-        st.info(
-            f"📅 **Circulaires de la semaine en vigueur :** du **{date_debut}** au **{date_fin}**"
-        )
+        message_bandeau = f"📅 **Circulaires en vigueur :** du **{date_debut}** au **{date_fin}**"
+
+    if not df_apercu.empty:
+        date_apercu_du = df_apercu["valide_du"].min()
+        date_apercu_au = df_apercu["valide_au"].max()
+        message_bandeau += f"  |  👀 **Aperçus disponibles dès maintenant :** du **{date_apercu_du}** au **{date_apercu_au}**"
+
+    if message_bandeau:
+        st.info(message_bandeau)
+
 st.sidebar.markdown(
     "<h2 style='font-size: 22px; color: #1E3A8A; margin-bottom: 10px;'>⚙️ Critères de recherche</h2>",
     unsafe_allow_html=True,

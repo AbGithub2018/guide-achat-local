@@ -230,6 +230,7 @@ def traiter_article_ameliore(item, merchant, flyer_id):
         "valide_du": str(item.get("valid_from", ""))[:10],
         "valide_au": str(item.get("valid_to", ""))[:10],
         "flyer_id": flyer_id,
+        "image_url": image_url,
     }
 
 

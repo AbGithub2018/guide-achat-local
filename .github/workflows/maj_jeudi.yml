@@ -1,10 +1,10 @@
-name: Extraction Circulaires QC (Mercredi & Jeudi 3h00)
+name: Extraction Circulaires QC (Mercredi & Jeudi 3h17)
 
 on:
   schedule:
-    # 08h00 UTC = 03h00 EST (heure de Montréal) le mercredi (3) et le jeudi (4)
-    - cron: '0 8 * * 3,4'
-  workflow_dispatch: # Permet de lancer la mise à jour manuellement en 1 clic sur GitHub
+    # 08h17 UTC = 03h17 EST (minute décalée pour éviter la congestion GitHub)
+    - cron: '17 8 * * 3,4'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -35,4 +35,4 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add circulaires_qc.csv
-          git diff --quiet && git diff --staged --quiet || (git commit -m "MAJ automatique circulaires semaine" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "MAJ automatique circulaires semaine" && git pull --rebase origin main && git push)

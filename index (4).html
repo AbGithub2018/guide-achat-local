@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+    <meta name="google-site-verification" content="t6AcqplShtnnt-FZDAdGULPuDS6CEJecipu5ZhTBnHU" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Guide d'Achat Local Québec | Scanner UPC & Comparateur de Prix Épicerie</title>
+    <link rel="icon" type="image/png" href="fleur_de_lys_blanche.png">
+    <meta name="description" content="Application citoyenne gratuite au Québec pour scanner les codes-barres (UPC), repérer les produits faits au Québec (+10 500 produits) et comparer les circulaires de 11 bannières d'épicerie.">
+    <meta name="keywords" content="achat local québec, circulaire épicerie québec, comparateur prix épicerie, scanner code barre produit québécois, anti-inflation épicerie, prix égalé maxi walmart, alternative flipp reebee">
+    <link rel="canonical" href="https://epicerieqc.github.io">
+
+    <meta property="og:title" content="Mon Guide d'Achat Local & Planificateur Anti-Inflation Québec">
+    <meta property="og:description" content="Outil citoyen gratuit : scannez vos codes-barres pour acheter québécois et comparez les meilleurs rabais des circulaires d'épicerie.">
+    <meta property="og:url" content="https://epicerieqc.github.io">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="fr_CA">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Mon Guide d'Achat Local Québec",
+      "alternateName": "EpicerieQC",
+      "url": "https://github.io",
+      "description": "Application citoyenne gratuite et bénévole au Québec offrant un scanner de code-barres (UPC) sur plus de 10 500 produits québécois et un comparateur de circulaires sur 11 bannières avec mode Prix égalé, bouclier anti-réduflation, simulateur de facture avec taxes (TPS/TVQ) et génération de codes-barres pour la caisse.",
+      "applicationCategory": "ShoppingApplication",
+      "operatingSystem": "All",
+      "inLanguage": "fr-CA",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "CAD"
+      },
+      "areaServed": {
+        "@type": "AdministrativeArea",
+        "name": "Québec, Canada"
+      },
+      "featureList": [
+        "Scanner de code-barres (UPC) sur plus de 10 500 produits avec badge Emploi au Québec Confirmé",
+        "Comparateur de circulaires sur 11 bannières : Super C, Maxi, IGA, Provigo, Metro, Walmart, Tigre Géant, Marché Tradition, Marché Ami, Adonis et Dollarama",
+        "Mode Prix égalé (Price Match) intelligent pour Maxi et Walmart",
+        "Bouclier anti-réduflation avec calcul automatique au 100g/100ml et conversion $/lb en $/kg",
+        "Simulateur de budget réel incluant les taxes TPS et TVQ",
+        "Génération de codes-barres scannables pour accélérer le passage à la caisse",
+        "Partage communautaire de rabais en magasin (Le Deal Extra)"
+      ],
+      "author": {
+        "@type": "Organization",
+        "name": "Mon Guide d'Achat Local",
+        "email": "monguide.d.achatlocal@gmail.com"
+      }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "Comment vérifier si un produit d'épicerie est fabriqué au Québec ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Utilisez notre application gratuite Mon Guide d'Achat Local pour scanner le code-barres (UPC) du produit directement en magasin ou rechercher parmi plus de 10 500 produits répertoriés avec le badge Emploi au Québec Confirmé."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Quelles circulaires d'épicerie sont incluses dans le comparateur ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Le Planificateur Anti-Inflation compare chaque semaine les spéciaux de Super C, Maxi, IGA, Provigo, Metro, Walmart, Tigre Géant, Marché Tradition, Marché Ami, Adonis et Dollarama."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Comment fonctionne l'option Prix égalé (Price Match) ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "L'outil regroupe les meilleurs rabais des circulaires concurrentes et prépare votre liste avec les liens directs vers les circulaires officielles à présenter à la caisse chez Maxi ou Walmart."
+        }
+      }]
+    }
+    </script>
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 850px; margin: 0 auto; padding: 20px; background-color: #f9fafb; }
+        header { text-align: center; padding: 30px 15px; background: #003366; color: white; border-radius: 12px; margin-bottom: 25px; }
+        h1 { margin: 0 0 10px 0; font-size: 2rem; display: flex; align-items: center; justify-content: center; gap: 15px; font-weight: bold; flex-wrap: wrap; }
+        .header-logo { height: 2.5rem; width: auto; vertical-align: middle; }
+        .subtitle { font-size: 1.1rem; opacity: 0.9; margin: 0; }
+        .cta-container { display: flex; flex-direction: column; gap: 15px; margin: 25px 0; }
+        .btn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 24px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1.2rem; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.15s; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-primary { background-color: #16a34a; }
+        .btn-secondary { background-color: #dc2626; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { color: #003366; margin-top: 0; border-bottom: 2px solid #eff6ff; padding-bottom: 8px; }
+        h3 { color: #1e40af; margin-bottom: 5px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-top: 15px; }
+        figure { margin: 0; background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
+        figure img { width: 100%; border-radius: 6px; display: block; }
+        figcaption { font-size: 0.85rem; color: #4b5563; margin-top: 10px; }
+        footer { text-align: center; font-size: 0.9rem; color: #6b7280; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>
+        <img src="fleur_de_lys_blanche.png" alt="Fleur de lys" class="header-logo">
+        Mon Guide d'Achat Local
+    </h1>
+    <p class="subtitle">Acheter Québécois & Comparateur de Prix Épicerie au Québec</p>
+</header>
+
+<div class="cta-container">
+    <a href="https://achatquebec.streamlit.app" class="btn btn-primary" title="Ouvrir le scanner de codes-barres et vérifier l'origine des produits">
+        <span>🔍</span> Ouvrir le Guide d'Achat Local (Scanner & 10 500+ produits) ➔
+    </a>
+    <a href="https://achatquebec-circulaires.streamlit.app" class="btn btn-secondary" title="Comparer les rabais des circulaires d'épicerie au Québec">
+        <span>🛒</span> Ouvrir le Planificateur Anti-Inflation (Circulaires & Panier) ➔
+    </a>
+</div>
+
+<div class="card">
+    <h2>Pourquoi choisir notre outil québécois plutôt que Flipp ou Reebee ?</h2>
+    <p>Contrairement aux applications commerciales appartenant à des fonds d'investissement américains et financées par la publicité, <strong>Mon Guide d'Achat Local</strong> est un projet citoyen 100 % québécois conçu pour maximiser votre pouvoir d'achat :</p>
+    <ul>
+        <li><strong>Mode « Prix égalé » intelligent :</strong> Regroupez les spéciaux des concurrents pour les égaler en un seul arrêt chez Maxi ou Walmart, avec les circulaires prêtes à montrer à la caisse.</li>
+        <li><strong>Bouclier anti-réduflation :</strong> Calcul automatique du prix au 100g/100ml et conversion instantanée $/lb en $/kg pour repérer les vrais rabais.</li>
+        <li><strong>Simulateur de budget réel :</strong> Calculez votre facture par épicerie incluant les taxes (TPS/TVQ) et suivez vos économies exactes en dollars.</li>
+        <li><strong>Codes-barres générés pour la caisse :</strong> Affichez directement les codes-barres scannables de vos articles en rabais pour accélérer votre passage à la caisse.</li>
+        <li><strong>Traçabilité québécoise :</strong> Scannez les codes-barres en magasin pour vérifier l'origine locale de plus de 10 500 produits.</li>
+    </ul>
+</div>
+
+<div class="card">
+    <h2>Aperçu de l'application en images</h2>
+    <p>Découvrez comment planifier votre épicerie et repérer les meilleurs rabais au Québec en quelques clics :</p>
+    <div class="gallery">
+        <figure>
+            <img src="images/recherche-epicerie-proximite-code-postal-quebec.png" alt="Recherche des épiceries à proximité par code postal et rayon en kilomètres au Québec" loading="lazy">
+            <figcaption><strong>1. Épiceries à proximité :</strong> Trouvez les supermarchés autour de votre code postal.</figcaption>
+        </figure>
+        <figure>
+            <img src="images/comparateur-circulaire-super-c-prix-unitaire.png" alt="Comparateur des rabais de la circulaire Super C avec prix au 100g et conversion livre kilo" loading="lazy">
+            <figcaption><strong>2. Circulaires et prix unitaires :</strong> Comparez le prix par 100g, par livre ou par kilo.</figcaption>
+        </figure>
+        <figure>
+            <img src="images/facture-epicerie-simulee-calcul-economies.png" alt="Simulation de facture d'épicerie avec calcul des taxes TPS TVQ et économies réalisées" loading="lazy">
+            <figcaption><strong>3. Facture simulée :</strong> Visualisez votre total avec taxes et vos économies cumulées.</figcaption>
+        </figure>
+        <figure>
+            <img src="images/exporter-liste-epicerie-sms-texte.png" alt="Boutons pour télécharger la liste d'épicerie en texte ou copier pour SMS et Notes" loading="lazy">
+            <figcaption><strong>4. Exportation en 1 clic :</strong> Copiez votre liste triée par rayon pour l'apporter en magasin.</figcaption>
+        </figure>
+        <figure>
+            <img src="images/partager-deal-extra-rabais-magasin.png" alt="Formulaire Le Deal Extra pour partager une photo de rabais vu en épicerie avec la communauté" loading="lazy">
+            <figcaption><strong>5. Le Deal Extra :</strong> Partagez en photo les rabais exclusifs repérés en succursale.</figcaption>
+        </figure>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Pourquoi utiliser cette application citoyenne ?</h2>
+    <p><strong>Mon Guide d'Achat Local</strong> est une initiative bénévole, gratuite et indépendante créée pour aider les consommateurs du Québec à repérer l'origine des produits alimentaires et à réduire le coût de leur panier d'épicerie.</p>
+    <ul>
+        <li><strong>Scanner de code-barres (UPC) :</strong> Vérifiez instantanément si un produit est québécois ou canadien directement depuis l'allée du supermarché.</li>
+        <li><strong>Soutien à l'emploi local :</strong> Repérez le badge « Emploi au Québec Confirmé » et découvrez l'impact sur les usines d'ici.</li>
+        <li><strong>Comparateur de prix multi-bannières :</strong> Comparez les prix entre IGA, Maxi, Metro, Super C, Provigo, Walmart, Tigre Géant et Dollarama.</li>
+    </ul>
+</div>
+
+<div class="card">
+    <h2>Questions fréquentes (FAQ)</h2>
+    <h3>Comment vérifier si un produit est fabriqué au Québec ?</h3>
+    <p>Ouvrez l'application <em>Mon Guide d'Achat Local</em>, activez la caméra de votre téléphone pour balayer le code-barres UPC ou tapez le nom de la marque dans le moteur de recherche.</p>
+    <h3>Quelles épiceries du Québec sont couvertes par le comparateur ?</h3>
+    <p>L'outil analyse les circulaires hebdomadaires des principales chaînes du Québec : Super C, Maxi, IGA, Provigo, Metro, Walmart, Tigre Géant, Marché Tradition, Marché Ami, Adonis et Dollarama.</p>
+    <h3>L'utilisation des applications est-elle vraiment gratuite ?</h3>
+    <p>Oui. Ce projet citoyen est entièrement bénévole, gratuit et ne nécessite aucune création de compte ni abonnement.</p>
+</div>
+
+<footer>
+    <p>Projet citoyen bénévole — Contact : <a href="mailto:monguide.d.achatlocal@gmail.com">monguide.d.achatlocal@gmail.com</a></p>
+</footer>
+
+</body>
+</html>

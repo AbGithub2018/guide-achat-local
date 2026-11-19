@@ -226,6 +226,8 @@ def charger_circulaires_qc():
         df["unite_prix"] = ""
     if "code_upc" not in df.columns:
         df["code_upc"] = ""
+    if "image_url" not in df.columns:
+        df["image_url"] = ""
     df["code_upc"] = (
         df["code_upc"]
         .str.replace(r"\.0$", "", regex=True)
@@ -948,9 +950,19 @@ with col_droite:
 
                 for _, item in df_offres.iterrows():
                     with st.container(border=True):
-                        col_info, col_prix, col_btn = st.columns(
-                            [2.2, 1.1, 1.0]
+                        col_img, col_info, col_prix, col_btn = st.columns(
+                            [0.7, 2.0, 1.1, 1.0]
                         )
+
+                        with col_img:
+                            url_img = str(item.get("image_url", "")).strip()
+                            if url_img.startswith("http"):
+                                st.image(url_img, width=70)
+                            else:
+                                st.markdown(
+                                    "<div style='font-size: 28px; text-align: center; padding-top: 10px;'>🛒</div>",
+                                    unsafe_allow_html=True,
+                                )
 
                         with col_info:
                             icone_rayon = item["rayon_auto"].split(" ").pop(0)
@@ -960,6 +972,7 @@ with col_droite:
                                 if mode_price_match
                                 else magasin_item
                             )
+
                             titre = f"{icone_rayon} **{item['produit']}**"
                             if item["marque"]:
                                 titre += f" ({item['marque']})"

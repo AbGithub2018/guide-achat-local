@@ -252,14 +252,20 @@ if df_coords is None or df_magasins is None:
     st.stop()
 
 df_circulaires = charger_circulaires_qc()
-# Fusionner ADONIS et MARCHÉ ADONIS et supprimer les doublons exacts
+
+# Fusionner ADONIS et MARCHÉ ADONIS (avec nettoyage des espaces et majuscules)
 if not df_circulaires.empty and "marchand" in df_circulaires.columns:
-    df_circulaires["marchand"] = df_circulaires["marchand"].replace(
-        {"Adonis": "Marché Adonis", "ADONIS": "MARCHÉ ADONIS"}
+    df_circulaires["marchand"] = (
+        df_circulaires["marchand"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .replace({"ADONIS": "MARCHÉ ADONIS"})
     )
     df_circulaires = df_circulaires.drop_duplicates(
         subset=["marchand", "produit", "prix_circulaire", "valide_du"]
     )
+
 
 # Affichage de la période de validité (et des aperçus du mercredi) sur la page principale
 

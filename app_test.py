@@ -309,6 +309,9 @@ with st.expander("🤝 À propos : Initiative citoyenne bénévole et gratuite (
             <p style="margin-bottom: 0px; font-size: 12.5px; color: #64748B;">
                 <strong>Avis important :</strong> Les prix, promotions, formats et visuels sont extraits automatiquement à titre indicatif à partir des circulaires publiques des marchands concernés. Les noms de bannières, logos et photographies de produits demeurent la propriété exclusive de leurs propriétaires respectifs. En cas de différence entre les données affichées ici et l'affichage en magasin, <strong>le prix officiel en vigueur chez le marchand prévaut toujours</strong>.
             </p>
+            <p style="margin-top: 8px; margin-bottom: 0px; font-size: 12.5px; color: #1E3A8A;">
+                Projet citoyen bénévole — Contact : <a href="mailto:monguide.d.achatlocal@gmail.com" style="color: #1E3A8A; text-decoration: underline;">monguide.d.achatlocal@gmail.com</a>
+            </p>
         </div>
         """,
         unsafe_allow_html=True,

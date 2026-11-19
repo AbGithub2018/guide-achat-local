@@ -299,6 +299,26 @@ if (
 
     if message_bandeau:
         st.info(message_bandeau)
+with st.expander("🤝 À propos : Initiative citoyenne bénévole et gratuite (Avis important)", expanded=False):
+    st.markdown(
+        """
+        <div style="font-size: 13.5px; color: #475569; line-height: 1.6;">
+            <p style="margin-bottom: 8px;">
+                <strong>Mon Planificateur Anti-Inflation</strong> est un projet communautaire développé bénévolement et offert gratuitement à toute la population du Québec afin d'aider les familles et les citoyens à comparer les rabais et à économiser sur leur panier d'épicerie. Cette application ne génère aucun revenu, ne contient aucune publicité et n'est affiliée à aucune chaîne d'alimentation.
+            </p>
+            <p style="margin-bottom: 0px; font-size: 12.5px; color: #64748B;">
+                <strong>Avis important :</strong> Les prix, promotions, formats et visuels sont extraits automatiquement à titre indicatif à partir des circulaires publiques des marchands concernés. Les noms de bannières, logos et photographies de produits demeurent la propriété exclusive de leurs propriétaires respectifs. En cas de différence entre les données affichées ici et l'affichage en magasin, <strong>le prix officiel en vigueur chez le marchand prévaut toujours</strong>.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+st.sidebar.markdown(
+    "<h2 style='font-size: 22px; color: #1E3A8A; margin-bottom: 10px;'>⚙️ Critères de recherche</h2>",
+    unsafe_allow_html=True,
+)
+
 
 st.sidebar.markdown(
     "<h2 style='font-size: 22px; color: #1E3A8A; margin-bottom: 10px;'>⚙️ Critères de recherche</h2>",

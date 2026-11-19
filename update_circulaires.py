@@ -1,5 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from io import BytesIO
+import os
 import re
 import threading
 import time
@@ -308,15 +310,38 @@ def executer_mise_a_jour():
         .astype(int)
     )
 
-    df["id_produit"] = df["marchand"].astype(str) + "_" + df.index.astype(str)
+    # --- FUSION AVEC LES CIRCULAIRES ENCORE VALIDES (CYCLE MERCREDI / JEUDI) ---
+    fichier_csv = "circulaires_qc.csv"
+    aujourd_hui = datetime.now().strftime("%Y-%m-%d")
 
-    compteur_reg = df["prix_regulier"].astype(bool).sum()
-    df.to_csv("circulaires_qc.csv", index=False, encoding="utf-8-sig")
+    if os.path.exists(fichier_csv):
+        df_ancien = pd.read_csv(fichier_csv, dtype=str).fillna("")
+        # Conserve uniquement les offres non expirées (le jeudi, les offres du mercredi s'effacent automatiquement)
+        df_valide = df_ancien[
+            (df_ancien["valide_au"] == "") | (df_ancien["valide_au"] >= aujourd_hui)
+        ].copy()
+        df_final = pd.concat([df_valide, df], ignore_index=True)
+    else:
+        df_final = df.copy()
+
+    # Déduplication en incluant 'valide_du' pour garder distincts la semaine courante et l'aperçu
+    df_final["produit_norm"] = df_final["produit"].astype(str).str.strip().str.lower()
+    df_final = df_final.drop_duplicates(
+        subset=["marchand", "produit_norm", "prix_circulaire", "valide_du"],
+        keep="last",
+    ).drop(columns=["produit_norm"]).reset_index(drop=True)
+
+    # Réassigner des IDs propres et uniques sur le fichier complet
+    df_final["id_produit"] = df_final["marchand"].astype(str) + "_" + df_final.index.astype(str)
+
+    compteur_reg = df_final["prix_regulier"].astype(bool).sum()
+    df_final.to_csv(fichier_csv, index=False, encoding="utf-8-sig")
 
     duree = round(time.time() - debut, 1)
     print(
-        f"Terminé en {duree}s : {len(df)} produits ({compteur_reg} prix réguliers) sauvegardés."
+        f"Terminé en {duree}s : {len(df_final)} produits ({compteur_reg} prix réguliers) sauvegardés."
     )
+
 
 
 if __name__ == "__main__":

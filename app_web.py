@@ -612,7 +612,10 @@ with st.sidebar.expander("🛡️ Politique de sécurité"):
 
 config_colonnes = {
     "code_upc": st.column_config.TextColumn("code_upc", width="medium"),
-    "nom": st.column_config.TextColumn("Nom du produit", width="large")
+    "nom": st.column_config.TextColumn("Nom du produit", width="large"),
+    "entreprise_proprietaire": st.column_config.TextColumn("Propriétaire réel", width="medium"),
+    "entreprise_province_etat": st.column_config.TextColumn("Siège social", width="small"),
+    "lieu_usine": st.column_config.TextColumn("Lieu de fabrication", width="medium")
 }
 
 selection_tableau = None

@@ -371,30 +371,7 @@ st.html("""
 """)
 
 st.html("<div style='text-align: center; margin-top: 25px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>🔍 Recherchez l'origine d'un produit parmi plus de 10 500 articles !</p></div>")
-st.markdown("### 🛒 Sélectionnez votre supermarché habituel :")
-st.html("""
-    <style>
-    [data-testid="stHorizontalBlock"] .stButton button { max-width: 180px !important; margin: 0 auto !important; display: block !important; }
-    @media (max-width: 640px) {
-        [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; gap: 10px !important; }
-        [data-testid="stColumn"] { width: 100% !important; flex: 1 1 0% !important; min-width: 0px !important; }
-    }
-    </style>
-""")
 
-c_iga, c_maxi = st.columns(2)
-if c_iga.button("🔴 IGA", use_container_width=True): st.session_state['banniere_active'] = "IGA"; st.rerun()
-if c_maxi.button("🟡 Maxi", use_container_width=True): st.session_state['banniere_active'] = "Maxi"; st.rerun()
-c_met, c_sup = st.columns(2)
-if c_met.button("🟢 Metro", use_container_width=True): st.session_state['banniere_active'] = "Metro"; st.rerun()
-if c_sup.button("🔵 Super C", use_container_width=True): st.session_state['banniere_active'] = "Super_C"; st.rerun()
-c_wal, c_tig = st.columns(2)
-if c_wal.button("🔵 Walmart", use_container_width=True): st.session_state['banniere_active'] = "Walmart"; st.rerun()
-if c_tig.button("🐯 Tigre Géant", use_container_width=True): st.session_state['banniere_active'] = "Tigre_Geant"; st.rerun()
-c_dol, c_pro, c_all = st.columns(3)
-if c_dol.button("💵 Dollarama", use_container_width=True): st.session_state['banniere_active'] = "Dollarama"; st.rerun()
-if c_pro.button("🟢 Provigo", use_container_width=True): st.session_state['banniere_active'] = "Provigo"; st.rerun()
-if c_all.button("🔄 Toutes", use_container_width=True): st.session_state['banniere_active'] = "Tous"; st.rerun()
 resultats, message_erreur_recherche = None, None
 
 if "saisie_manuelle" not in st.session_state:

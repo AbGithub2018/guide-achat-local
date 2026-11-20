@@ -74,8 +74,6 @@ def televerser_vers_github(fichier_photo) -> str:
     except Exception as e:
         st.error(f"Erreur lors de la sauvegarde sur GitHub : {e}")
         return ""
-
-
 @st.cache_data(ttl=300)
 def charger_deals_extra(_conn):
     """Charge les Deals Extra approuvés depuis Google Sheets."""
@@ -98,20 +96,12 @@ def agrandir_photo_deal(url_img: str, produit: str, prix: float, magasin: str, v
     st.image(url_img, use_container_width=True)
     st.markdown(f"### {produit} — :red[{prix:.2f} $]")
     st.caption(f"🏪 {magasin}" + (f" | 📍 {ville}" if ville else ""))
-def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, liens_officiels: dict, classer_rayon_fn):
-    """Affiche le module communautaire Le Deal Extra (avec bascule automatique en mode démo si secrets absents)."""
-    try:
-        conn_gsheets = st.connection("gsheets", type=GSheetsConnection)
-        _ = st.secrets["connections"]["gsheets"]
-        df_deals_extra = charger_deals_extra(conn_gsheets)
-        mode_demo = False
-    except Exception:
-        conn_gsheets = None
-        mode_demo = True
-        if "deals_demo_presse" not in st.session_state:
-            st.session_state["deals_demo_presse"] = []
-        df_deals_extra = pd.DataFrame(st.session_state["deals_demo_presse"])
 
+
+def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, liens_officiels: dict, classer_rayon_fn):
+    """Affiche le module communautaire Le Deal Extra."""
+    conn_gsheets = st.connection("gsheets", type=GSheetsConnection)
+    df_deals_extra = charger_deals_extra(conn_gsheets)
     nb_deals = len(df_deals_extra)
 
     st.markdown("""
@@ -173,7 +163,7 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                                 c_img, c_txt = st.columns([1, 1.6])
 
                                 with c_img:
-                                    if d_img and (d_img.startswith("http") or d_img.startswith("data:image")):
+                                    if d_img and d_img.startswith("http"):
                                         st.markdown(
                                             f"""
                                             <div style="width:100%; height:130px; border-radius:8px; background-color:#f8fafc; display:flex; align-items:center; justify-content:center; padding:4px;">
@@ -235,25 +225,6 @@ def afficher_section_deals_extra(banniere_active: str, ville_detectee: str, lien
                     if st.form_submit_button("🚀 Envoyer mon Deal Extra", type="primary", use_container_width=True):
                         if not deal_produit.strip() or not deal_ville.strip() or deal_prix <= 0:
                             st.error("⚠️ Veuillez remplir le produit, le prix et la ville.")
-                        elif mode_demo:
-                            img_data_url = ""
-                            if photo_cell is not None:
-                                octets = compresser_photo_50ko(photo_cell)
-                                b64 = base64.b64encode(octets).decode("utf-8")
-                                img_data_url = f"data:image/jpeg;base64,{b64}"
-
-                            st.session_state["deals_demo_presse"].insert(0, {
-                                "statut": "APPROUVE",
-                                "date_soumission": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                "pseudo": deal_pseudo.strip() if deal_pseudo.strip() else "Anonyme",
-                                "magasin": deal_magasin.strip(),
-                                "ville": deal_ville.strip(),
-                                "produit": deal_produit.strip(),
-                                "prix": f"{deal_prix:.2f}",
-                                "lien_image": img_data_url,
-                            })
-                            st.success("🎉 [Mode Démo Presse] En production, cette soumission envoie une alerte courriel pour modération avant publication. Ici, elle est affichée directement pour votre test !")
-                            st.rerun()
                         else:
                             lien_github = ""
                             if photo_cell is not None:

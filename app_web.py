@@ -714,24 +714,11 @@ if resultats is None or resultats.empty:
     with st.form(key="formulaire_nouveau_produit", clear_on_submit=True):
         nom_nouveau = st.text_input("Nom exact du produit (ex: Fraises du Québec 1L)")
         cup_final = st.text_input("code_upc", value=saisie_net.strip() if saisie_net else "", disabled=True)
-        entreprise = st.text_input("Entreprise propriétaire / Marque (ex: Agropur)")
-        province = st.text_input("Province / État (ex: Québec)")
-        pays = st.text_input("Pays", value="Canada")
-        distribution = st.text_input("Réseau d'épicerie (ex: IGA, Maxi, Metro, Super C)")
-        
-        st.write("---")
-        st.write("**Entrez les prix constatés en magasin (optionnel) :**")
-        col1, col2, col3 = st.columns(3)
-        with col1: prix_iga = st.text_input("Prix IGA ($)", value="")
-        with col2: prix_maxi = st.text_input("Prix Maxi ($)", value="")
-        with col3: prix_metro = st.text_input("Prix Metro ($)", value="")
-        col4, col5, col6 = st.columns(3)
-        with col4: prix_superc = st.text_input("Prix Super C ($)", value="")
-        with col5: prix_walmart = st.text_input("Prix Walmart ($)", value="")
-        with col6: prix_tigre = st.text_input("Prix Tigre Géant ($)", value="")
-        col7, col8 = st.columns(2)
-        with col7: prix_dollarama = st.text_input("Prix Dollarama ($)", value="")
-        with col8: prix_provigo = st.text_input("Prix Provigo ($)", value="")
+        lieu_fabrication = st.text_input("🏭 Lieu de fabrication / Usine (ex: Saint-Hyacinthe, QC)")
+        entreprise = st.text_input("🤝 Propriétaire réel / Maison-mère (ex: Agropur)")
+        province = st.text_input("🏢 Siège social Canada - Province / État (ex: Québec)")
+        pays = st.text_input("Pays du siège social", value="Canada")
+        distribution = st.text_input("Où le trouve-t-on ? (ex: IGA, Maxi, Metro, Super C)")
 
         bouton_creer = st.form_submit_button("🚀 Envoyer la proposition de nouveau produit", type="primary", use_container_width=True)
 
@@ -740,17 +727,17 @@ if resultats is None or resultats.empty:
                 with st.spinner("Envoi de votre proposition au modérateur..."):
                     try:
                         horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
-                        infos_compil = f"PROPOSITION_NOUVEAU: {nom_nouveau.strip()} | Marque: {entreprise.strip()} | Province: {province.strip()} | Pays: {pays.strip()}"
-                        premier_prix = prix_iga.strip() or prix_maxi.strip() or prix_metro.strip() or prix_superc.strip() or "0"
+                        infos_compil = f"PROPOSITION_NOUVEAU: {nom_nouveau.strip()} | Usine: {lieu_fabrication.strip()} | Propriétaire: {entreprise.strip()} | Siège: {province.strip()} ({pays.strip()})"
                         
                         ligne_creation_h = pd.DataFrame([{
                             'horodatage': horodatage_actuel,
                             'code_upc': str(cup_final).strip(),
                             'distribution': distribution.strip() or 'Multi',
-                            'prix': premier_prix,
+                            'prix': '',
                             'source': infos_compil,
                             'photo': ''
                         }])
+
                         
                         sauvegarder_historique(ligne_creation_h)
                         st.success("🎉 **Merci !** Votre proposition a été envoyée à notre file de modération bénévole. Elle sera ajoutée au catalogue après vérification par l'administrateur.")

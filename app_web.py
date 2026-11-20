@@ -455,16 +455,22 @@ if 'saisie_net' not in locals() or not saisie_net or saisie_net.strip() in ["", 
                 df_filtre = df_filtre[df_filtre["_SubShort"] == racine_choix]
                 df_filtre = df_filtre.drop(columns=["_SubShort"])
 
+if st.session_state.get('filtre_origine_rapide') == "Quebec" and 'entreprise_province_etat' in df_filtre.columns:
+    df_filtre = df_filtre[df_filtre['entreprise_province_etat'].str.lower().str.contains('québec|quebec', na=False)]
+elif st.session_state.get('filtre_origine_rapide') == "Canada" and 'entreprise_pays' in df_filtre.columns:
+    df_filtre = df_filtre[df_filtre['entreprise_pays'].str.lower().str.contains('canada', na=False)]
+
 st.markdown("---")
 st.markdown(f"### 📋 Liste des produits ({len(df_filtre)} affichés) :")
 
-colonnes_prix_tableau = ['prix_iga', 'prix_maxi', 'prix_metro', 'prix_super_c', 'prix_walmart', 'prix_tigre_geant', 'prix_dollarama', 'prix_provigo']
-colonnes_dispo = [c for c in ['code_upc', 'nom', 'distribution'] if c in df_filtre.columns]
-df_affichage = df_filtre[colonnes_dispo + [c for c in colonnes_prix_tableau if c in df_filtre.columns]].copy()
+colonnes_a_montrer = ['code_upc', 'nom', 'entreprise_proprietaire', 'entreprise_province_etat', 'lieu_usine']
+colonnes_dispo = [c for c in colonnes_a_montrer if c in df_filtre.columns]
+df_affichage = df_filtre[colonnes_dispo].copy()
 
-for c in df_affichage.columns: df_affichage[c] = df_affichage[c].astype(str).replace('nan', '')
+for c in df_affichage.columns:
+    df_affichage[c] = df_affichage[c].astype(str).replace(['nan', 'None'], '')
 df_affichage = df_affichage.reset_index(drop=True)
-df_affichage = df_affichage.reset_index(drop=True)
+
 # =====================================================================
 # APERÇU DE L'IMAGE DANS LA BARRE LATÉRALE (URL EXACTE INTEGRÉE)
 # =====================================================================

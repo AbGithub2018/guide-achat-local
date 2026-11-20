@@ -35,9 +35,12 @@ Un outil d'optimisation de budget d'épicerie basé sur la localisation de l'uti
 
 ## 🚀 Utilisation en ligne
 
-(Ici se trouve le lien vers votre application hébergée sur Streamlit Community Cloud)*
-<h1 align="center">👉 **Accéder à l'application :** https://achatquebec.streamlit.app  ou</h1>
-<h1 align="center">👉 **Accéder à l'application :** https://achatquebec-circulaires.streamlit.app</h1>
+*(Ici se trouve le lien vers votre application hébergée sur Streamlit Community Cloud)*
+
+👉 **Accéder à l'application :** https://achatquebec.streamlit.app ou
+
+👉 **Accéder à l'application :** https://achatquebec-circulaires.streamlit.app
+
 ---
 
 ## 🤝 Contribuer et Signaler un problème

@@ -1,4 +1,4 @@
-# ⚜️ Mon Guide d'Achat Local & Planificateur Anti-Inflation 🍁
+# ⚜️ Mon Guide d'Achat Local : Origine & Propriété & Planificateur Anti-Inflation 🍁
 👉 **[Lancer l'application en ligne : achatquebec.streamlit.app](https://streamlit.app)**
 
 

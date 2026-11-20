@@ -353,24 +353,32 @@ with open("logo_quebec.png", "rb") as image_file:
 
 logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: clamp(30px, 5vw, 46px); width: auto; flex-shrink: 0;" />'
 
+logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: clamp(30px, 5vw, 46px); width: auto; flex-shrink: 0;" />'
+
 st.html(f"""
-<div style="display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 15px); margin-bottom: 20px; width: 100%; text-align: center;">
-    {logo_html}
-    <h1 style="color: #003366; font-family: sans-serif; font-size: clamp(1.3rem, 4.5vw, 2.5rem); margin: 0; padding: 0; line-height: 1.2;">MON GUIDE D'ACHAT LOCAL</h1>
-    <span style="font-size: clamp(1.3rem, 4.5vw, 2.5rem); flex-shrink: 0;">🍁</span>
+<div style="text-align: center; margin-bottom: 20px; font-family: sans-serif;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 15px); width: 100%;">
+        {logo_html}
+        <h1 style="color: #003366; font-size: clamp(1.3rem, 4.5vw, 2.5rem); margin: 0; padding: 0; line-height: 1.2;">MON GUIDE D'ACHAT LOCAL</h1>
+        <span style="font-size: clamp(1.3rem, 4.5vw, 2.5rem); flex-shrink: 0;">🍁</span>
+    </div>
+    <p style="font-size: 19px; font-weight: 600; color: #1e3a8a; margin-top: 8px; margin-bottom: 4px;">
+        🏭 Lieu de fabrication &nbsp;•&nbsp; 🏢 Siège social au Canada &nbsp;•&nbsp; 🤝 Propriétaire réel
+    </p>
+    <p style="font-size: 16px; color: #475569; margin: 0;">
+        Scannez ou recherchez parmi plus de <strong>10 500 produits</strong> pour savoir d'où viennent vraiment vos aliments
+    </p>
 </div>
 """)
 
 st.html("""
-    <a href="https://achatquebec-circulaires.streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block;">
-        <div style="background-color: #FF3B30; color: white; text-align: center; padding: 18px 20px; border-radius: 12px; font-family: sans-serif; line-height: 1.6; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s ease;">
-            <div style="font-size: 20px; font-weight: bold; margin-bottom: 6px;">🛒 Votre panier au plus bas, en direct de vos commerces locaux</div>
-            <div style="font-size: 15px; opacity: 0.90; font-weight: 500;">Ouvrir le Planificateur de Budget (circulaires & calcul du panier) ➔</div>
+    <a href="https://streamlit.app" target="_blank" style="text-decoration: none; width: 100%; display: block; margin-bottom: 20px;">
+        <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; color: #0f172a; text-align: center; padding: 12px 18px; border-radius: 10px; font-family: sans-serif;">
+            <span style="font-size: 15px; font-weight: 600;">🛒 Vous cherchez plutôt les rabais de la semaine ?</span>
+            <span style="font-size: 15px; font-weight: bold; color: #dc2626; margin-left: 6px;">Ouvrir le Comparateur de Circulaires ➔</span>
         </div>
     </a>
 """)
-
-st.html("<div style='text-align: center; margin-top: 25px; margin-bottom: 25px;'><p style='font-size: 22px; font-weight: bold; color: #2e7d32;'>🔍 Recherchez l'origine d'un produit parmi plus de 10 500 articles !</p></div>")
 
 resultats, message_erreur_recherche = None, None
 

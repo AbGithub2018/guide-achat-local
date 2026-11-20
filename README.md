@@ -1,6 +1,6 @@
 <h1 align="center">⚜ Mon Guide d'Achat Local : Origine & Propriété</h1>
  <h1 align="center">  + Planificateur Anti-Inflation 🍁</h1>
-👉 **[Lancer l'application en ligne : achatquebec.streamlit.app](https://streamlit.app)**
+👉 **[Lancer l'application en ligne : achatquebec.streamlit.app](https://achatquebec.streamlit.app)**
 
 
 Une **initiative citoyenne bénévole, indépendante et sans but lucratif** destinée à aider les consommateurs québécois à identifier l'origine des produits de consommation, à soutenir l'économie locale et à réduire le coût de leur panier d'épicerie.

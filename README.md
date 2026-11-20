@@ -1,5 +1,5 @@
-<h1 align="center">⚜ Mon Guide d'Achat Local : Origine & Propriété 
-              + Planificateur Anti-Inflation 🍁</h1>
+<h1 align="center">⚜ Mon Guide d'Achat Local : Origine & Propriété</h1>
+ <h1 align="center">  + Planificateur Anti-Inflation 🍁</h1>
 👉 **[Lancer l'application en ligne : achatquebec.streamlit.app](https://streamlit.app)**
 
 

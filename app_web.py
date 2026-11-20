@@ -899,27 +899,25 @@ if resultats is not None and not resultats.empty:
         """
 
 
-    bannières_config = {
-        'prix_iga': ('🔴 IGA', '#d32f2f'), 'prix_maxi': ('🟡 MAXI', '#f9d71c'), 'prix_metro': ('🟢 METRO', '#28a745'), 'prix_super_c': ('🔵 SUPER C', '#0056b3'),
-        'prix_walmart': ('🔵 WALMART', '#0071dc'), 'prix_tigre_geant': ('🐯 TIGRE GÉANT', '#ffcc00'), 'prix_dollarama': ('💵 DOLLARAMA', '#00843d'), 'prix_provigo': ('🟢 PROVIGO', '#ff5a00')
-    }
+    usine_affiche = str(row.get('lieu_usine', '')).strip().replace('nan', '') or str(row.get('usine_principale', '')).strip().replace('nan', '') or "Non répertorié"
+    proprietaire_affiche = compagnie if compagnie else "Non répertorié"
 
-    prix_valides = {}
-    for col_key, _ in bannières_config.items():
-        v_prix = str(row.get(col_key, '')).strip().replace('nan', '').replace('$', '').replace(',', '.').strip()
-        if v_prix and v_prix.lower() != "non inscrit" and v_prix != "":
-            try: prix_valides[col_key] = float(v_prix)
-            except ValueError: pass
-
-    meilleure_banniere_col = min(prix_valides, key=prix_valides.get) if prix_valides else None
-
-    bloc_prix_html = '<div style="margin: 15px 0; display: flex; gap: 12px; flex-wrap: wrap;">'
-    for col_key, (label, _) in bannières_config.items():
-        v_prix = str(row.get(col_key, '')).strip().replace('nan', '')
-        affichage = f"{v_prix}$" if v_prix and v_prix.lower() != "non inscrit" else "Non inscrit"
-        style_card = 'background-color: #e8f5e9; border: 3px solid #2e7d32;' if col_key == meilleure_banniere_col else 'background-color: #ffffff; border: 1px solid #e0e0e0;'
-        bloc_prix_html += f'<div style="padding: 10px 15px; border-radius: 8px; font-weight: bold; min-width: 135px; text-align: center; {style_card}"><div style="font-size: 11px; color: #666;">{label}</div><div style="font-size: 17px;">{affichage}</div></div>'
-    bloc_prix_html += '</div>'
+    bloc_identite_html = f"""
+    <div style="background-color: #ffffff; border: 1px solid #d1d5db; border-radius: 10px; padding: 18px; margin: 15px 0; display: flex; flex-wrap: wrap; gap: 15px;">
+        <div style="flex: 1; min-width: 220px; background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #003366;">
+            <div style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">🏭 Lieu de fabrication</div>
+            <div style="font-size: 16px; font-weight: bold; color: #1e293b; margin-top: 4px;">{usine_affiche}</div>
+        </div>
+        <div style="flex: 1; min-width: 220px; background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #16a34a;">
+            <div style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">🏢 Siège social (Canada / État)</div>
+            <div style="font-size: 16px; font-weight: bold; color: #1e293b; margin-top: 4px;">{localisation_siege}</div>
+        </div>
+        <div style="flex: 1; min-width: 220px; background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #d97706;">
+            <div style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">🤝 Propriétaire réel</div>
+            <div style="font-size: 16px; font-weight: bold; color: #1e293b; margin-top: 4px;">{proprietaire_affiche}</div>
+        </div>
+    </div>
+    """
 
     st.html(f'''
     <div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;">
@@ -930,77 +928,42 @@ if resultats is not None and not resultats.empty:
         <h2>📦 {row.get("nom", "Produit sans nom")}</h2>
         <p style="color: {couleur_texte}; font-weight: 500;">{verdict}</p>
         {boite_entreprise_html}
-        {bloc_prix_html}
+        {bloc_identite_html}
     </div>
     ''')
 
-    st.markdown("#### 📝 Collaborer à la mise à jour des prix en direct au Québec :")
-    with st.form("formulaire_prix_epicerie"):
+    st.markdown("#### 📝 Signaler ou corriger l'origine de ce produit :")
+    with st.form("formulaire_origine_produit"):
         upc_dynamique = str(row.get('code_upc', 'sans_upc'))
-        def clean_price(val): return "" if str(val).strip().lower() in ["nan", "none", ""] else str(val).strip()
+        c1, c2, c3 = st.columns(3)
+        nouvelle_usine = c1.text_input("🏭 Lieu de fabrication / Usine :", value="" if usine_affiche == "Non répertorié" else usine_affiche, key=f"form_usine_{upc_dynamique}")
+        nouveau_siege = c2.text_input("🏢 Siège social (Province / Pays) :", value="" if localisation_siege == "Non spécifié" else localisation_siege, key=f"form_siege_{upc_dynamique}")
+        nouveau_proprio = c3.text_input("🤝 Propriétaire réel :", value="" if proprietaire_affiche == "Non répertorié" else proprietaire_affiche, key=f"form_proprio_{upc_dynamique}")
+
+        st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #003366 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
         
-        c1, c2, c3, c4 = st.columns(4)
-        nouveau_iga = c1.text_input("Prix IGA ($) :", value=clean_price(row.get('prix_iga', '')), key=f"form_iga_{upc_dynamique}")
-        nouveau_maxi = c2.text_input("Prix Maxi ($) :", value=clean_price(row.get('prix_maxi', '')), key=f"form_maxi_{upc_dynamique}")
-        nouveau_metro = c3.text_input("Prix Metro ($) :", value=clean_price(row.get('prix_metro', '')), key=f"form_metro_{upc_dynamique}")
-        nouveau_super_c = c4.text_input("Prix Super C ($) :", value=clean_price(row.get('prix_super_c', '')), key=f"form_super_c_{upc_dynamique}")
-        
-        c5, c6, c7, c8 = st.columns(4)
-        nouveau_walmart = c5.text_input("Prix Walmart ($) :", value=clean_price(row.get('prix_walmart', '')), key=f"form_wal_{upc_dynamique}")
-        nouveau_tigre = c6.text_input("Prix Tigre Géant ($) :", value=clean_price(row.get('prix_tigre_geant', '')), key=f"form_tig_{upc_dynamique}")
-        nouveau_dollarama = c7.text_input("Prix Dollarama ($) :", value=clean_price(row.get('prix_dollarama', '')), key=f"form_dol_{upc_dynamique}")
-        nouveau_provigo = c8.text_input("Prix Provigo ($) :", value=clean_price(row.get('prix_provigo', '')), key=f"form_provigo_{upc_dynamique}")
-        
-        st.html("<style>div[data-testid='stFormSubmitButton'] button { background-color: #2e7d32 !important; color: white !important; font-size: 20px !important; font-weight: bold !important; height: 55px !important; border-radius: 10px !important; }</style>")
-        
-        texte_barre = "💾 Envoyer la mise à jour des prix"
+        texte_barre = "💾 Envoyer la correction d'origine"
         if "dernier_horodatage" in st.session_state:
-            texte_barre = f"💾 Envoyer la mise à jour des prix (Fait le : {st.session_state['dernier_horodatage']})"
+            texte_barre = f"💾 Envoyer la correction d'origine (Fait le : {st.session_state['dernier_horodatage']})"
         bouton_enregistrer = st.form_submit_button(texte_barre, use_container_width=True)
-        
+
     if bouton_enregistrer:
         try:
-            with st.spinner("Envoi des prix suggérés pour validation..."):
+            with st.spinner("Envoi de votre suggestion pour validation..."):
                 horodatage_actuel = pd.Timestamp.now(tz='America/Toronto').tz_localize(None).strftime("%Y-%m-%d %H:%M")
-                nouvelles_lignes = []
-                upc_produit = str(row.get('code_upc', '')).strip()
-                champs_saisis = {
-                    'prix_iga': nouveau_iga, 
-                    'prix_maxi': nouveau_maxi, 
-                    'prix_metro': nouveau_metro, 
-                    'prix_super_c': nouveau_super_c,  # <-- Remettez les deux tirets ici !
-                    'prix_walmart': nouveau_walmart, 
-                    'prix_tigre_geant': nouveau_tigre, 
-                    'prix_dollarama': nouveau_dollarama, 
-                    'prix_provigo': nouveau_provigo
-                }
-
-
-
-                for distribution_enseigne, valeur_prix in champs_saisis.items():
-                    if valeur_prix and str(valeur_prix).strip() != "":
-                        try:
-                            prix_propre = float(str(valeur_prix).replace(',', '.').replace('$', '').strip())
-                            nouvelle_ligne = {
-                                'horodatage': horodatage_actuel,
-                                'code_upc': upc_produit,
-                                'distribution': distribution_enseigne,
-                                'prix': prix_propre,
-                                'source': 'PROPOSITION_PRIX',
-                                'photo': ''
-                            }
-                            nouvelles_lignes.append(nouvelle_ligne)
-                        except ValueError: pass
-
-                if nouvelles_lignes:
-                    df_nouvel_historique = pd.DataFrame(nouvelles_lignes)
-                    sauvegarder_historique(df_nouvel_historique)
-                    
+                details_origine = f"Usine: {nouvelle_usine.strip()} | Siège: {nouveau_siege.strip()} | Propriétaire: {nouveau_proprio.strip()}"
+                df_nouvel_historique = pd.DataFrame([{
+                    'horodatage': horodatage_actuel,
+                    'code_upc': str(row.get('code_upc', '')).strip(),
+                    'distribution': 'ORIGINE_CORPORATIVE',
+                    'prix': '',
+                    'source': f"CORRECTION_ORIGINE: {details_origine}",
+                    'photo': ''
+                }])
+                sauvegarder_historique(df_nouvel_historique)
                 st.session_state['dernier_horodatage'] = horodatage_actuel
-                st.success("👍 **Proposition enregistrée !** Les prix ont été envoyés pour vérification. Ils seront mis à jour publiquement dès que l'administrateur aura le temps de les valider.")
+                st.success("👍 **Merci !** Vos informations sur la fabrication et le propriétaire ont été envoyées à l'administrateur pour validation.")
                 time.sleep(1.5)
                 st.rerun()
-        except Exception as e: st.error(f"❌ Erreur lors de l'envoi : {e}")
-
-banniere_a_afficher = st.session_state.get('banniere_active', 'Tous')
-st.caption(f"Filtre d'affichage actif : Enseigne sélectionnée -> **{banniere_a_afficher.upper()}**")
+        except Exception as e:
+            st.error(f"❌ Erreur lors de l'envoi : {e}")

@@ -3,7 +3,7 @@
 👉 **[Lancer l'application en ligne : achatquebec.streamlit.app](https://achatquebec.streamlit.app)**
 
 
-Une **initiative citoyenne bénévole, indépendante et sans but lucratif** destinée à aider les consommateurs québécois à identifier l'origine des produits de consommation, à soutenir l'économie locale et à réduire le coût de leur panier d'épicerie.
+Une **initiative citoyenne bénévole, indépendante et sans but lucratif** destinée à aider les consommateurs québécois à identifier l'origine des produits de consommation, à soutenir l'économie locale et à réduire le coût de leur panier d'épicerie, avec le Planificateur Anti-Inflation.
 
 ---
 

@@ -23,7 +23,7 @@ Un outil d'optimisation de budget d'épicerie basé sur la localisation de l'uti
 * **🗺️ Recherche par rayon géographique :** Entrez votre code postal et définissez un rayon maximal (en km) pour lister les succursales autour de chez vous.
 * **📰 Accès direct aux circulaires :** Ouvrez en un clic la circulaire de la semaine ou le site web de votre succursale locale.
 * **🧾 Simulateur de facture d'épicerie :** Saisissez les articles repérés en spécial par rayon et par enseigne pour obtenir une **estimation totale cumulée** et une répartition claire de vos dépenses par magasin avant même de sortir de chez vous. Et bien plus.
-👉 **[Lancer l'application en ligne : achatquebec-circulaires.streamlit.app](https://achatquebec-circulaires.streamlit.app)**
+* **👉 **[Lancer l'application en ligne : achatquebec-circulaires.streamlit.app](https://achatquebec-circulaires.streamlit.app)**
 ---
 
 ## 🛠️ Technologies utilisées

@@ -943,8 +943,8 @@ if resultats is not None and not resultats.empty:
     st.markdown("#### 📝 Signaler ou corriger l'origine de ce produit :")
     with st.form("formulaire_origine_produit"):
         upc_dynamique = str(row.get('code_upc', 'sans_upc'))
-        c1, c2, c3 = st.columns(3)
-        nouvelle_usine = c1.text_input("🏭 Lieu de fabrication / Usine :", value="" if usine_affiche == "Non répertorié" else usine_affiche, key=f"form_usine_{upc_dynamique}")
+        c1, c2, c3 = st.columns([1.4, 1, 1])
+        nouvelle_usine = c1.text_area("🏭 Lieu de fabrication / Usine :", value="" if usine_affiche == "Non répertorié" else usine_affiche, height=75, key=f"form_usine_{upc_dynamique}")
         nouveau_siege = c2.text_input("🏢 Siège social (Province / Pays) :", value="" if localisation_siege == "Non spécifié" else localisation_siege, key=f"form_siege_{upc_dynamique}")
         nouveau_proprio = c3.text_input("🤝 Propriétaire réel :", value="" if proprietaire_affiche == "Non répertorié" else proprietaire_affiche, key=f"form_proprio_{upc_dynamique}")
 

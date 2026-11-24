@@ -936,8 +936,8 @@ if resultats is not None and not resultats.empty:
         </div>
     </div>
     """
-        couleur_boite = couleur_boite if 'couleur_boite' in locals() else "#e3f2fd"
-        couleur_texte = couleur_texte if 'couleur_texte' in locals() else "#0d47a1"
+    couleur_boite = couleur_boite if 'couleur_boite' in locals() else "#e3f2fd"
+    couleur_texte = couleur_texte if 'couleur_texte' in locals() else "#0d47a1"
 
     st.html(f'''
     <div style="background-color: {couleur_boite}; padding: 25px; border-radius: 12px; border-top: 8px solid {couleur_texte}; font-family: sans-serif;">

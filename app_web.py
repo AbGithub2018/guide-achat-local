@@ -863,55 +863,58 @@ if resultats is not None and not resultats.empty:
                     nom_entreprise_locale = parties[0].strip(' .')
                     region_fabrication = parties[1].strip(' .')
 
+            
             # Cas C : Autre format sans virgule (ex: "Multiples usines sous contrat (Canada)")
             else:
                 nom_entreprise_locale = usine_brute
                 region_fabrication = "Québec"
 
-        # 2. Extraction du nombre d'emplois approximatifs au Québec (colonne Z)
-        chiffre_nettoye = 0
-        val_emplois = str(row.get('emplois_quebec', '')).strip()
-        if val_emplois and val_emplois.lower() != 'nan':
-            try:
-                chiffre_nettoye = int(float(val_emplois.replace(" ", "").replace("\xa0", "").replace("\u202f", "")))
-            except ValueError:
-                chiffre_nettoye = 0
+            # 2. Extraction du nombre d'emplois approximatifs au Québec (colonne Z)
+            chiffre_nettoye = 0
+            val_emplois = str(row.get('emplois_quebec', '')).strip().replace("\xa0", " ").replace("\u202f", " ")
+            if val_emplois and val_emplois.lower() != 'nan':
+                try:
+                    chiffre_nettoye = int(float(val_emplois.replace(" ", "")))
+                except ValueError:
+                    chiffre_nettoye = val_emplois
 
-        if isinstance(chiffre_nettoye, int) and chiffre_nettoye > 0:
-            format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
-            texte_emplois = f"Environ <b>{format_emplois}</b> emplois directs au Québec"
-        elif isinstance(chiffre_nettoye, str) and chiffre_nettoye != "":
-            if chiffre_nettoye.lower().startswith("entre"):
-                texte_formate = chiffre_nettoye[0].upper() + chiffre_nettoye[1:]
-                texte_emplois = f"<b>{texte_formate}</b> emplois directs au Québec"
+            if isinstance(chiffre_nettoye, int) and chiffre_nettoye > 0:
+                format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
+                texte_emplois = f"Environ <b>{format_emplois}</b> emplois directs au Québec"
+            elif isinstance(chiffre_nettoye, str) and chiffre_nettoye != "":
+                if chiffre_nettoye.lower().startswith("entre"):
+                    texte_formate = chiffre_nettoye[0].upper() + chiffre_nettoye[1:]
+                    texte_emplois = f"<b>{texte_formate}</b> emplois directs au Québec"
+                else:
+                    texte_emplois = f"Environ <b>{chiffre_nettoye}</b> emplois directs au Québec"
             else:
-                texte_emplois = f"Environ <b>{chiffre_nettoye}</b> emplois directs au Québec"
-        else:
-            texte_emplois = "Nombre d'emplois non répertorié"
+                texte_emplois = "Nombre d'emplois non répertorié"
+
+            # 3. Construction de la boîte dédiée (uniquement quand la colonne G = Québec)
+            couleur_boite = couleur_texte if 'couleur_texte' in locals() else "#0d47a1"
+            boite_entreprise_html = f"""
+            <div style="background-color: #ffffff; border-left: 5px solid {couleur_boite}; border-radius: 8px; padding: 15px 20px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.06);">
+                <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: {couleur_boite}; letter-spacing: 0.5px; margin-bottom: 8px;">
+                    🏭 Entreprise & Usine de fabrication au Québec
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 15px; color: #333333;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <span style="color: #666666; font-size: 13px;">Entreprise / Usine :</span><br>
+                        <strong style="font-size: 16px;">{nom_entreprise_locale}</strong>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <span style="color: #666666; font-size: 13px;">Lieu de fabrication :</span><br>
+                        <strong style="font-size: 16px;">📍 {region_fabrication}</strong>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <span style="color: #666666; font-size: 13px;">Emplois approximatifs :</span><br>
+                        <span style="font-size: 16px; color: #0d47a1;">👥 {texte_emplois}</span>
+                    </div>
+                </div>
+            </div>
+            """
 
 
-        # 3. Construction de la boîte dédiée (uniquement quand la colonne G = Québec)
-        boite_entreprise_html = f"""
-        <div style="background-color: #ffffff; border-left: 5px solid {couleur_texte}; border-radius: 8px; padding: 15px 20px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.06);">
-            <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: {couleur_texte}; letter-spacing: 0.5px; margin-bottom: 8px;">
-                🏭 Entreprise & Usine de fabrication au Québec
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 15px; color: #333333;">
-                <div style="flex: 1; min-width: 200px;">
-                    <span style="color: #666666; font-size: 13px;">Entreprise / Usine :</span><br>
-                    <strong style="font-size: 16px;">{nom_entreprise_locale}</strong>
-                </div>
-                <div style="flex: 1; min-width: 200px;">
-                    <span style="color: #666666; font-size: 13px;">Lieu de fabrication :</span><br>
-                    <strong style="font-size: 16px;">📍 {region_fabrication}</strong>
-                </div>
-                <div style="flex: 1; min-width: 200px;">
-                    <span style="color: #666666; font-size: 13px;">Emplois approximatifs :</span><br>
-                    <span style="font-size: 16px; color: #0d47a1;">👥 {texte_emplois}</span>
-                </div>
-            </div>
-        </div>
-        """
 
 
     usine_affiche = str(row.get('lieu_usine', '')).strip().replace('nan', '') or str(row.get('usine_principale', '')).strip().replace('nan', '') or "Non répertorié"

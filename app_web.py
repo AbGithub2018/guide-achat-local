@@ -883,7 +883,7 @@ if resultats is not None and not resultats.empty:
                 chiffre_nettoye = val_emplois
 
         if chiffre_nettoye != 0 and str(chiffre_nettoye).strip() != "":
-             format_emplois = f"{chiffre_nettoye:,}".replace(",", " ") if isinstance(chiffre_nettoye, int) else str(chiffre_nettoye)
+            format_emplois = f"{chiffre_nettoye:,}".replace(",", " ") if isinstance(chiffre_nettoye, int) else str(chiffre_nettoye)
 
             texte_emplois = f"<b>{format_emplois.capitalize()}</b> emplois directs au Québec"
         else:

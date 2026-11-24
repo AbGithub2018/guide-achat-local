@@ -817,7 +817,7 @@ if resultats is not None and not resultats.empty:
         if chiffre_nettoye != 0 and str(chiffre_nettoye).strip() != "":
             format_emplois = f"{chiffre_nettoye:,}".replace(",", " ") if isinstance(chiffre_nettoye, int) else str(chiffre_nettoye)
 
-            verdict = f"Ce produit est fabriqué dans une usine locale générant aussi environ <b>{format_emplois}</b> emplois directs au Québec."
+            verdict = f"Ce produit est fabriqué dans une usine locale générant aussi  <b>{format_emplois}</b> emplois directs au Québec."
         else:
             verdict = "Ce produit est fabriqué dans une usine locale au Québec."
 
@@ -885,7 +885,7 @@ if resultats is not None and not resultats.empty:
         if chiffre_nettoye != 0 and str(chiffre_nettoye).strip() != "":
              format_emplois = f"{chiffre_nettoye:,}".replace(",", " ") if isinstance(chiffre_nettoye, int) else str(chiffre_nettoye)
 
-             texte_emplois = f"Environ <b>{format_emplois}</b> emplois directs au Québec"
+             texte_emplois = f"<b>{format_emplois}</b> emplois directs au Québec"
         else:
             texte_emplois = "Nombre d'emplois non répertorié"
 

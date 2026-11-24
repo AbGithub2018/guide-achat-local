@@ -793,7 +793,11 @@ if resultats is not None and not resultats.empty:
             # Extraction et nettoyage final du nombre d'emplois (colonne Z)
             if valeur_brute is not None and str(valeur_brute).strip() != "" and str(valeur_brute).lower() != "nan":
                 texte_brut = str(valeur_brute).replace(" ", "").replace("\xa0", "").replace("\u202f", "")
-                chiffre_nettoye = int(float(texte_brut))
+                try:
+                    chiffre_nettoye = int(float(texte_brut))
+                except ValueError:
+                    chiffre_nettoye = str(valeur_brute).strip()
+
         except Exception:
             chiffre_nettoye = 0
 
@@ -810,8 +814,9 @@ if resultats is not None and not resultats.empty:
         couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", f"""<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 54px; height: 32px; display: inline-flex; align-items: center; margin-right: 14px;"><img src="{src_image}" style="height: 100%; width: auto; display: block;" alt="⚜"></div>Emploi au Québec Confirmé</span>"""
         
         # 3. Verdict
-        if chiffre_nettoye > 0:
-            format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
+        if chiffre_nettoye != 0 and str(chiffre_nettoye).strip() != "":
+            format_emplois = f"{chiffre_nettoye:,}".replace(",", " ") if isinstance(chiffre_nettoye, int) else str(chiffre_nettoye)
+
             verdict = f"Ce produit est fabriqué dans une usine locale générant aussi environ <b>{format_emplois}</b> emplois directs au Québec."
         else:
             verdict = "Ce produit est fabriqué dans une usine locale au Québec."

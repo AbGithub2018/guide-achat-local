@@ -792,29 +792,29 @@ if resultats is not None and not resultats.empty:
 
             # Extraction et nettoyage final du nombre d'emplois (colonne Z)
             if valeur_brute is not None and str(valeur_brute).strip() != "" and str(valeur_brute).lower() != "nan":
-                texte_brut = str(valeur_brute).replace(" ", "").replace("\xa0", "").replace("\u202f", "")
-                chiffre_nettoye = int(float(texte_brut))
+                texte_propre = str(valeur_brute).strip().replace("\xa0", " ").replace("\u202f", " ")
+                
+                try:
+                    # Cas 1 : C'est un nombre pur (ex: "150" ou "1 500")
+                    sans_espaces = texte_propre.replace(" ", "")
+                    chiffre_nettoye = int(float(sans_espaces))
+                except ValueError:
+                    # Cas 2 : C'est une plage textuelle (ex: "entre 50 et 100")
+                    chiffre_nettoye = texte_propre
         except Exception:
             chiffre_nettoye = 0
 
-        # 2. Encodage de votre fleur de lys transparente (Base64)
-        chemin_img = "images_stockees/logo_quebec.png"
-        src_image = ""
-        if os.path.exists(chemin_img):
-            with open(chemin_img, "rb") as f:
-                data_base64 = base64.b64encode(f.read()).decode("utf-8")
-                src_image = f"data:image/png;base64,{data_base64}"
-        else:
-            src_image = "https://githubusercontent.com"
-
-        couleur_boite, couleur_texte, badge_html = "#e1f5fe", "#0d47a1", f"""<span style="display: inline-flex; align-items: center; background-color: #0d47a1; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><div style="width: 54px; height: 32px; display: inline-flex; align-items: center; margin-right: 14px;"><img src="{src_image}" style="height: 100%; width: auto; display: block;" alt="⚜"></div>Emploi au Québec Confirmé</span>"""
-        
         # 3. Verdict
-        if chiffre_nettoye > 0:
+        if isinstance(chiffre_nettoye, int) and chiffre_nettoye > 0:
             format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
             verdict = f"Ce produit est fabriqué dans une usine locale générant aussi environ <b>{format_emplois}</b> emplois directs au Québec."
+        elif isinstance(chiffre_nettoye, str) and chiffre_nettoye != "":
+            # On enlève "environ" devant si le texte commence déjà par "entre" pour que la phrase soit naturelle
+            prefixe = "" if chiffre_nettoye.lower().startswith("entre") else "environ "
+            verdict = f"Ce produit est fabriqué dans une usine locale générant aussi {prefixe}<b>{chiffre_nettoye}</b> emplois directs au Québec."
         else:
             verdict = "Ce produit est fabriqué dans une usine locale au Québec."
+
 
 
     elif "canada" in pays.lower() or "canada" in prov.lower():
@@ -877,11 +877,18 @@ if resultats is not None and not resultats.empty:
             except ValueError:
                 chiffre_nettoye = 0
 
-        if chiffre_nettoye > 0:
+        if isinstance(chiffre_nettoye, int) and chiffre_nettoye > 0:
             format_emplois = f"{chiffre_nettoye:,}".replace(",", " ")
             texte_emplois = f"Environ <b>{format_emplois}</b> emplois directs au Québec"
+        elif isinstance(chiffre_nettoye, str) and chiffre_nettoye != "":
+            if chiffre_nettoye.lower().startswith("entre"):
+                texte_formate = chiffre_nettoye[0].upper() + chiffre_nettoye[1:]
+                texte_emplois = f"<b>{texte_formate}</b> emplois directs au Québec"
+            else:
+                texte_emplois = f"Environ <b>{chiffre_nettoye}</b> emplois directs au Québec"
         else:
             texte_emplois = "Nombre d'emplois non répertorié"
+
 
         # 3. Construction de la boîte dédiée (uniquement quand la colonne G = Québec)
         boite_entreprise_html = f"""

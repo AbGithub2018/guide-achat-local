@@ -365,7 +365,7 @@ st.html(f"""
         🏭 Lieu de fabrication &nbsp;•&nbsp; 🏢 Siège social au Canada &nbsp;•&nbsp; 🤝 Propriétaire réel
     </p>
     <p style="font-size: 16px; color: #475569; margin: 0;">
-        Scannez ou recherchez parmi <strong id="compteur-produits">plus de 17 000 produits</strong> pour savoir d'où viennent vraiment vos aliments
+        Scannez ou recherchez parmi <strong>{f"{len(df):,}".replace(",", " ")} produits</strong> pour savoir d'où viennent vraiment vos aliments
     </p>
 
 </div>

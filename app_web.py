@@ -319,7 +319,7 @@ def deviner_categorie(nom_produit):
     if any(m in nom for m in legumes_mots): return ("Fruits et Légumes", "Légumes frais (légumes-feuilles, racines, fines herbes)")
 
     return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
-if 'df_produits' not in st.session_state:
+
     st.session_state['df_produits'] = charger_donnees()
 df = st.session_state['df_produits']
 

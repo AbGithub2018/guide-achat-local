@@ -321,7 +321,7 @@ def deviner_categorie(nom_produit):
     return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
 if 'df_produits' not in st.session_state:
     st.session_state['df_produits'] = charger_donnees()
-
+    st.html(f"<script>window.parent.document.getElementById('compteur-produits').innerText = '{len(st.session_state['df_produits']):,}'.replace(/,/g, ' ') + ' produits';</script>")
 df = st.session_state['df_produits']
 
 if 'banniere_active' not in st.session_state:
@@ -366,8 +366,9 @@ st.html(f"""
         🏭 Lieu de fabrication &nbsp;•&nbsp; 🏢 Siège social au Canada &nbsp;•&nbsp; 🤝 Propriétaire réel
     </p>
     <p style="font-size: 16px; color: #475569; margin: 0;">
-        Scannez ou recherchez parmi plus de <strong>17 000 produits(en progression)</strong> pour savoir d'où viennent vraiment vos aliments
+        Scannez ou recherchez parmi <strong id="compteur-produits">plus de 17 000 produits</strong> pour savoir d'où viennent vraiment vos aliments
     </p>
+
 </div>
 """)
 

@@ -320,7 +320,7 @@ def deviner_categorie(nom_produit):
 
     return ("Épicerie salée et Garde-manger", "Toutes les sous-catégories")
 
-    st.session_state['df_produits'] = charger_donnees()
+st.session_state['df_produits'] = charger_donnees()
 df = st.session_state['df_produits']
 
 if 'banniere_active' not in st.session_state:
